@@ -1,0 +1,83 @@
+.App {
+    font-family: sans-serif;
+    display: flex;
+}
+
+.Navbar {
+    /* height: 100vh; */
+    width: 200px;
+    background-color: hotpink;
+    padding: 10px;
+    margin-right: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    /* overflow: scroll; */
+}
+
+.navlink {
+    cursor: pointer;
+}
+
+/* 10px = 1 row */
+
+.shape {
+    z-index: 10;
+}
+
+.circle {
+    width: 120px;
+    height: 120px;
+    background-color: red;
+    border-radius: 50%;
+    border: 0;
+    cursor: grab;
+}
+
+.square {
+    width: 120px;
+    height: 120px;
+    background-color: blue;
+    border: 0;
+    cursor: grab;
+}
+
+.rectangle {
+    width: 120px;
+    height: 180px;
+    background-color: green;
+    border-radius: 50%;
+    border: 0;
+    cursor: grab;
+}
+
+.oval {
+    width: 180px;
+    height: 180px;
+    background-color: yellow;
+    border-radius: 50%;
+    border: 0;
+    cursor: grab;
+}
+
+.shape-container {
+    display: flex;
+    background-color: lightblue;
+    width: 500px;
+    z-index: -10;
+    position: fixed;
+}
+
+.draggables {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+}
+
+.draggable-shape {
+    text-align: center;
+    height: 30px;
+    padding-top: 10px;
+}
