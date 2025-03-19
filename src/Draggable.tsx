@@ -11,12 +11,15 @@ export default function Draggable({ id, data }: { id: string; data: any }) {
 
     const baseStyle = {
         position: "absolute",
-        left: data?.shape?.x ?? 0, // Gebruik fallback 0 als x niet beschikbaar is
-        top: data?.shape?.y ?? 0, // Gebruik fallback 0 als y niet beschikbaar is
+        left: data?.shape?.x ?? 0,
+        top: data?.shape?.y ?? 0,
+        width: data?.shape?.width,
+        height: data?.shape?.height,
         textAlign: "center",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
+        cursor: "grab",
     };
 
     const style = transform
@@ -33,6 +36,7 @@ export default function Draggable({ id, data }: { id: string; data: any }) {
             style={style}
             {...listeners}
             {...attributes}
+            onMouseDown={() => {console.log("mouse down")}}
         >
             {id}
         </div>

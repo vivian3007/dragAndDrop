@@ -1,8 +1,7 @@
-import Draggable from "./Draggable";
 import { v4 as uuidv4 } from "uuid";
 import {useEffect, useRef, useState} from "react";
 
-export default function Sidebar({ navBarRef, setDroppedShapes }: { navBarRef: any, setDroppedShapes: any }) {
+export default function Sidebar({ setDroppedShapes }: { setDroppedShapes: any }) {
     const shapes = [
         { type: "circle", label: "Circle" },
         { type: "square", label: "Square" },
@@ -14,6 +13,7 @@ export default function Sidebar({ navBarRef, setDroppedShapes }: { navBarRef: an
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [currentShape, setCurrentShape] = useState<string | null>(null);
     const dragItemRef = useRef<HTMLDivElement | null>(null);
+    const navBarRef = useRef<HTMLDivElement>(null);
 
     const handleMouseDown = (e: any, shapeType: any) => {
         e.preventDefault();
@@ -44,6 +44,8 @@ export default function Sidebar({ navBarRef, setDroppedShapes }: { navBarRef: an
                 type: currentShape,
                 x: e.clientX - navBarRef.current.clientWidth - width / 2,
                 y: e.clientY - height / 2,
+                width: width,
+                height: height,
             };
             setDroppedShapes((prevShapes: any[]) => [...prevShapes, newShape]);
         }

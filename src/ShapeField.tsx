@@ -1,32 +1,25 @@
 import Droppable from "./Droppable";
 import Draggable from "./Draggable";
 import "./styles.css";
-import { useRef } from "react";
 
 export default function ShapeField({
                                        droppedShapes,
                                        containerRef,
-                                       navBarRef,
                                    }: {
     droppedShapes: [];
     containerRef: any;
-    navBarRef: any;
 }) {
-    let navBarWidth = null;
 
-    if (navBarRef.current) {
-        navBarWidth = navBarRef.current.clientWidth;
-    }
 
-    console.log(droppedShapes)
+    // console.log(droppedShapes)
 
     return (
         <div
             ref={containerRef}
             className="shape-container"
             style={{
-                // position: "relative",
-                left: navBarWidth + 8,
+                position: "relative",
+                // left: navBarWidth + 8,
                 height: "100vh",
                 width: "70vw",
                 border: "1px dashed #ccc",
