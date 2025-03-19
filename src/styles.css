@@ -6,13 +6,28 @@
 .Navbar {
     /* height: 100vh; */
     width: 200px;
+    min-height: 100vh;
     background-color: hotpink;
     padding: 10px;
     margin-right: 10px;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    /*justify-content: center;*/
     align-items: center;
+    /* overflow: scroll; */
+}
+
+.settings-bar {
+    /* height: 100vh; */
+    width: 10vw;
+    min-height: 100vh;
+    background-color: greenyellow;
+    padding: 10px;
+    margin-right: 10px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    left: 70vw;
     /* overflow: scroll; */
 }
 
@@ -78,6 +93,6 @@
 
 .draggable-shape {
     text-align: center;
-    height: 30px;
     padding-top: 10px;
+    align-items: center;
 }

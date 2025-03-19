@@ -12,7 +12,7 @@ export default function Droppable({ children }) {
             style={{
                 position: "relative",
                 height: "100vh",
-                width: "500px",
+                width: "100vw",
                 border: "1px dashed #ccc",
             }}
         >

@@ -1,9 +1,11 @@
 import "./styles.css";
-import Navbar from "./Navbar";
+import Navbar from "./Sidebar.tsx";
 import ShapeField from "./ShapeField";
 import { useState, useRef, useEffect } from "react";
 import { DndContext, DragOverlay } from "@dnd-kit/core";
 import useMousePosition from "./useMousePosition";
+import {v4 as uuidv4} from "uuid";
+import Settingsbar from "./Settingsbar.tsx";
 
 export default function App() {
     const [droppedShapes, setDroppedShapes] = useState<HTMLDivElement[]>([]);
@@ -16,12 +18,13 @@ export default function App() {
 
     const mousePosition = useMousePosition();
 
-    // const activeShape = droppedShapes.find((shape) => shape.uuid === activeId);
+    const activeShape = droppedShapes.find((shape) => shape.id === activeId);
 
     const handleDragEnd = (event) => {
         const { active, over, delta } = event;
         setActiveId(null);
         const currentMouseState = mousePosition;
+        const uniqueId = `${uuidv4()}`;
 
         if (over && containerRef.current) {
             const containerRect = containerRef.current.getBoundingClientRect();
@@ -29,27 +32,29 @@ export default function App() {
             let shapeHeight = null;
 
             const newShape = {
-                id: active.id,
+                id: uniqueId,
                 x: currentMouseState.x - containerRect.x,
                 y: currentMouseState.y - containerRect.y,
-                type: shapeType,
+                type: shapeType
             };
 
             const existingShape = droppedShapes.find(
                 (shape) => shape.id === newShape.id
             );
 
+            console.log(existingShape)
+
             if (!existingShape) {
+                console.log("no shape")
+                if (shapeRef.current) {
+                    shapeWidth = shapeRef.current.clientWidth;
+                    shapeHeight = shapeRef.current.clientHeight;
+                }
                 const isOutOfBounds =
                     newShape.x - shapeWidth / 2 < 0 ||
                     newShape.x + shapeWidth / 2 > containerRect.width ||
                     newShape.y - shapeHeight / 2 < 0 ||
                     newShape.y + shapeHeight / 2 > containerRect.height;
-
-                if (shapeRef.current) {
-                    shapeWidth = shapeRef.current.clientWidth;
-                    shapeHeight = shapeRef.current.clientHeight;
-                }
 
                 if (!isOutOfBounds) {
                     setDroppedShapes((prevShapes) => [...prevShapes, newShape]);
@@ -57,6 +62,7 @@ export default function App() {
                     console.log("Vorm buiten grenzen bij droppen");
                 }
             } else {
+                console.log("existingshape")
                 const newX = existingShape.x + delta.x;
                 const newY = existingShape.y + delta.y;
 
@@ -69,7 +75,7 @@ export default function App() {
                 if (!isOutOfBounds) {
                     setDroppedShapes((prevShapes) =>
                         prevShapes.map((shape) =>
-                            shape.id === shapeId ? { ...shape, x: newX, y: newY } : shape
+                            shape.id === activeId ? { ...shape, x: newX, y: newY } : shape
                         )
                     );
                 } else {
@@ -78,6 +84,8 @@ export default function App() {
             }
         }
     };
+
+    // console.log(droppedShapes)
 
     const handleDragStart = (event) => {
         console.log("Start drag");
@@ -95,15 +103,13 @@ export default function App() {
     return (
         <div className="App">
             <DndContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
-                <Navbar navBarRef={navBarRef}></Navbar>
+                <Navbar navBarRef={navBarRef} setDroppedShapes={setDroppedShapes} />
                 <ShapeField
                     droppedShapes={droppedShapes}
-                    setDroppedShapes={setDroppedShapes}
                     containerRef={containerRef}
-                    shapeRef={shapeRef}
                     navBarRef={navBarRef}
-                    activeShape={activeShape}
-                ></ShapeField>
+                />
+                <Settingsbar activeShape={activeShape} />
             </DndContext>
         </div>
     );
