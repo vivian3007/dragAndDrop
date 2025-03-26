@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import {useEffect, useRef, useState} from "react";
 
-export default function Sidebar({ setDroppedShapes }: { setDroppedShapes: any }) {
+export default function Sidebar({ setDroppedShapes, setActiveId, containerRef }: { setDroppedShapes: any, setActiveId: any, containerRef: any }) {
     const shapes = [
         { type: "circle", label: "Circle" },
         { type: "square", label: "Square" },
@@ -39,15 +39,26 @@ export default function Sidebar({ setDroppedShapes }: { setDroppedShapes: any })
         if (dragging && currentShape) {
             const width = dragItemRef.current?.offsetWidth;
             const height = dragItemRef.current?.offsetHeight;
-            const newShape = {
-                id: uuidv4(),
-                type: currentShape,
-                x: e.clientX - navBarRef.current.clientWidth - width / 2,
-                y: e.clientY - height / 2,
-                width: width,
-                height: height,
-            };
-            setDroppedShapes((prevShapes: any[]) => [...prevShapes, newShape]);
+            const containerRect = containerRef.current.getBoundingClientRect();
+            const isOutOfBounds =
+                e?.clientX - navBarRef.current.clientWidth - width / 2 < 0 ||
+                e?.clientX - navBarRef.current.clientWidth + width / 2 > containerRect.width ||
+                e?.clientY - height / 2 < 0 ||
+                e?.clientY + height / 2 > containerRect.height;
+            if(!isOutOfBounds) {
+                const newShape = {
+                    id: uuidv4(),
+                    type: currentShape,
+                    x: e.clientX - navBarRef.current.clientWidth - width / 2,
+                    y: e.clientY - height / 2,
+                    width: width,
+                    height: height,
+                    color: null,
+                    name: null,
+                };
+                setDroppedShapes((prevShapes: any[]) => [...prevShapes, newShape]);
+                setActiveId(newShape.id)
+            }
         }
         setDragging(false);
         setCurrentShape(null);
@@ -87,9 +98,9 @@ export default function Sidebar({ setDroppedShapes }: { setDroppedShapes: any })
                         //     id={shape.type}
                         //     data={{ type: shape.type, label: shape.label }}
                         // />
-                             <div className={`draggable-shape ${shape.type}`} onMouseDown={(e) => handleMouseDown(e, shape.type)} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}>{shape.label}</div>
+                             <div className={`draggable-shape ${shape.type}`} onMouseDown={(e) => handleMouseDown(e, shape.type)} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}></div>
                     );
-                })}
+                             })}
             </div>
             {dragging && currentShape && (
                 <div
@@ -99,10 +110,10 @@ export default function Sidebar({ setDroppedShapes }: { setDroppedShapes: any })
                         position: "absolute",
                         ...getCenteredPosition(),
                         pointerEvents: "none",
-                        zIndex: 1000,
+                        zIndex: 10,
                     }}
                 >
-                    {shapes.find((shape) => shape.type === currentShape)?.label}
+                    {/*{shapes.find((shape) => shape.type === currentShape)?.label}*/}
                 </div>
             )}
         </nav>

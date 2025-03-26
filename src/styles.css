@@ -1,15 +1,19 @@
+body {
+    margin: 0;
+    /*overflow: hidden;*/
+}
+
 .App {
     font-family: sans-serif;
     display: flex;
 }
 
 .Navbar {
-    /* height: 100vh; */
     width: 15vw;
-    min-height: 100vh;
+    height: 100vh;
     background-color: hotpink;
     padding: 10px;
-    margin-right: 10px;
+    /*margin-right: 10px;*/
     display: flex;
     flex-direction: column;
     /*justify-content: center;*/
@@ -20,10 +24,9 @@
 .settings-bar {
     /* height: 100vh; */
     width: 15vw;
-    min-height: 100vh;
+    height: 100vh;
     background-color: greenyellow;
-    padding: 10px;
-    margin-right: 10px;
+    padding: 20px;
     display: flex;
     flex-direction: column;
     position: relative;
@@ -44,43 +47,43 @@
 .circle {
     width: 120px;
     height: 120px;
-    background-color: red;
+    /*background-color: red;*/
+    background-color: #FFFFFF;
     border-radius: 50%;
-    border: 0;
-    cursor: grab;
+    /*border: 0;*/
 }
 
 .square {
     width: 120px;
     height: 120px;
-    background-color: blue;
-    border: 0;
-    cursor: grab;
+    /*background-color: blue;*/
+    background-color: #FFFFFF;
+    /*border: 0;*/
 }
 
 .rectangle {
     width: 120px;
     height: 180px;
-    background-color: green;
+    /*background-color: green;*/
+    background-color: #FFFFFF;
     border-radius: 50%;
-    border: 0;
-    cursor: grab;
+    /*border: 0;*/
 }
 
 .oval {
     width: 180px;
     height: 180px;
-    background-color: yellow;
+    /*background-color: yellow;*/
+    background-color: #FFFFFF;
     border-radius: 50%;
-    border: 0;
-    cursor: grab;
+    /*border: 0;*/
 }
 
 .shape-container {
     display: flex;
     background-color: lightblue;
     width: 500px;
-    z-index: -10;
+    /*z-index: -10;*/
     position: fixed;
 }
 
@@ -93,7 +96,19 @@
 
 .draggable-shape {
     text-align: center;
-    padding-top: 10px;
     align-items: center;
     cursor: grab;
+    border: 5px solid black;
+}
+
+.input-text {
+    margin-bottom: 20px;
+}
+
+.input-text input {
+    height: 20px;
+}
+
+.pattern-container {
+    overflow: auto;
 }

@@ -1,17 +1,17 @@
 import Droppable from "./Droppable";
 import Draggable from "./Draggable";
 import "./styles.css";
+import {Button} from "@mui/material";
 
 export default function ShapeField({
                                        droppedShapes,
                                        containerRef,
+    shapeColor
                                    }: {
     droppedShapes: [];
     containerRef: any;
+    shapeColor: string;
 }) {
-
-
-    // console.log(droppedShapes)
 
     return (
         <div
@@ -29,22 +29,6 @@ export default function ShapeField({
                 {droppedShapes.map((shape : HTMLDivElement) => {
                     return (
                         <Draggable key={shape.id} id={shape.id} data={{shape: shape}} />
-                        //     <div
-                        //         ref={shapeRef}
-                        //         className={`shape ${shape.type}`}
-                        //         style={{
-                        //             position: "absolute",
-                        //             left: shape.x,
-                        //             top: shape.y,
-                        //             textAlign: "center",
-                        //             display: "flex",
-                        //             justifyContent: "center",
-                        //             alignItems: "center",
-                        //             transform: "translate(-50%, -50%)",
-                        //         }}
-                        //     >
-                        //         {shape.id}
-                        //     </div>
                     );
                 })}
             </Droppable>

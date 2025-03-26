@@ -20,6 +20,8 @@ export default function Draggable({ id, data }: { id: string; data: any }) {
         justifyContent: "center",
         alignItems: "center",
         cursor: "grab",
+        backgroundColor: data?.shape?.color || '#FFFFFF',
+        zIndex: 10,
     };
 
     const style = transform
@@ -38,7 +40,7 @@ export default function Draggable({ id, data }: { id: string; data: any }) {
             {...attributes}
             onMouseDown={() => {console.log("mouse down")}}
         >
-            {id}
+            {/*{id}*/}
         </div>
     );
 }
