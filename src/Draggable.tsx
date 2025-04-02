@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useEffect, useState} from "react";
 import { useDraggable } from "@dnd-kit/core";
 
 export default function Draggable({ id, data }: { id: string; data: any }) {
@@ -13,21 +13,22 @@ export default function Draggable({ id, data }: { id: string; data: any }) {
         position: "absolute",
         left: data?.shape?.x ?? 0,
         top: data?.shape?.y ?? 0,
-        width: data?.shape?.width,
-        height: data?.shape?.height,
+        width: data?.shape?.width * data?.shape?.zoom,
+        height: data?.shape?.height * data?.shape?.zoom,
+        transform: `rotate(${data?.shape?.rotate ?? 0}deg)`,
         textAlign: "center",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
         cursor: "grab",
         backgroundColor: data?.shape?.color || '#FFFFFF',
-        zIndex: 10,
+        zIndex: data?.shape?.zIndex ?? 10,
     };
 
     const style = transform
         ? {
             ...baseStyle,
-            transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+            transform: `translate3d(${transform.x}px, ${transform.y}px, 0) rotate(${data?.shape?.rotate ?? 0}deg)`,
         }
         : baseStyle;
 
@@ -38,7 +39,6 @@ export default function Draggable({ id, data }: { id: string; data: any }) {
             style={style}
             {...listeners}
             {...attributes}
-            onMouseDown={() => {console.log("mouse down")}}
         >
             {/*{id}*/}
         </div>

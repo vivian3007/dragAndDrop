@@ -2,6 +2,7 @@ import Droppable from "./Droppable";
 import Draggable from "./Draggable";
 import "./styles.css";
 import {Button} from "@mui/material";
+import Trashcan from "./Trashcan.tsx";
 
 export default function ShapeField({
                                        droppedShapes,
@@ -22,7 +23,6 @@ export default function ShapeField({
                 // left: navBarWidth + 8,
                 height: "100vh",
                 width: "70vw",
-                border: "1px dashed #ccc",
             }}
         >
             <Droppable>

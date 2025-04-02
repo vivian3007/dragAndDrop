@@ -1,6 +1,7 @@
 body {
     margin: 0;
     /*overflow: hidden;*/
+    background-color: antiquewhite;
 }
 
 .App {
@@ -12,12 +13,11 @@ body {
     width: 15vw;
     height: 100vh;
     background-color: hotpink;
-    padding: 10px;
     /*margin-right: 10px;*/
     display: flex;
     flex-direction: column;
-    /*justify-content: center;*/
     align-items: center;
+    /*justify-content: center;*/
      overflow: auto;
 }
 
@@ -26,9 +26,11 @@ body {
     width: 15vw;
     height: 100vh;
     background-color: greenyellow;
-    padding: 20px;
+    padding-left: 20px;
+    padding-right: 20px;
     display: flex;
     flex-direction: column;
+    justify-content: space-between;
     position: relative;
     /*left: 70vw;*/
     /* overflow: scroll; */
@@ -42,6 +44,7 @@ body {
 
 .shape {
     z-index: 10;
+    border: 3px solid black;
 }
 
 .circle {
@@ -79,6 +82,53 @@ body {
     /*border: 0;*/
 }
 
+.head {
+    width: 200px;
+    height: 200px;
+    /*background-color: yellow;*/
+    background-color: #FFFFFF;
+    border-radius: 50%;
+    /*border: 0;*/
+}
+
+.body {
+    width: 130px;
+    height: 160px;
+    /*background-color: yellow;*/
+    background-color: #FFFFFF;
+    border-radius: 50%;
+    /*border: 0;*/
+}
+
+.leftArm {
+    width: 130px;
+    height: 70px;
+    background-color: #FFFFFF;
+    border-radius: 50%;
+}
+
+.rightArm {
+    width: 130px;
+    height: 70px;
+    background-color: #FFFFFF;
+    border-radius: 50%;
+}
+
+.leftLeg {
+    width: 30px;
+    height: 80px;
+    background-color: #FFFFFF;
+    border-radius: 50%;
+}
+
+.rightLeg {
+    width: 30px;
+    height: 80px;
+    background-color: #FFFFFF;
+    border-radius: 50%;
+}
+
+
 .shape-container {
     display: flex;
     background-color: lightblue;
@@ -103,12 +153,33 @@ body {
 
 .input-text {
     margin-bottom: 20px;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
 }
 
 .input-text input {
     height: 20px;
 }
 
+.pattern{
+    width: 100vw;
+    display: flex;
+    margin: 20px;
+}
+
 .pattern-container {
-    overflow: auto;
+    columns: 2;
+}
+
+.pattern-text-container {
+    margin: 0 0 20px 0;
+    padding: 20px;
+    width: 33vw;
+    height: auto;
+    break-inside: avoid;
+}
+
+.pattern-image{
+    width: 33vw;
 }

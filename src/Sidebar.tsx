@@ -1,15 +1,20 @@
 import { v4 as uuidv4 } from "uuid";
 import {useEffect, useRef, useState} from "react";
+import Trashcan from "./Trashcan.tsx";
 
-export default function Sidebar({ setDroppedShapes, setActiveId, containerRef }: { setDroppedShapes: any, setActiveId: any, containerRef: any }) {
+export default function Sidebar({ setDroppedShapes, setActiveId, containerRef, dragging, setDragging }: { setDroppedShapes: any, setActiveId: any, containerRef: any, dragging: boolean, setDragging: any }) {
     const shapes = [
+        { type: "head", label: "Head" },
+        { type: "body", label: "body" },
+        { type: "leftArm", label: "LeftArm" },
+        { type: "leftLeg", label: "LeftLeg" },
         { type: "circle", label: "Circle" },
         { type: "square", label: "Square" },
         { type: "rectangle", label: "Rectangle" },
         { type: "oval", label: "Oval" },
     ];
 
-    const [dragging, setDragging] = useState(false);
+
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [currentShape, setCurrentShape] = useState<string | null>(null);
     const dragItemRef = useRef<HTMLDivElement | null>(null);
@@ -55,6 +60,9 @@ export default function Sidebar({ setDroppedShapes, setActiveId, containerRef }:
                     height: height,
                     color: null,
                     name: null,
+                    rotate: null,
+                    zIndex: 10,
+                    zoom: 1,
                 };
                 setDroppedShapes((prevShapes: any[]) => [...prevShapes, newShape]);
                 setActiveId(newShape.id)
@@ -83,22 +91,16 @@ export default function Sidebar({ setDroppedShapes, setActiveId, containerRef }:
                 top: position.y - height / 2,
             };
         }
-        return { left: position.x, top: position.y }; // Fallback if ref isn't ready
+        return { left: position.x, top: position.y };
     };
 
     return (
         <nav className="Navbar" ref={navBarRef}>
-            <h1>Vormen</h1>
+            <h1>Shapes</h1>
             <div className={"draggables"}>
                 {shapes.map((shape) => {
-                    const uniqueId = `${shape.type}-${uuidv4()}`;
                     return (
-                        // <Draggable
-                        //     key={uniqueId}
-                        //     id={shape.type}
-                        //     data={{ type: shape.type, label: shape.label }}
-                        // />
-                             <div className={`draggable-shape ${shape.type}`} onMouseDown={(e) => handleMouseDown(e, shape.type)} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}></div>
+                             <div key={shape.type} className={`draggable-shape ${shape.type}`} onMouseDown={(e) => handleMouseDown(e, shape.type)} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}></div>
                     );
                              })}
             </div>

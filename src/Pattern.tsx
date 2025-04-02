@@ -1,7 +1,8 @@
 import React from "react";
 import { useState, useEffect } from "react";
 import {Link} from "react-router-dom";
-import {Button} from "@mui/material";
+import {Button, Card} from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 interface Shape {
     id: string;
@@ -12,6 +13,7 @@ interface Shape {
     height: number;
     color: string;
     name: string;
+    rotate: number
 }
 
 interface PatternProps {
@@ -41,21 +43,37 @@ const Pattern: React.FC<PatternProps> = ({ shapes }) => {
         }
 
         for (let i = 1; i < incRows - 1; i++) {
-            incArray.push(`Row ${rowArray[i + 1]}: 1inc, ${i}sc`);
+            incArray.push(`Row ${rowArray[i + 1]}: 1inc, ${i}sc (${12 + i * 6})`);
         }
 
-        for (let i = incRows; i < incRows + scRows; i++) {
-            scArray.push(`Row ${rowArray[i]}: ${incRows * 6}sc`);
+        const maxStitches = incRows * 6;
+
+        // for (let i = incRows; i < incRows + scRows; i++) {
+        //     scArray.push(`Row ${rowArray[i]}: ${incRows * 6}sc`);
+        // }
+
+        for (let i = 1; i < 2; i++) {
+            if((incRows + scRows) - (incRows + 1) === 1) {
+                scArray.push(`Row ${incRows + 1}: ${incRows * 6}sc (${maxStitches})`);
+            } else {
+                scArray.push(`Row ${incRows + 1} - ${incRows + scRows}: ${incRows * 6}sc (${maxStitches})`);
+            }
         }
+
+        let currentStitches = maxStitches;
 
         for (let i = incRows - 2; i > 0; i--) {
-            decArray.push(`Row ${rowArray[rows - i - 1]}: 1dec, ${i}sc`);
+            currentStitches -= 6;
+            decArray.push(`Row ${rowArray[rows - i - 1]}: 1dec, ${i}sc (${currentStitches})`);
         }
 
         return {
             type: singleShape.type,
             color: singleShape.color,
             name: singleShape.name,
+            width: singleShape.width,
+            height: singleShape.height,
+            rotate: singleShape.rotate,
             rows,
             incArray,
             scArray,
@@ -73,15 +91,29 @@ const Pattern: React.FC<PatternProps> = ({ shapes }) => {
     }, [shapes]);
 
     return (
+        <div className="pattern">
         <div className="pattern-container">
+            <Card className="pattern-text-container">
+                <h1 style={{marginTop: 0}}>Stitch abbreviations</h1>
+                <div style={{display: "flex", justifyContent: "space-between"}}>
+                    <ul style={{lineHeight: 2}}>
+                        <li>st = stitch</li>
+                        <li>sl = slip stitch</li>
+                        <li>sc = single crochet</li>
+                        <li>inc = increase (2 single crochet in 1 stitch)</li>
+                        <li>dec = decrease (single crochet 2 stitches together)</li>
+                    </ul>
+                </div>
+            </Card>
             {patterns.length > 0 ? (
                 patterns.map((pattern, index) => (
-                    <div key={index} className="pattern-text-container">
-                        <h1>Pattern voor {pattern.name}</h1>
-                        <p>Selected Shape: {pattern.type}</p>
-                        <ul>
-                            <li>Row 1: 6sc in a magic ring</li>
-                            <li>Row 2: 6inc</li>
+                    <Card key={index} className="pattern-text-container">
+                        <h1 style={{marginTop: 0}}>Pattern for - {pattern.name ?? "give this part a name"}</h1>
+                        {/*<p>Selected Shape: {pattern.type}</p>*/}
+                        <div style={{display: "flex", justifyContent: "space-between"}}>
+                        <ul style={{lineHeight: 2}}>
+                            <li>Row 1: 6sc in a magic ring (6)</li>
+                            <li>Row 2: 6inc (12)</li>
                             {pattern.incArray.map((row, idx) => (
                                 <li key={idx}>{row}</li>
                             ))}
@@ -91,19 +123,26 @@ const Pattern: React.FC<PatternProps> = ({ shapes }) => {
                             {pattern.decArray.map((row, idx) => (
                                 <li key={idx}>{row}</li>
                             ))}
-                            <li>Row {pattern.rows}: 6dec</li>
+                            <li>Row {pattern.rows}: 6dec (6)</li>
                         </ul>
                         <div
                             className={`shape ${pattern.type}`}
-                            style={{ backgroundColor: pattern.color }}
+                            style={{ backgroundColor: pattern.color, width: pattern.width, height: pattern.height,
+                                // transform: `rotate(${pattern.rotate}deg)`
+                        }}
                         ></div>
-                    </div>
+                        </div>
+                    </Card>
                 ))
             ) : (
                 <p>Geen shapes geselecteerd</p>
             )}
-            <Link to="/"><Button variant="contained" color="primary">Go back</Button></Link>
+
         </div>
+        <div className="pattern-image">
+            <Link to="/"><Button variant="contained" color="primary" style={{position: "sticky", marginLeft: 20}}>Go back</Button></Link>
+        </div>
+    </div>
     );
 };
 

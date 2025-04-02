@@ -14,10 +14,8 @@ export default function App() {
         { id: string; type: string; x: number; y: number, width: number, height: number, color: string, name: string }[]
     >([]);
     const containerRef = useRef<HTMLDivElement>(null);
-    const shapeRef = useRef<HTMLDivElement>(null);
+    const [dragging, setDragging] = useState(false);
 
-
-    const [shapeType, setShapeType] = useState(null);
     const [activeId, setActiveId] = useState(null);
     const [shapeColor, setShapeColor] = useState('#FFFFFF');
 
@@ -25,8 +23,11 @@ export default function App() {
     const activeShape = droppedShapes.find((shape) => shape.id === activeId);
     const handleDragEnd = (event) => {
         const { over, delta } = event;
-        console.log(over)
         if (over && containerRef.current) {
+            if(over?.id === "trashcan"){
+                const updatedDroppedShapes = droppedShapes.filter(shape => shape.id !== activeShape?.id);
+                setDroppedShapes(updatedDroppedShapes);
+            }
             const containerRect = containerRef.current.getBoundingClientRect();
                 const newX = activeShape?.x + delta.x;
                 const newY = activeShape?.y + delta.y;
@@ -52,15 +53,15 @@ export default function App() {
     const handleDragStart = (event) => {
         const { active, over, delta } = event;
 
-        setShapeType(active.data?.current?.type);
         setActiveId(active.id);
     };
 
-    const handleUpdateShape = (updatedShape: { id: string; x: number, y: number, width: number; height: number, color: string, name: string }) => {
+    const handleUpdateShape = (updatedShape: { id: string; x: number, y: number, width: number; height: number, color: string, name: string, rotate: number, zIndex: number, zoom: number }) => {
+        console.log(updatedShape)
         setDroppedShapes((prevShapes) =>
             prevShapes.map((shape) =>
                 shape.id === updatedShape.id
-                    ? { ...shape, width: updatedShape.width, height: updatedShape.height, color: updatedShape.color, name: updatedShape.name }
+                    ? { ...shape, width: updatedShape.width, height: updatedShape.height, color: updatedShape.color, name: updatedShape.name, rotate: updatedShape.rotate, zIndex: updatedShape.zIndex, zoom: updatedShape.zoom }
                     : shape
             )
         );
@@ -71,13 +72,13 @@ export default function App() {
             <Routes>
                 <Route path="/" element={
                     <DndContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
-                        <Navbar setDroppedShapes={setDroppedShapes} setActiveId={setActiveId} containerRef={containerRef} />
+                        <Navbar setDroppedShapes={setDroppedShapes} setActiveId={setActiveId} containerRef={containerRef} dragging={dragging} setDragging={setDragging} />
                         <ShapeField
                             droppedShapes={droppedShapes}
                             containerRef={containerRef}
                             shapeColor={shapeColor}
                         />
-                        <Settingsbar activeShape={activeShape} onUpdateShape={handleUpdateShape} shapeColor={shapeColor} setShapeColor={setShapeColor} droppedShapes={droppedShapes} />
+                        <Settingsbar activeShape={activeShape} onUpdateShape={handleUpdateShape} shapeColor={shapeColor} setShapeColor={setShapeColor} droppedShapes={droppedShapes} dragging={dragging} />
                     </DndContext>
                     }
                 />

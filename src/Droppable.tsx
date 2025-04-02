@@ -13,27 +13,9 @@ export default function Droppable({ children }) {
                 position: "relative",
                 height: "100vh",
                 width: "100vw",
-                border: "1px dashed #ccc",
             }}
         >
             {children}
         </div>
     );
 }
-
-// export default function Droppable(props) {
-//   const { isOver, setNodeRef } = useDroppable({
-//     id: "droppable",
-//   });
-//   const style = {
-//     color: isOver ? "green" : undefined,
-//     width: "500px",
-//     height: "500px",
-//   };
-
-//   return (
-//     <div ref={setNodeRef} style={style}>
-//       {props.children}
-//     </div>
-//   );
-// }
