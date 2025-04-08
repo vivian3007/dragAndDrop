@@ -9,7 +9,7 @@ export default function Trashcan({dragging} : {dragging: boolean}){
 
     const [overTrashcan, setOverTrashcan] = useState(false);
 
-    const backgroundColor = isOver || (dragging && overTrashcan) ? "blue" : null;
+    const backgroundColor = isOver || (dragging && overTrashcan) ? '#F2F3AE' : null;
 
     return (
         <div style={{backgroundColor: backgroundColor, border: "3px solid black", borderRadius: "5%", width: "100%", display: "flex", justifyContent: "center", marginBottom: "20px"}}>

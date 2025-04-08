@@ -1,7 +1,7 @@
 body {
     margin: 0;
     /*overflow: hidden;*/
-    background-color: antiquewhite;
+    background-color: #EACBD2;
 }
 
 .App {
@@ -12,20 +12,22 @@ body {
 .Navbar {
     width: 15vw;
     height: 100vh;
-    background-color: hotpink;
+    background-color: #d4929a;
     /*margin-right: 10px;*/
     display: flex;
     flex-direction: column;
     align-items: center;
     /*justify-content: center;*/
-     overflow: auto;
+     overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .settings-bar {
     /* height: 100vh; */
     width: 15vw;
     height: 100vh;
-    background-color: greenyellow;
+    /*background-color: #DFAEB4;*/
+    background-color: #d4929a;
     padding-left: 20px;
     padding-right: 20px;
     display: flex;
@@ -131,7 +133,7 @@ body {
 
 .shape-container {
     display: flex;
-    background-color: lightblue;
+    background-color: #EACBD2;
     width: 500px;
     /*z-index: -10;*/
     position: fixed;
@@ -142,6 +144,7 @@ body {
     flex-direction: column;
     gap: 10px;
     align-items: center;
+    margin-bottom: 20px;
 }
 
 .draggable-shape {

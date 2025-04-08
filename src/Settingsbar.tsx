@@ -178,10 +178,10 @@ export default function Settingsbar({activeShape, onUpdateShape, shapeColor, set
                             placeholder="Give this part a rotation"
                         />
                     </div>
-                    <Button type="button" variant="contained" color="secondary"
-                            sx={{marginBottom: "20px", width: 1}} onClick={handleBringToFront}>Bring to front</Button>
-                    <Button type="button" variant="contained" color="secondary"
-                            sx={{marginBottom: "20px", width: 1}} onClick={handleSendToBack}>Send to back</Button>
+                    <Button type="button" variant="contained" color="inherit"
+                            sx={{marginBottom: "20px", width: 1, backgroundColor: "#F2F3AE"}} onClick={handleBringToFront}>Bring to front</Button>
+                    <Button type="button" variant="contained" color="inherit"
+                            sx={{marginBottom: "20px", width: 1, backgroundColor: "#F2F3AE"}} onClick={handleSendToBack}>Send to back</Button>
                     <Sketch
                         style={{marginTop: "20px", marginBottom: "20px"}}
                         color={shapeColor}
@@ -191,7 +191,7 @@ export default function Settingsbar({activeShape, onUpdateShape, shapeColor, set
                     {/*                style={{marginTop: "20px", marginBottom: "20px"}}/>*/}
                     {/*<Button type="submit" variant="contained" color="secondary"*/}
                     {/*        sx={{marginBottom: "20px", width: 1}}>Save</Button>*/}
-                        <Button type="submit" variant="contained" color="primary" sx={{width: 1}}
+                        <Button type="submit" variant="contained" color="inherit" sx={{width: 1, backgroundColor: "#F2F3AE"}}
                                 disabled={!droppedShapes || droppedShapes.length < 1}>
                             Pattern
                             {/*<Link to="/pattern" style={{width: "100%"}}>Pattern</Link>*/}
