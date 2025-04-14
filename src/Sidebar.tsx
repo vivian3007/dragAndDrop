@@ -1,8 +1,8 @@
 import { v4 as uuidv4 } from "uuid";
-import {useEffect, useRef, useState} from "react";
+import React, {Ref, useEffect, useRef, useState} from "react";
 import Trashcan from "./Trashcan.tsx";
 
-export default function Sidebar({ setDroppedShapes, setActiveId, containerRef, dragging, setDragging }: { setDroppedShapes: any, setActiveId: any, containerRef: any, dragging: boolean, setDragging: any }) {
+export default function Sidebar({ setDroppedShapes, setActiveId, containerRef, threeJsContainerRef, dragging, setDragging }: { setDroppedShapes: any, setActiveId: any, containerRef: Ref<HTMLDivElement>, threeJsContainerRef: Ref<HTMLCanvasElement>, dragging: boolean, setDragging: any }) {
     const shapes = [
         { type: "head", label: "Head" },
         { type: "body", label: "body" },
@@ -44,7 +44,8 @@ export default function Sidebar({ setDroppedShapes, setActiveId, containerRef, d
         if (dragging && currentShape) {
             const width = dragItemRef.current?.offsetWidth;
             const height = dragItemRef.current?.offsetHeight;
-            const containerRect = containerRef.current.getBoundingClientRect();
+            // const containerRect = containerRef.current.getBoundingClientRect();
+            const containerRect = threeJsContainerRef.current?.getBoundingClientRect();
             const isOutOfBounds =
                 e?.clientX - navBarRef.current.clientWidth - width / 2 < 0 ||
                 e?.clientX - navBarRef.current.clientWidth + width / 2 > containerRect.width ||
@@ -56,6 +57,7 @@ export default function Sidebar({ setDroppedShapes, setActiveId, containerRef, d
                     type: currentShape,
                     x: e.clientX - navBarRef.current.clientWidth - width / 2,
                     y: e.clientY - height / 2,
+                    length: null,
                     width: width,
                     height: height,
                     color: null,

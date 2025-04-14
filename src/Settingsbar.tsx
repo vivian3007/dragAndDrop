@@ -6,9 +6,10 @@ import Trashcan from "./Trashcan.tsx";
 import Sketch from "@uiw/react-color-sketch";
 import { ColorResult } from '@uiw/color-convert';
 
-export default function Settingsbar({activeShape, onUpdateShape, shapeColor, setShapeColor, droppedShapes, dragging}: {activeShape: any, onUpdateShape: any, shapeColor: string, setShapeColor: any, droppedShapes: any, dragging: boolean}) {
+export default function Settingsbar({activeShape, onUpdateShape, shapeColor, setShapeColor, droppedShapes, dragging}: {activeShape: any, onUpdateShape: any, shapeColor: string, setShapeColor: any, droppedShapes: [], dragging: boolean}) {
     const [width, setWidth] = useState(null);
     const [height, setHeight] = useState(null);
+    const [length, setLength] = useState(null);
     const [name, setName] = useState(null);
     const [rotate, setRotate] = useState(null);
     const [zIndex, setZIndex] = useState(10);
@@ -30,6 +31,7 @@ export default function Settingsbar({activeShape, onUpdateShape, shapeColor, set
     useEffect(() => {
         setWidth(activeShape?.width || 50);
         setHeight(activeShape?.height || 50);
+        setLength(activeShape?.length || 50);
         setName(activeShape?.name || null);
         setShapeColor(activeShape?.color || '#FFFFFF');
         setRotate(activeShape?.rotate || 0);
@@ -65,6 +67,12 @@ export default function Settingsbar({activeShape, onUpdateShape, shapeColor, set
         handleUpdate({ height: newHeight });
     };
 
+    const handleLengthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newLength = Number(e.target.value);
+        setLength(newLength);
+        handleUpdate({ length: newLength });
+    };
+
     const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newName = e.target.value;
         setName(newName);
@@ -97,6 +105,7 @@ export default function Settingsbar({activeShape, onUpdateShape, shapeColor, set
                 id: activeShape.id,
                 width: Number(width),
                 height: Number(height),
+                length: Number(length),
                 color: shapeColor,
                 name: name,
                 rotate: Number(rotate),
@@ -154,6 +163,19 @@ export default function Settingsbar({activeShape, onUpdateShape, shapeColor, set
                         />
                     </div>
                     <div className="input-text">
+                        <label htmlFor="length">Length: </label>
+                        <input
+                            type="number"
+                            id="length"
+                            value={length}
+                            onChange={handleLengthChange}
+                            min="10"
+                            step="10"
+                            required={true}
+                            placeholder="Give this part a length"
+                        />
+                    </div>
+                    <div className="input-text">
                         <label htmlFor="zoom">Zoom: </label>
                         <input
                             type="number"
@@ -178,10 +200,12 @@ export default function Settingsbar({activeShape, onUpdateShape, shapeColor, set
                             placeholder="Give this part a rotation"
                         />
                     </div>
-                    <Button type="button" variant="contained" color="inherit"
-                            sx={{marginBottom: "20px", width: 1, backgroundColor: "#F2F3AE"}} onClick={handleBringToFront}>Bring to front</Button>
-                    <Button type="button" variant="contained" color="inherit"
-                            sx={{marginBottom: "20px", width: 1, backgroundColor: "#F2F3AE"}} onClick={handleSendToBack}>Send to back</Button>
+                    {/*<Button type="button" variant="contained" color="inherit"*/}
+                    {/*        sx={{marginBottom: "20px", width: 1, backgroundColor: "#F2F3AE"}}*/}
+                    {/*        onClick={handleBringToFront}>Bring to front</Button>*/}
+                    {/*<Button type="button" variant="contained" color="inherit"*/}
+                    {/*        sx={{marginBottom: "20px", width: 1, backgroundColor: "#F2F3AE"}}*/}
+                    {/*        onClick={handleSendToBack}>Send to back</Button>*/}
                     <Sketch
                         style={{marginTop: "20px", marginBottom: "20px"}}
                         color={shapeColor}
@@ -191,11 +215,12 @@ export default function Settingsbar({activeShape, onUpdateShape, shapeColor, set
                     {/*                style={{marginTop: "20px", marginBottom: "20px"}}/>*/}
                     {/*<Button type="submit" variant="contained" color="secondary"*/}
                     {/*        sx={{marginBottom: "20px", width: 1}}>Save</Button>*/}
-                        <Button type="submit" variant="contained" color="inherit" sx={{width: 1, backgroundColor: "#F2F3AE"}}
-                                disabled={!droppedShapes || droppedShapes.length < 1}>
-                            Pattern
-                            {/*<Link to="/pattern" style={{width: "100%"}}>Pattern</Link>*/}
-                        </Button>
+                    <Button type="submit" variant="contained" color="inherit"
+                            sx={{width: 1, backgroundColor: "#F2F3AE"}}
+                            disabled={!droppedShapes || droppedShapes.length < 1}>
+                        Pattern
+                        {/*<Link to="/pattern" style={{width: "100%"}}>Pattern</Link>*/}
+                    </Button>
                 </form>
             ) : (
                 <p>No shape selected</p>

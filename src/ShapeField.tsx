@@ -3,6 +3,7 @@ import Draggable from "./Draggable";
 import "./styles.css";
 import {Button} from "@mui/material";
 import Trashcan from "./Trashcan.tsx";
+import React, {Ref} from "react";
 
 export default function ShapeField({
                                        droppedShapes,
@@ -10,7 +11,7 @@ export default function ShapeField({
     shapeColor
                                    }: {
     droppedShapes: [];
-    containerRef: any;
+    containerRef: Ref<HTMLDivElement>;
     shapeColor: string;
 }) {
 
