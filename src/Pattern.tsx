@@ -28,8 +28,8 @@ interface PatternProps {
 const Pattern: React.FC<PatternProps> = ({ shapes }) => {
     const [patterns, setPatterns] = useState<any[]>([]);
     const generatePattern = (singleShape: Shape) => {
-        const shapeHeight = singleShape.height;
-        const shapeWidth = singleShape.width;
+        const shapeHeight = singleShape.width > singleShape.height ? singleShape.width : singleShape.height;
+        const shapeWidth = singleShape.width > singleShape.height ? singleShape.height : singleShape.width;
 
         const rows = shapeHeight ? shapeHeight / 10 : 0;
         const extraScRows =
@@ -49,7 +49,7 @@ const Pattern: React.FC<PatternProps> = ({ shapes }) => {
 
         console.log(rowArray);
 
-        for (let i = 1; i < incRows - 1; i++) {
+        for (let i = 1; i < incRows; i++) {
             incArray.push(`Row ${rowArray[i + 1]}: 1inc, ${i}sc (${12 + i * 6})`);
         }
 
@@ -74,7 +74,7 @@ const Pattern: React.FC<PatternProps> = ({ shapes }) => {
             const rowIndex = incRows + scRows + i;
             decArray.push(`Row ${rowArray[rowIndex]}: 1dec, ${decRows - i - 1}sc (${currentStitches})`);
         }
-        console.log(rows);
+        console.log(singleShape.name, incArray.length);
 
         return {
             type: singleShape.type,
@@ -126,7 +126,9 @@ const Pattern: React.FC<PatternProps> = ({ shapes }) => {
                         <div style={{display: "flex", justifyContent: "space-between"}}>
                         <ul style={{lineHeight: 2}}>
                             <li>Row 1: 6sc in a magic ring (6)</li>
-                            <li>Row 2: 6inc (12)</li>
+                            {pattern.incArray.length > 0 ? (
+                                <li>Row 2: 6inc (12)</li>
+                            ) : null}
                             {pattern.incArray.map((row, idx) => (
                                 <li key={idx}>{row}</li>
                             ))}

@@ -26,8 +26,8 @@ export default function ThreeJsField({
     return (
         <Canvas
             camera={{ position: [0, 0, 40], fov: 75 }}
-            style={{ height: '100vw' }}
             ref={threeJsContainerRef}
+            style={{height: "100vh"}}
         >
             <ambientLight intensity={0.4} />
             <directionalLight position={[10, 10, 10]} intensity={1} castShadow />

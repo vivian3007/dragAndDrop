@@ -22,6 +22,7 @@ export default function Settingsbar({
     droppedShapes: [],
     dragging: boolean
 }) {
+    const PIXELS_PER_CM = 10; // 10 pixels = 1 cm
     const [width, setWidth] = useState<number | null>(null);
     const [height, setHeight] = useState<number | null>(null);
     const [length, setLength] = useState<number | null>(null);
@@ -46,10 +47,9 @@ export default function Settingsbar({
     console.log(activeShape);
 
     useEffect(() => {
-        // Initialize input fields with scaled values
-        setWidth(activeShape ? activeShape.width * activeShape.zoom : 50);
-        setHeight(activeShape ? activeShape.height * activeShape.zoom : 50);
-        setLength(activeShape ? activeShape.length * activeShape.zoom : 50);
+        setWidth(activeShape ? activeShape.width / PIXELS_PER_CM * activeShape.zoom : 50);
+        setHeight(activeShape ? activeShape.height / PIXELS_PER_CM * activeShape.zoom : 50);
+        setLength(activeShape ? activeShape.length / PIXELS_PER_CM * activeShape.zoom : 50);
         setName(activeShape?.name || null);
         setShapeColor(activeShape?.color || '#FFFFFF');
         setRotateX(activeShape?.rotateX || 0);
@@ -62,21 +62,21 @@ export default function Settingsbar({
     const handleWidthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newScaledWidth = Number(e.target.value);
         setWidth(newScaledWidth);
-        const newBaseWidth = newScaledWidth / (activeShape?.zoom || 1);
+        const newBaseWidth = newScaledWidth * PIXELS_PER_CM / (activeShape?.zoom || 1);
         handleUpdate({ width: newBaseWidth });
     };
 
     const handleHeightChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newScaledHeight = Number(e.target.value);
         setHeight(newScaledHeight);
-        const newBaseHeight = newScaledHeight / (activeShape?.zoom || 1);
+        const newBaseHeight = newScaledHeight * PIXELS_PER_CM / (activeShape?.zoom || 1);
         handleUpdate({ height: newBaseHeight });
     };
 
     const handleLengthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newScaledLength = Number(e.target.value);
         setLength(newScaledLength);
-        const newBaseLength = newScaledLength / (activeShape?.zoom || 1);
+        const newBaseLength = newScaledLength * PIXELS_PER_CM / (activeShape?.zoom || 1);
         handleUpdate({ length: newBaseLength });
     };
 
@@ -136,7 +136,9 @@ export default function Settingsbar({
                 length: length !== null ? length / zoom : activeShape.length,
                 color: shapeColor,
                 name: name,
-                rotate: Number(rotate),
+                rotateX: Number(rotateX),
+                rotateY: Number(rotateY),
+                rotateZ: Number(rotateZ),
                 zIndex: Number(zIndex),
                 zoom: Number(zoom),
             });
@@ -164,40 +166,40 @@ export default function Settingsbar({
                             />
                         </div>
                         <div className="input-text">
-                            <label htmlFor="width">Width: </label>
+                            <label htmlFor="width">Width (cm): </label>
                             <input
                                 type="number"
                                 id="width"
                                 value={width !== null ? Math.round(width) : ""}
                                 onChange={handleWidthChange}
-                                min="10"
-                                step="10"
+                                min="1"
+                                step="1"
                                 required={true}
                                 placeholder="Give this part a width"
                             />
                         </div>
                         <div className="input-text">
-                            <label htmlFor="height">Height: </label>
+                            <label htmlFor="height">Height (cm): </label>
                             <input
                                 type="number"
                                 id="height"
                                 value={height !== null ? Math.round(height) : ""}
                                 onChange={handleHeightChange}
-                                min="10"
-                                step="10"
+                                min="1"
+                                step="1"
                                 required={true}
                                 placeholder="Give this part a height"
                             />
                         </div>
                         <div className="input-text">
-                            <label htmlFor="length">Length: </label>
+                            <label htmlFor="length">Length (cm): </label>
                             <input
                                 type="number"
                                 id="length"
                                 value={length !== null ? Math.round(length) : ""}
                                 onChange={handleLengthChange}
-                                min="10"
-                                step="10"
+                                min="1"
+                                step="1"
                                 required={true}
                                 placeholder="Give this part a length"
                             />
@@ -207,7 +209,7 @@ export default function Settingsbar({
                             <input
                                 type="number"
                                 id="zoom"
-                                value={zoom}
+                                value={Math.round(zoom * 10) / 10}
                                 onChange={handleZoomChange}
                                 min="0.1"
                                 step="0.1"

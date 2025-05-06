@@ -20,25 +20,30 @@ export default function Sidebar({ setDroppedShapes, setActiveId, containerRef, t
     const dragItemRef = useRef<HTMLDivElement | null>(null);
     const navBarRef = useRef<HTMLDivElement>(null);
 
+    const getEventCoordinates = (e: any) => {
+        if (e.touches && e.touches.length > 0) {
+            return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        }
+        return { x: e.clientX, y: e.clientY };
+    };
+
+
     const handleMouseDown = (e: any, shapeType: any) => {
         e.preventDefault();
         setDragging(true);
         setCurrentShape(shapeType);
-        // Set initial position
-        setPosition({
-            x: e.clientX,
-            y: e.clientY
-        });
+        const coords = getEventCoordinates(e);
+        setPosition(coords);
     }
 
     const handleMouseMove = (e) => {
         if (dragging) {
-            setPosition({
-                x: e.clientX,
-                y: e.clientY
-            });
+            const coords = getEventCoordinates(e);
+            setPosition(coords);
         }
     }
+
+    console.log(dragging);
 
     const handleMouseUp = (e) => {
         if (dragging && currentShape) {
@@ -57,10 +62,10 @@ export default function Sidebar({ setDroppedShapes, setActiveId, containerRef, t
                     type: currentShape,
                     // x: e.clientX - navBarRef.current.clientWidth - width / 2,
                     // y: e.clientY - height / 2,
-                    x: 24,
+                    x: -12,
                     y: 0,
                     z: null,
-                    length: 50,
+                    length: width,
                     width: width,
                     height: height,
                     color: "#FFFFFF",
@@ -107,7 +112,7 @@ export default function Sidebar({ setDroppedShapes, setActiveId, containerRef, t
             <div className={"draggables"}>
                 {shapes.map((shape) => {
                     return (
-                             <div key={shape.type} className={`draggable-shape ${shape.type}`} onMouseDown={(e) => handleMouseDown(e, shape.type)} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}></div>
+                             <div key={shape.type} className={`draggable-shape ${shape.type}`} onMouseDown={(e) => handleMouseDown(e, shape.type)} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onTouchStart={(e) => {handleMouseDown(e, shape.type)}} onTouchMove={handleMouseMove} onTouchEnd={handleMouseUp}></div>
                     );
                              })}
             </div>

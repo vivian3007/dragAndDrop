@@ -18,15 +18,15 @@ export default function Sphere({
     onUpdateShape: (shape: any) => void;
 }) {
     const shape = data?.shape;
-    const width = shape?.width ?? 50; // Base pixel width
-    const height = shape?.height ?? 50; // Base pixel height
-    const length = shape?.length ?? 50; // Base pixel length
+    const width = shape?.width ?? 50;
+    const height = shape?.height ?? 50;
+    const length = shape?.length ?? 50;
     const x = shape?.x ?? 0;
     const y = shape?.y ?? 0;
     const z = shape?.z ?? 0;
-    const rotateX = shape?.rotateX ?? 0; // Degrees
-    const rotateY = shape?.rotateY ?? 0; // Degrees
-    const rotateZ = shape?.rotateZ ?? 0; // Degrees
+    const rotateX = shape?.rotateX ?? 0;
+    const rotateY = shape?.rotateY ?? 0;
+    const rotateZ = shape?.rotateZ ?? 0;
     const zoom = shape?.zoom ?? 1;
     const { camera, size } = useThree();
     const meshRef = useRef<THREE.Mesh>(null);
@@ -38,15 +38,12 @@ export default function Sphere({
     useEffect(() => {
         const canvasWidth = size.width;
         const canvasHeight = size.height;
-        const baseRadius = 1;
 
-        // Compute scaled pixel values
-        const scaledWidth = width * zoom; // Pixels
-        const scaledHeight = height * zoom; // Pixels
-        const scaledLength = length * zoom; // Pixels
+        const scaledWidth = width * zoom;
+        const scaledHeight = height * zoom;
+        const scaledLength = length * zoom;
 
-        // Convert pixel values to Three.js units
-        const scaleFactor = 0.01; // 1 pixel = 0.01 Three.js units
+        const scaleFactor = 0.01;
         const scaleX = (scaledWidth / canvasWidth) * canvasWidth * scaleFactor;
         const scaleY = (scaledHeight / canvasHeight) * canvasHeight * scaleFactor;
         const scaleZ = (scaledLength / canvasWidth) * canvasWidth * scaleFactor;
@@ -62,7 +59,6 @@ export default function Sphere({
         }
     }, [camera, size, width, height, length, zoom, x, y, z, rotateX, rotateY, rotateZ, isSelected, isDragging]);
 
-    // Render-volgorde voor TransformControls
     useEffect(() => {
         if (transformControlsRef.current) {
             transformControlsRef.current.traverse((child: any) => {
@@ -135,35 +131,31 @@ export default function Sphere({
                             const mesh = meshRef.current;
                             const updatedShape: any = { ...shape };
 
-                            // Update based on transformMode
                             if (transformMode === 'translate') {
                                 updatedShape.x = mesh.position.x;
                                 updatedShape.y = mesh.position.y;
                                 updatedShape.z = mesh.position.z;
                             } else if (transformMode === 'rotate') {
-                                updatedShape.rotateX = mesh.rotation.x * (180 / Math.PI); // Degrees
-                                updatedShape.rotateY = mesh.rotation.y * (180 / Math.PI); // Degrees
-                                updatedShape.rotateZ = mesh.rotation.z * (180 / Math.PI); // Degrees
+                                updatedShape.rotateX = mesh.rotation.x * (180 / Math.PI);
+                                updatedShape.rotateY = mesh.rotation.y * (180 / Math.PI);
+                                updatedShape.rotateZ = mesh.rotation.z * (180 / Math.PI);
                             } else if (transformMode === 'scale') {
-                                // Compute base pixel dimensions from mesh scale
                                 const canvasWidth = size.width;
                                 const canvasHeight = size.height;
-                                const scaleFactor = 0.01; // Same as in useEffect
+                                const scaleFactor = 0.01;
 
                                 const scaleX = mesh.scale.x;
                                 const scaleY = mesh.scale.y;
                                 const scaleZ = mesh.scale.z;
 
-                                // Convert Three.js units to scaled pixel values
-                                const scaledWidth = (scaleX / scaleFactor) * canvasWidth / canvasWidth; // Scaled pixels
-                                const scaledHeight = (scaleY / scaleFactor) * canvasHeight / canvasHeight; // Scaled pixels
-                                const scaledLength = (scaleZ / scaleFactor) * canvasWidth / canvasWidth; // Scaled pixels
-                                const newZoom = scaleX / (width * scaleFactor); // New zoom based on base width
+                                const scaledWidth = (scaleX / scaleFactor) * canvasWidth / canvasWidth;
+                                const scaledHeight = (scaleY / scaleFactor) * canvasHeight / canvasHeight;
+                                const scaledLength = (scaleZ / scaleFactor) * canvasWidth / canvasWidth;
+                                const newZoom = scaleX / (width * scaleFactor);
 
-                                // Compute base pixel values
-                                updatedShape.width = scaledWidth / newZoom; // Base width in pixels
-                                updatedShape.height = scaledHeight / newZoom; // Base height in pixels
-                                updatedShape.length = scaledLength / newZoom; // Base length in pixels
+                                updatedShape.width = scaledWidth / newZoom;
+                                updatedShape.height = scaledHeight / newZoom;
+                                updatedShape.length = scaledLength / newZoom;
                                 updatedShape.zoom = newZoom;
                             }
 
