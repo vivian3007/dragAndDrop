@@ -1,17 +1,34 @@
-import {useEffect, useState} from "react";
-import {HexColorInput, HexColorPicker} from "react-colorful";
-import {Button} from "@mui/material";
-import {Link, useNavigate} from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Button } from "@mui/material";
+import { Link, useNavigate } from "react-router-dom";
 import Trashcan from "./Trashcan.tsx";
 import Sketch from "@uiw/react-color-sketch";
 import { ColorResult } from '@uiw/color-convert';
 
-export default function Settingsbar({activeShape, onUpdateShape, shapeColor, setShapeColor, droppedShapes, dragging}: {activeShape: any, onUpdateShape: any, shapeColor: string, setShapeColor: any, droppedShapes: [], dragging: boolean}) {
-    const [width, setWidth] = useState(null);
-    const [height, setHeight] = useState(null);
-    const [length, setLength] = useState(null);
-    const [name, setName] = useState(null);
-    const [rotate, setRotate] = useState(null);
+export default function Settingsbar({
+                                        activeShape,
+                                        onUpdateShape,
+                                        onDeleteShape,
+                                        shapeColor,
+                                        setShapeColor,
+                                        droppedShapes,
+                                        dragging
+                                    }: {
+    activeShape: any,
+    onUpdateShape: any,
+    onDeleteShape: any,
+    shapeColor: string,
+    setShapeColor: any,
+    droppedShapes: [],
+    dragging: boolean
+}) {
+    const [width, setWidth] = useState<number | null>(null);
+    const [height, setHeight] = useState<number | null>(null);
+    const [length, setLength] = useState<number | null>(null);
+    const [name, setName] = useState<string | null>(null);
+    const [rotateX, setRotateX] = useState<number | null>(null);
+    const [rotateY, setRotateY] = useState<number | null>(null);
+    const [rotateZ, setRotateZ] = useState<number | null>(null);
     const [zIndex, setZIndex] = useState(10);
     const [zoom, setZoom] = useState(1);
     const navigate = useNavigate();
@@ -26,51 +43,41 @@ export default function Settingsbar({activeShape, onUpdateShape, shapeColor, set
         }
     };
 
-    console.log(activeShape)
+    console.log(activeShape);
 
     useEffect(() => {
-        setWidth(activeShape?.width || 50);
-        setHeight(activeShape?.height || 50);
-        setLength(activeShape?.length || 50);
+        // Initialize input fields with scaled values
+        setWidth(activeShape ? activeShape.width * activeShape.zoom : 50);
+        setHeight(activeShape ? activeShape.height * activeShape.zoom : 50);
+        setLength(activeShape ? activeShape.length * activeShape.zoom : 50);
         setName(activeShape?.name || null);
         setShapeColor(activeShape?.color || '#FFFFFF');
-        setRotate(activeShape?.rotate || 0);
+        setRotateX(activeShape?.rotateX || 0);
+        setRotateY(activeShape?.rotateY || 0)
+        setRotateZ(activeShape?.rotateZ || 0)
         setZIndex(activeShape?.zIndex || 10);
         setZoom(activeShape?.zoom || 1);
     }, [activeShape]);
 
-    const handleBringToFront = () => {
-        if (activeShape) {
-            const newZIndex = zIndex + 1;
-            setZIndex(newZIndex);
-            handleUpdate({ zIndex: newZIndex });
-        }
-    };
-
-    const handleSendToBack = () => {
-        if (activeShape) {
-            const newZIndex = zIndex - 1;
-            setZIndex(newZIndex);
-            handleUpdate({ zIndex: newZIndex });
-        }
-    };
-
     const handleWidthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newWidth = Number(e.target.value);
-        setWidth(newWidth);
-        handleUpdate({ width: newWidth });
+        const newScaledWidth = Number(e.target.value);
+        setWidth(newScaledWidth);
+        const newBaseWidth = newScaledWidth / (activeShape?.zoom || 1);
+        handleUpdate({ width: newBaseWidth });
     };
 
     const handleHeightChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newHeight = Number(e.target.value);
-        setHeight(newHeight);
-        handleUpdate({ height: newHeight });
+        const newScaledHeight = Number(e.target.value);
+        setHeight(newScaledHeight);
+        const newBaseHeight = newScaledHeight / (activeShape?.zoom || 1);
+        handleUpdate({ height: newBaseHeight });
     };
 
     const handleLengthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newLength = Number(e.target.value);
-        setLength(newLength);
-        handleUpdate({ length: newLength });
+        const newScaledLength = Number(e.target.value);
+        setLength(newScaledLength);
+        const newBaseLength = newScaledLength / (activeShape?.zoom || 1);
+        handleUpdate({ length: newBaseLength });
     };
 
     const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -79,10 +86,22 @@ export default function Settingsbar({activeShape, onUpdateShape, shapeColor, set
         handleUpdate({ name: newName });
     };
 
-    const handleRotateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newRotate = Number(e.target.value);
-        setRotate(newRotate);
-        handleUpdate({ rotate: newRotate });
+    const handleRotateXChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newRotateX = Number(e.target.value);
+        setRotateX(newRotateX);
+        handleUpdate({ rotateX: newRotateX });
+    };
+
+    const handleRotateYChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newRotateY = Number(e.target.value);
+        setRotateY(newRotateY);
+        handleUpdate({ rotateY: newRotateY });
+    };
+
+    const handleRotateZChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newRotateZ = Number(e.target.value);
+        setRotateX(newRotateZ);
+        handleUpdate({ rotateZ: newRotateZ });
     };
 
     const handleColorChange = (newShade: ColorResult) => {
@@ -94,6 +113,15 @@ export default function Settingsbar({activeShape, onUpdateShape, shapeColor, set
         const newZoom = Number(e.target.value);
         setZoom(newZoom);
         handleUpdate({ zoom: newZoom });
+        setWidth(activeShape ? Math.round(activeShape.width * newZoom) : 50);
+        setHeight(activeShape ? Math.round(activeShape.height * newZoom) : 50);
+        setLength(activeShape ? Math.round(activeShape.length * newZoom) : 50);
+    };
+
+    const handleDeleteShape = () => {
+        if (activeShape) {
+            onDeleteShape(activeShape.id);
+        }
     };
 
     const displayName = name !== null ? name : activeShape?.name ?? "";
@@ -103,9 +131,9 @@ export default function Settingsbar({activeShape, onUpdateShape, shapeColor, set
         if (activeShape) {
             onUpdateShape({
                 id: activeShape.id,
-                width: Number(width),
-                height: Number(height),
-                length: Number(length),
+                width: width !== null ? width / zoom : activeShape.width,
+                height: height !== null ? height / zoom : activeShape.height,
+                length: length !== null ? length / zoom : activeShape.length,
                 color: shapeColor,
                 name: name,
                 rotate: Number(rotate),
@@ -118,116 +146,148 @@ export default function Settingsbar({activeShape, onUpdateShape, shapeColor, set
         });
     };
 
-
     return (
         <nav className="settings-bar">
             <div>
-            <h1>Settings: {activeShape?.name}</h1>
-            {activeShape ? (
-                <form onSubmit={handleSubmit}>
-                    <div className="input-text">
-                        <label>Name: </label>
-                        <input
-                            type="text"
-                            id="part"
-                            value={displayName ?? ""}
-                            onChange={handleNameChange}
-                            required={true}
-                            placeholder="Give this part a name"
+                <h1>Settings: {activeShape?.name}</h1>
+                {activeShape ? (
+                    <form onSubmit={handleSubmit}>
+                        <div className="input-text">
+                            <label>Name: </label>
+                            <input
+                                type="text"
+                                id="part"
+                                value={displayName ?? ""}
+                                onChange={handleNameChange}
+                                required={true}
+                                placeholder="Give this part a name"
+                            />
+                        </div>
+                        <div className="input-text">
+                            <label htmlFor="width">Width: </label>
+                            <input
+                                type="number"
+                                id="width"
+                                value={width !== null ? Math.round(width) : ""}
+                                onChange={handleWidthChange}
+                                min="10"
+                                step="10"
+                                required={true}
+                                placeholder="Give this part a width"
+                            />
+                        </div>
+                        <div className="input-text">
+                            <label htmlFor="height">Height: </label>
+                            <input
+                                type="number"
+                                id="height"
+                                value={height !== null ? Math.round(height) : ""}
+                                onChange={handleHeightChange}
+                                min="10"
+                                step="10"
+                                required={true}
+                                placeholder="Give this part a height"
+                            />
+                        </div>
+                        <div className="input-text">
+                            <label htmlFor="length">Length: </label>
+                            <input
+                                type="number"
+                                id="length"
+                                value={length !== null ? Math.round(length) : ""}
+                                onChange={handleLengthChange}
+                                min="10"
+                                step="10"
+                                required={true}
+                                placeholder="Give this part a length"
+                            />
+                        </div>
+                        <div className="input-text">
+                            <label htmlFor="zoom">Zoom: </label>
+                            <input
+                                type="number"
+                                id="zoom"
+                                value={zoom}
+                                onChange={handleZoomChange}
+                                min="0.1"
+                                step="0.1"
+                                placeholder="Give this part a zoom"
+                            />
+                        </div>
+                        <div className="input-text">
+                            <label htmlFor="rotationX">Rotation x: </label>
+                            <input
+                                type="number"
+                                id="rotationX"
+                                value={rotateX !== null ? Math.round(rotateX) : ""}
+                                onChange={handleRotateXChange}
+                                min="0"
+                                step="1"
+                                // required={true}
+                                placeholder="Give this part a x rotation"
+                            />
+                        </div>
+                        <div className="input-text">
+                            <label htmlFor="rotationY">Rotation y: </label>
+                            <input
+                                type="number"
+                                id="rotationY"
+                                value={rotateY !== null ? Math.round(rotateY) : ""}
+                                onChange={handleRotateYChange}
+                                min="0"
+                                step="1"
+                                // required={true}
+                                placeholder="Give this part a y rotation"
+                            />
+                        </div>
+                        <div className="input-text">
+                            <label htmlFor="rotationZ">Rotation z: </label>
+                            <input
+                                type="number"
+                                id="rotationZ"
+                                value={rotateZ !== null ? Math.round(rotateZ) : ""}
+                                onChange={handleRotateZChange}
+                                min="0"
+                                step="1"
+                                // required={true}
+                                placeholder="Give this part a z rotation"
+                            />
+                        </div>
+                        <Button
+                            type="button"
+                            variant="contained"
+                            color="inherit"
+                            sx={{marginBottom: "20px", width: 1, backgroundColor: "#F2F3AE"}}
+                            onClick={handleDeleteShape}
+                        >
+                            Delete shape
+                        </Button>
+                        <Sketch
+                            style={{marginTop: "20px", marginBottom: "20px"}}
+                            color={shapeColor}
+                            onChange={handleColorChange}
                         />
-                    </div>
-                    <div className="input-text">
-                        <label htmlFor="width">Width: </label>
-                        <input
-                            type="number"
-                            id="width"
-                            value={width}
-                            onChange={handleWidthChange}
-                            min="10"
-                            step="10"
-                            required={true}
-                            placeholder="Give this part a width"
-                        />
-                    </div>
-                    <div className="input-text">
-                        <label htmlFor="height">Height: </label>
-                        <input
-                            type="number"
-                            id="height"
-                            value={height}
-                            onChange={handleHeightChange}
-                            min="10"
-                            step="10"
-                            required={true}
-                            placeholder="Give this part a height"
-                        />
-                    </div>
-                    <div className="input-text">
-                        <label htmlFor="length">Length: </label>
-                        <input
-                            type="number"
-                            id="length"
-                            value={length}
-                            onChange={handleLengthChange}
-                            min="10"
-                            step="10"
-                            required={true}
-                            placeholder="Give this part a length"
-                        />
-                    </div>
-                    <div className="input-text">
-                        <label htmlFor="zoom">Zoom: </label>
-                        <input
-                            type="number"
-                            id="zoom"
-                            value={zoom}
-                            onChange={handleZoomChange}
-                            min="0.1"
-                            step="0.1"
-                            // required={true}
-                            placeholder="Give this part a zoom"
-                        />
-                    </div>
-                    <div className="input-text">
-                        <label htmlFor="height">Rotation: </label>
-                        <input
-                            type="number"
-                            id="rotate"
-                            value={rotate ?? "0"}
-                            onChange={handleRotateChange}
-                            min="0"
-                            step="1"
-                            placeholder="Give this part a rotation"
-                        />
-                    </div>
-                    {/*<Button type="button" variant="contained" color="inherit"*/}
-                    {/*        sx={{marginBottom: "20px", width: 1, backgroundColor: "#F2F3AE"}}*/}
-                    {/*        onClick={handleBringToFront}>Bring to front</Button>*/}
-                    {/*<Button type="button" variant="contained" color="inherit"*/}
-                    {/*        sx={{marginBottom: "20px", width: 1, backgroundColor: "#F2F3AE"}}*/}
-                    {/*        onClick={handleSendToBack}>Send to back</Button>*/}
-                    <Sketch
-                        style={{marginTop: "20px", marginBottom: "20px"}}
-                        color={shapeColor}
-                        onChange={handleColorChange}
-                    />
-                    {/*<HexColorPicker color={shapeColor} onChange={handleColorChange}*/}
-                    {/*                style={{marginTop: "20px", marginBottom: "20px"}}/>*/}
-                    {/*<Button type="submit" variant="contained" color="secondary"*/}
-                    {/*        sx={{marginBottom: "20px", width: 1}}>Save</Button>*/}
-                    <Button type="submit" variant="contained" color="inherit"
-                            sx={{width: 1, backgroundColor: "#F2F3AE"}}
-                            disabled={!droppedShapes || droppedShapes.length < 1}>
-                        Pattern
-                        {/*<Link to="/pattern" style={{width: "100%"}}>Pattern</Link>*/}
-                    </Button>
-                </form>
-            ) : (
-                <p>No shape selected</p>
-            )}
+                    </form>
+                ) : (
+                    <ul>
+                        <li>T: translate</li>
+                        <li>S: scale</li>
+                        <li>R: rotate</li>
+                    </ul>
+                )}
             </div>
             <div style={{marginBottom: 20, alignItems: "center", display: "flex", flexDirection: "column"}}>
-                <Trashcan dragging={dragging}/>
+                <Button
+                    type="submit"
+                    variant="contained"
+                    color="inherit"
+                    sx={{width: 1, backgroundColor: "#F2F3AE", marginBottom: "10px"}}
+                    disabled={!droppedShapes || droppedShapes.length < 1}
+                >
+                    <Link to="/pattern" style={{ width: "100%", textDecoration: "none", color: "black" }}>
+                        Pattern
+                    </Link>
+                </Button>
             </div>
         </nav>
     );

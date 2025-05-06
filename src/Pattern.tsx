@@ -9,11 +9,16 @@ interface Shape {
     type: string;
     x: number;
     y: number;
+    z: number;
     width: number;
     height: number;
+    length: number
     color: string;
     name: string;
-    rotate: number
+    rotateX: number;
+    rotateY: number;
+    rotateZ: number;
+    zIndex: number;
 }
 
 interface PatternProps {
@@ -30,8 +35,8 @@ const Pattern: React.FC<PatternProps> = ({ shapes }) => {
         const extraScRows =
             shapeHeight && shapeWidth ? (shapeHeight - shapeWidth) / 10 : 0;
         const incRows = Math.floor((rows - extraScRows) / 3);
-        const decRows = incRows - 1;
-        const scRows = rows - incRows - decRows;
+        const decRows = Math.floor(incRows - 1);
+        const scRows = Math.floor(rows - incRows - decRows);
 
         const rowArray = [];
         const incArray = [];
@@ -39,8 +44,10 @@ const Pattern: React.FC<PatternProps> = ({ shapes }) => {
         const decArray = [];
 
         for (let i = 1; i < rows + 1; i++) {
-            rowArray.push(` ${i}`);
+            rowArray.push(i);
         }
+
+        console.log(rowArray);
 
         for (let i = 1; i < incRows - 1; i++) {
             incArray.push(`Row ${rowArray[i + 1]}: 1inc, ${i}sc (${12 + i * 6})`);
@@ -52,20 +59,22 @@ const Pattern: React.FC<PatternProps> = ({ shapes }) => {
         //     scArray.push(`Row ${rowArray[i]}: ${incRows * 6}sc`);
         // }
 
-        for (let i = 1; i < 2; i++) {
-            if((incRows + scRows) - (incRows + 1) === 1) {
-                scArray.push(`Row ${incRows + 1}: ${incRows * 6}sc (${maxStitches})`);
-            } else {
-                scArray.push(`Row ${incRows + 1} - ${incRows + scRows}: ${incRows * 6}sc (${maxStitches})`);
-            }
+        if (scRows > 0) {
+            const startRow = incRows + 1;
+            const endRow = incRows + scRows;
+            const rowText = scRows === 1 ? `Row ${startRow}` : `Row ${startRow}-${endRow}`;
+            scArray.push(`${rowText}: ${maxStitches}sc (${maxStitches})`);
         }
+        console.log(scRows)
 
         let currentStitches = maxStitches;
 
-        for (let i = incRows - 2; i > 0; i--) {
+        for (let i = 0; i < decRows - 1; i++) {
             currentStitches -= 6;
-            decArray.push(`Row ${rowArray[rows - i - 1]}: 1dec, ${i}sc (${currentStitches})`);
+            const rowIndex = incRows + scRows + i;
+            decArray.push(`Row ${rowArray[rowIndex]}: 1dec, ${decRows - i - 1}sc (${currentStitches})`);
         }
+        console.log(rows);
 
         return {
             type: singleShape.type,
@@ -73,13 +82,17 @@ const Pattern: React.FC<PatternProps> = ({ shapes }) => {
             name: singleShape.name,
             width: singleShape.width,
             height: singleShape.height,
-            rotate: singleShape.rotate,
+            rotateX: singleShape.rotateX,
+            rotateY: singleShape.rotateY,
+            rotateZ: singleShape.rotateZ,
             rows,
             incArray,
             scArray,
             decArray,
+            rowArray,
         };
     }
+    console.log(shapes);
 
     useEffect(() => {
         if (shapes && shapes.length > 0) {
@@ -123,7 +136,8 @@ const Pattern: React.FC<PatternProps> = ({ shapes }) => {
                             {pattern.decArray.map((row, idx) => (
                                 <li key={idx}>{row}</li>
                             ))}
-                            <li>Row {pattern.rows}: 6dec (6)</li>
+                            <li>Row {pattern.rowArray.length}: 6dec (6)</li>
+                            <li>Sew closed</li>
                         </ul>
                         <div
                             className={`shape ${pattern.type}`}

@@ -7,12 +7,14 @@ export default function ThreeJsField({
                                          droppedShapes,
                                          threeJsContainerRef,
     activeId,
-    setActiveId
+    setActiveId,
+    onUpdateShape,
                                      }: {
     droppedShapes: [];
     threeJsContainerRef: Ref<HTMLCanvasElement>;
     activeId: any;
     setActiveId: any;
+    onUpdateShape: any;
 }) {
     const orbitControlsRef = useRef(null);
     // const [selectedSphereId, setSelectedSphereId] = useState(null);
@@ -41,6 +43,7 @@ export default function ThreeJsField({
                     orbitControlsRef={orbitControlsRef}
                     isSelected={activeId === shape.id}
                     onSelect={handleSelect}
+                    onUpdateShape={onUpdateShape}
                 />
             ))}
         </Canvas>

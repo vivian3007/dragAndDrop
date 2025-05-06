@@ -12,7 +12,7 @@ import {Route, Routes, Link} from "react-router-dom";
 
 export default function App() {
     const [droppedShapes, setDroppedShapes] = useState<
-        { id: string; type: string; x: number; y: number, width: number, height: number, length:number, color: string, name: string, zoom: number, rotate: number, zIndex: number }[]
+        { id: string; type: string; x: number; y: number,z: number, width: number, height: number, length:number, color: string, name: string, zoom: number, rotateX: number, rotateY: number, rotateZ: number, zIndex: number }[]
     >([]);
     const containerRef = useRef<HTMLDivElement>(null);
     const threeJsContainerRef = useRef<HTMLDivElement>(null);
@@ -28,12 +28,15 @@ export default function App() {
             type: 'circle',
             x: 0,
             y: 0,
+            z: 0,
             width: 200,
             height: 200,
             length: 200,
             color: 'yellow',
             name: 'Circle',
-            rotate: null,
+            rotateX: null,
+            rotateY: null,
+            rotateZ: null,
             zIndex: 10,
             zoom: 1,
         };
@@ -43,12 +46,15 @@ export default function App() {
             type: 'circle',
             x: 12,
             y: 0,
+            z: 0,
             width: 200,
             height: 200,
             length: 200,
             color: 'hotpink',
             name: 'Circle',
-            rotate: null,
+            rotateX: null,
+            rotateY: null,
+            rotateZ: null,
             zIndex: 10,
             zoom: 1,
         };
@@ -91,15 +97,23 @@ export default function App() {
         setActiveId(active.id);
     };
 
-    const handleUpdateShape = (updatedShape: { id: string; x: number, y: number, width: number; height: number, length: number, color: string, name: string, rotate: number, zIndex: number, zoom: number }) => {
+    const handleUpdateShape = (updatedShape: { id: string; x: number, y: number, z: number, width: number; height: number, length: number, color: string, name: string, rotateX: number, rotateY: number, rotateZ: number, zIndex: number, zoom: number }) => {
         console.log(updatedShape)
+        console.log(activeShape)
         setDroppedShapes((prevShapes) =>
             prevShapes.map((shape) =>
                 shape.id === updatedShape.id
-                    ? { ...shape, width: updatedShape.width, height: updatedShape.height, length: updatedShape.length, color: updatedShape.color, name: updatedShape.name, rotate: updatedShape.rotate, zIndex: updatedShape.zIndex, zoom: updatedShape.zoom }
+                    ? { ...shape, x: updatedShape.x, y: updatedShape.y, z: updatedShape.z, width: updatedShape.width, height: updatedShape.height, length: updatedShape.length, color: updatedShape.color, name: updatedShape.name, rotateX: updatedShape.rotateX, rotateY: updatedShape.rotateY,  rotateZ: updatedShape.rotateZ, zIndex: updatedShape.zIndex, zoom: updatedShape.zoom }
                     : shape
             )
         );
+    };
+
+    const handleDeleteShape = (id: string) => {
+        setDroppedShapes((prev) => prev.filter((shape) => shape.id !== id));
+        if (activeShape?.id === id) {
+            setActiveId(null); // Clear activeShape if it was deleted
+        }
     };
 
     console.log(droppedShapes)
@@ -115,8 +129,8 @@ export default function App() {
                         {/*    containerRef={containerRef}*/}
                         {/*    shapeColor={shapeColor}*/}
                         {/*/>*/}
-                        <ThreeJsField droppedShapes={droppedShapes} threeJsContainerRef={threeJsContainerRef} activeId={activeId} setActiveId={setActiveId} />
-                        <Settingsbar activeShape={activeShape} onUpdateShape={handleUpdateShape} shapeColor={shapeColor} setShapeColor={setShapeColor} droppedShapes={droppedShapes} dragging={dragging} />
+                        <ThreeJsField droppedShapes={droppedShapes} threeJsContainerRef={threeJsContainerRef} activeId={activeId} setActiveId={setActiveId} onUpdateShape={handleUpdateShape} />
+                        <Settingsbar activeShape={activeShape} onUpdateShape={handleUpdateShape} onDeleteShape={handleDeleteShape} shapeColor={shapeColor} setShapeColor={setShapeColor} droppedShapes={droppedShapes} dragging={dragging} />
                     </DndContext>
                     }
                 />
