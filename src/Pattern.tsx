@@ -32,8 +32,7 @@ const Pattern: React.FC<PatternProps> = ({ shapes }) => {
         const shapeWidth = singleShape.width > singleShape.height ? singleShape.height : singleShape.width;
 
         const rows = shapeHeight ? shapeHeight / 10 : 0;
-        const extraScRows =
-            shapeHeight && shapeWidth ? (shapeHeight - shapeWidth) / 10 : 0;
+        const extraScRows = shapeHeight && shapeWidth ? (shapeHeight - shapeWidth) / 10 : 0;
         const incRows = Math.floor((rows - extraScRows) / 3);
         const decRows = Math.floor(incRows - 1);
         const scRows = Math.floor(rows - incRows - decRows);
@@ -60,7 +59,7 @@ const Pattern: React.FC<PatternProps> = ({ shapes }) => {
         // }
 
         if (scRows > 0) {
-            const startRow = incRows + 1;
+            const startRow = incRows + 2;
             const endRow = incRows + scRows;
             const rowText = scRows === 1 ? `Row ${startRow}` : `Row ${startRow}-${endRow}`;
             scArray.push(`${rowText}: ${maxStitches}sc (${maxStitches})`);
@@ -105,60 +104,60 @@ const Pattern: React.FC<PatternProps> = ({ shapes }) => {
 
     return (
         <div className="pattern">
-        <div className="pattern-container">
-            <Card className="pattern-text-container">
-                <h1 style={{marginTop: 0}}>Stitch abbreviations</h1>
-                <div style={{display: "flex", justifyContent: "space-between"}}>
-                    <ul style={{lineHeight: 2}}>
-                        <li>st = stitch</li>
-                        <li>sl = slip stitch</li>
-                        <li>sc = single crochet</li>
-                        <li>inc = increase (2 single crochet in 1 stitch)</li>
-                        <li>dec = decrease (single crochet 2 stitches together)</li>
-                    </ul>
-                </div>
-            </Card>
-            {patterns.length > 0 ? (
-                patterns.map((pattern, index) => (
-                    <Card key={index} className="pattern-text-container">
-                        <h1 style={{marginTop: 0}}>Pattern for - {pattern.name ?? "give this part a name"}</h1>
-                        {/*<p>Selected Shape: {pattern.type}</p>*/}
-                        <div style={{display: "flex", justifyContent: "space-between"}}>
+            <div className="pattern-container">
+                <Card className="pattern-text-container">
+                    <h1 style={{marginTop: 0}}>Stitch abbreviations</h1>
+                    <div style={{display: "flex", justifyContent: "space-between"}}>
                         <ul style={{lineHeight: 2}}>
-                            <li>Row 1: 6sc in a magic ring (6)</li>
-                            {pattern.incArray.length > 0 ? (
-                                <li>Row 2: 6inc (12)</li>
-                            ) : null}
-                            {pattern.incArray.map((row, idx) => (
-                                <li key={idx}>{row}</li>
-                            ))}
-                            {pattern.scArray.map((row, idx) => (
-                                <li key={idx}>{row}</li>
-                            ))}
-                            {pattern.decArray.map((row, idx) => (
-                                <li key={idx}>{row}</li>
-                            ))}
-                            <li>Row {pattern.rowArray.length}: 6dec (6)</li>
-                            <li>Sew closed</li>
+                            <li>st = stitch</li>
+                            <li>sl = slip stitch</li>
+                            <li>sc = single crochet</li>
+                            <li>inc = increase (2 single crochet in 1 stitch)</li>
+                            <li>dec = decrease (single crochet 2 stitches together)</li>
                         </ul>
-                        <div
-                            className={`shape ${pattern.type}`}
-                            style={{ backgroundColor: pattern.color, width: pattern.width, height: pattern.height,
-                                // transform: `rotate(${pattern.rotate}deg)`
-                        }}
-                        ></div>
-                        </div>
-                    </Card>
-                ))
-            ) : (
-                <p>Geen shapes geselecteerd</p>
-            )}
+                    </div>
+                </Card>
+                {patterns.length > 0 ? (
+                    patterns.map((pattern, index) => (
+                        <Card key={index} className="pattern-text-container">
+                            <h1 style={{marginTop: 0}}>Pattern for - {pattern.name ?? "give this part a name"}</h1>
+                            {/*<p>Selected Shape: {pattern.type}</p>*/}
+                            <div style={{display: "flex", justifyContent: "space-between", flexWrap: "wrap"}}>
+                                <ul style={{lineHeight: 2}}>
+                                    <li>Row 1: 6sc in a magic ring (6)</li>
+                                    {pattern.incArray.length > 0 ? (
+                                        <li>Row 2: 6inc (12)</li>
+                                    ) : null}
+                                    {pattern.incArray.map((row, idx) => (
+                                        <li key={idx}>{row}</li>
+                                    ))}
+                                    {pattern.scArray.map((row, idx) => (
+                                        <li key={idx}>{row}</li>
+                                    ))}
+                                    {pattern.decArray.map((row, idx) => (
+                                        <li key={idx}>{row}</li>
+                                    ))}
+                                    <li>Row {pattern.rowArray.length}: 6dec (6)</li>
+                                    <li>Sew closed</li>
+                                </ul>
+                                <div
+                                    className={`shape ${pattern.type}`}
+                                    style={{ backgroundColor: pattern.color, width: pattern.width, height: pattern.height,
+                                        // transform: `rotate(${pattern.rotate}deg)`
+                                }}
+                                ></div>
+                            </div>
+                        </Card>
+                    ))
+                ) : (
+                    <p>Geen shapes geselecteerd</p>
+                )}
 
+            </div>
+            <div className="pattern-image">
+                <Link to="/"><Button variant="contained" color="inherit" style={{position: "sticky", marginLeft: 20, backgroundColor: "#F2F3AE", color: "black"}}>Go back</Button></Link>
+            </div>
         </div>
-        <div className="pattern-image">
-            <Link to="/"><Button variant="contained" color="primary" style={{position: "sticky", marginLeft: 20}}>Go back</Button></Link>
-        </div>
-    </div>
     );
 };
 

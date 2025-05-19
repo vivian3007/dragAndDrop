@@ -1,15 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useThree } from '@react-three/fiber';
+import * as THREE from 'three';
 import { TransformControls } from '@react-three/drei';
 
-export default function Sphere({
-                                   id,
-                                   data,
-                                   orbitControlsRef,
-                                   isSelected,
-                                   onSelect,
-                                   onUpdateShape
-                               }: {
+export default function TeddyBearArm({
+                                         id,
+                                         data,
+                                         orbitControlsRef,
+                                         isSelected,
+                                         onSelect,
+                                         onUpdateShape,
+                                     }: {
     id: string;
     data: { shape: any };
     orbitControlsRef: React.MutableRefObject<any>;
@@ -17,6 +18,7 @@ export default function Sphere({
     onSelect: (id: string) => void;
     onUpdateShape: (shape: any) => void;
 }) {
+
     const shape = data?.shape;
     const width = shape?.width ?? 50;
     const height = shape?.height ?? 50;
@@ -28,11 +30,17 @@ export default function Sphere({
     const rotateY = shape?.rotateY ?? 0;
     const rotateZ = shape?.rotateZ ?? 0;
     const zoom = shape?.zoom ?? 1;
+    const color = shape?.color ?? 'white';
     const { camera, size } = useThree();
     const meshRef = useRef<THREE.Mesh>(null);
     const transformControlsRef = useRef<any>(null);
     const [transformMode, setTransformMode] = useState<'translate' | 'rotate' | 'scale'>('translate');
     const [isDragging, setIsDragging] = useState(false);
+
+    console.log(shape);
+
+
+    console.log(data)
 
     useEffect(() => {
         const canvasWidth = size.width;
@@ -68,8 +76,6 @@ export default function Sphere({
         }
     }, [isSelected]);
 
-    console.log(isSelected)
-
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
             if (!isSelected) return;
@@ -96,19 +102,21 @@ export default function Sphere({
 
     return (
         <group
+
             onClick={(e) => {
                 e.stopPropagation();
                 onSelect(id);
             }}
         >
-            <mesh ref={meshRef} scale={[1, 1, 1]}>
-                {/*position={[x, y, z]*/}
-                <sphereGeometry args={[1, 32, 32]} />
-                <meshStandardMaterial
-                    color={shape?.color ?? 'white'}
-                    metalness={0}
-                    roughness={0.8}
-                />
+            <mesh position={[0, 0.5, 0]} ref={meshRef}>
+                <mesh position={[0, 0.5, 0]} ref={meshRef}>
+                    <cylinderGeometry args={[0.5, 0.5, 1, 32, 1, true]} />
+                    <meshStandardMaterial color={shape?.color ?? 'white'} metalness={0} roughness={0.8} side={THREE.DoubleSide} />
+                </mesh>
+                <mesh position={[0, 1, 0]} ref={meshRef}>
+                    <sphereGeometry args={[0.5, 32, 16]} />
+                    <meshStandardMaterial color={shape?.color ?? 'white'} metalness={0} roughness={0.8} side={THREE.DoubleSide} />
+                </mesh>
             </mesh>
             {isSelected && (
                 <TransformControls
@@ -129,25 +137,25 @@ export default function Sphere({
                     }}
                     onObjectChange={() => {
                         if (meshRef.current && shape) {
-                            const mesh = meshRef.current;
+                            const group = meshRef.current;
                             const updatedShape: any = { ...shape };
 
                             if (transformMode === 'translate') {
-                                updatedShape.x = mesh.position.x;
-                                updatedShape.y = mesh.position.y;
-                                updatedShape.z = mesh.position.z;
+                                updatedShape.x = group.position.x;
+                                updatedShape.y = group.position.y;
+                                updatedShape.z = group.position.z;
                             } else if (transformMode === 'rotate') {
-                                updatedShape.rotateX = mesh.rotation.x * (180 / Math.PI);
-                                updatedShape.rotateY = mesh.rotation.y * (180 / Math.PI);
-                                updatedShape.rotateZ = mesh.rotation.z * (180 / Math.PI);
+                                updatedShape.rotateX = group.rotation.x * (180 / Math.PI);
+                                updatedShape.rotateY = group.rotation.y * (180 / Math.PI);
+                                updatedShape.rotateZ = group.rotation.z * (180 / Math.PI);
                             } else if (transformMode === 'scale') {
                                 const canvasWidth = size.width;
                                 const canvasHeight = size.height;
                                 const scaleFactor = 0.01;
 
-                                const scaleX = mesh.scale.x;
-                                const scaleY = mesh.scale.y;
-                                const scaleZ = mesh.scale.z;
+                                const scaleX = group.scale.x;
+                                const scaleY = group.scale.y;
+                                const scaleZ = group.scale.z;
 
                                 const scaledWidth = (scaleX / scaleFactor) * canvasWidth / canvasWidth;
                                 const scaledHeight = (scaleY / scaleFactor) * canvasHeight / canvasHeight;
@@ -159,8 +167,6 @@ export default function Sphere({
                                 updatedShape.length = scaledLength / newZoom;
                                 updatedShape.zoom = newZoom;
                             }
-
-                            console.log("updatedShape", updatedShape)
 
                             onUpdateShape(updatedShape);
                         }

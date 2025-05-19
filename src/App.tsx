@@ -1,8 +1,9 @@
 import "./styles.css";
-import Navbar from "./Sidebar.tsx";
+import Sidebar from "./Sidebar.tsx";
 import ShapeField from "./ShapeField";
 import ThreeJsField from "./ThreeJsField.tsx"
 import Pattern from "./Pattern";
+import YarnSettings from "./YarnSettings"
 import { useState, useRef, useEffect } from "react";
 import {DndContext, DragOverlay, PointerSensor, useSensor, useSensors} from "@dnd-kit/core";
 import useMousePosition from "./useMousePosition";
@@ -14,10 +15,14 @@ export default function App() {
     const [droppedShapes, setDroppedShapes] = useState<
         { id: string; type: string; x: number; y: number,z: number, width: number, height: number, length:number, color: string, name: string, zoom: number, rotateX: number, rotateY: number, rotateZ: number, zIndex: number }[]
     >([]);
+    const [yarnInfo, setYarnInfo] = useState<
+        { id: string; name: string; weight: number; mPerSkein: number, hooksize: number, material: string, color: string }
+    >({});
     const containerRef = useRef<HTMLDivElement>(null);
     const threeJsContainerRef = useRef<HTMLDivElement>(null);
 
     const [dragging, setDragging] = useState(false);
+    const [camera, setCamera] = useState(null);
 
     const [activeId, setActiveId] = useState(null);
     const [shapeColor, setShapeColor] = useState('#FFFFFF');
@@ -25,7 +30,7 @@ export default function App() {
     useEffect(() => {
         const newShape1 = {
             id: uuidv4(),
-            type: 'circle',
+            type: 'Sphere',
             x: 0,
             y: 0,
             z: 0,
@@ -43,7 +48,7 @@ export default function App() {
 
         const newShape2 = {
             id: uuidv4(),
-            type: 'circle',
+            type: 'Arm',
             x: 12,
             y: 0,
             z: 0,
@@ -51,7 +56,7 @@ export default function App() {
             height: 200,
             length: 200,
             color: 'hotpink',
-            name: 'Circle',
+            name: 'Arm',
             rotateX: null,
             rotateY: null,
             rotateZ: null,
@@ -59,6 +64,8 @@ export default function App() {
             zoom: 1,
         };
         setDroppedShapes((prevShapes: any[]) => [...prevShapes, newShape1, newShape2]);
+
+        setYarnInfo( {id: uuidv4(), name: null, weight: null, mPerSkein: null, hooksize: null, material: null, color: null});
     }, []);
 
     const activeShape = droppedShapes.find((shape) => shape.id === activeId);
@@ -91,11 +98,12 @@ export default function App() {
             }
     };
 
-    const handleDragStart = (event) => {
-        const { active, over, delta } = event;
-
-        setActiveId(active.id);
-    };
+    // const handleDragStart = (event) => {
+    //     const { active, over, delta } = event;
+    //
+    //     console.log("dragstart")
+    //     setActiveId(active.id);
+    // };
 
     const handleUpdateShape = (updatedShape: { id: string; x: number, y: number, z: number, width: number; height: number, length: number, color: string, name: string, rotateX: number, rotateY: number, rotateZ: number, zIndex: number, zoom: number }) => {
         console.log(updatedShape)
@@ -109,10 +117,19 @@ export default function App() {
         );
     };
 
+    const handleUpdateYarnInfo = (updatedYarnInfo: { id: string; name: string; weight: number; mPerSkein: number, hooksize: number, material: string, color: string }) => {
+        console.log(updatedYarnInfo)
+        setYarnInfo(
+        yarnInfo.id === updatedYarnInfo.id
+            ? { name: updatedYarnInfo.name, weight: updatedYarnInfo.weight, mPerSkein: updatedYarnInfo.mPerSkein, hooksize: updatedYarnInfo.hooksize, material: updatedYarnInfo.material, color: updatedYarnInfo.color }
+            : yarnInfo
+        );
+    };
+
     const handleDeleteShape = (id: string) => {
         setDroppedShapes((prev) => prev.filter((shape) => shape.id !== id));
         if (activeShape?.id === id) {
-            setActiveId(null); // Clear activeShape if it was deleted
+            setActiveId(null);
         }
     };
 
@@ -122,19 +139,20 @@ export default function App() {
         <div className="App">
             <Routes>
                 <Route path="/" element={
-                    <DndContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
-                        <Navbar setDroppedShapes={setDroppedShapes} setActiveId={setActiveId} containerRef={containerRef} threeJsContainerRef={threeJsContainerRef} dragging={dragging} setDragging={setDragging} />
+                    <DndContext onDragEnd={handleDragEnd}>
+                        <Sidebar setDroppedShapes={setDroppedShapes} setActiveId={setActiveId} containerRef={containerRef} threeJsContainerRef={threeJsContainerRef} dragging={dragging} setDragging={setDragging} camera={camera} />
                         {/*<ShapeField*/}
                         {/*    droppedShapes={droppedShapes}*/}
                         {/*    containerRef={containerRef}*/}
                         {/*    shapeColor={shapeColor}*/}
                         {/*/>*/}
-                        <ThreeJsField droppedShapes={droppedShapes} threeJsContainerRef={threeJsContainerRef} activeId={activeId} setActiveId={setActiveId} onUpdateShape={handleUpdateShape} />
-                        <Settingsbar activeShape={activeShape} onUpdateShape={handleUpdateShape} onDeleteShape={handleDeleteShape} shapeColor={shapeColor} setShapeColor={setShapeColor} droppedShapes={droppedShapes} dragging={dragging} />
+                        <ThreeJsField droppedShapes={droppedShapes} threeJsContainerRef={threeJsContainerRef} activeId={activeId} setActiveId={setActiveId} onUpdateShape={handleUpdateShape} setCamera={setCamera} />
+                        <Settingsbar activeShape={activeShape} onUpdateShape={handleUpdateShape} onDeleteShape={handleDeleteShape} shapeColor={shapeColor} setShapeColor={setShapeColor} droppedShapes={droppedShapes} dragging={dragging} onUpdateYarnInfo={handleUpdateYarnInfo} yarnInfo={yarnInfo} />
                     </DndContext>
                     }
                 />
                 <Route path="/pattern" element={<Pattern shapes={droppedShapes} />} />
+                {/*<Route path="/yarnSettings" element={<YarnSettings />} />*/}
             </Routes>
 
         </div>

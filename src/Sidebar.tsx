@@ -1,20 +1,22 @@
 import { v4 as uuidv4 } from "uuid";
 import React, {Ref, useEffect, useRef, useState} from "react";
 import Trashcan from "./Trashcan.tsx";
+import * as THREE from "three";
+import {Camera} from "three";
 
-export default function Sidebar({ setDroppedShapes, setActiveId, containerRef, threeJsContainerRef, dragging, setDragging }: { setDroppedShapes: any, setActiveId: any, containerRef: Ref<HTMLDivElement>, threeJsContainerRef: Ref<HTMLCanvasElement>, dragging: boolean, setDragging: any }) {
+export default function Sidebar({ setDroppedShapes, setActiveId, containerRef, threeJsContainerRef, dragging, setDragging, camera }: { setDroppedShapes: any, setActiveId: any, containerRef: Ref<HTMLDivElement>, threeJsContainerRef: Ref<HTMLCanvasElement>, dragging: boolean, setDragging: any, camera: Camera }) {
     const shapes = [
-        { type: "head", label: "Head" },
-        { type: "body", label: "body" },
+        { type: "Sphere", label: "Head" },
+        { type: "Arm", label: "body" },
         { type: "leftArm", label: "LeftArm" },
         { type: "leftLeg", label: "LeftLeg" },
-        { type: "circle", label: "Circle" },
         { type: "square", label: "Square" },
-        { type: "rectangle", label: "Rectangle" },
         { type: "oval", label: "Oval" },
+        { type: "Arm", label: "Arm"},
+        {type: "Sphere", label: "Sphere"}
     ];
 
-
+console.log(camera)
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [currentShape, setCurrentShape] = useState<string | null>(null);
     const dragItemRef = useRef<HTMLDivElement | null>(null);
@@ -43,9 +45,10 @@ export default function Sidebar({ setDroppedShapes, setActiveId, containerRef, t
         }
     }
 
-    console.log(dragging);
-
     const handleMouseUp = (e) => {
+        console.log(e.clientX, window.innerWidth)
+        console.log("MOUSE POS "+((e.clientX / window.innerWidth) * 2 - 1));
+        console.log(threeJsContainerRef.current?.clientWidth)
         if (dragging && currentShape) {
             const width = dragItemRef.current?.offsetWidth;
             const height = dragItemRef.current?.offsetHeight;
@@ -56,14 +59,32 @@ export default function Sidebar({ setDroppedShapes, setActiveId, containerRef, t
                 e?.clientX - navBarRef.current.clientWidth + width / 2 > containerRect.width ||
                 e?.clientY - height / 2 < 0 ||
                 e?.clientY + height / 2 > containerRect.height;
+
+
+            const mouseX = ((e.clientX - containerRect.left) / containerRect.width) * 2 - 1;
+            const mouseY = -((e.clientY - containerRect.top) / containerRect.height) * 2 + 1;
+
+            let worldPosition = { x: 0, y: 0, z: 0 };
+            if (camera) {
+                console.log("camera")
+                const vector = new THREE.Vector3(mouseX, mouseY, 0.5);
+                vector.unproject(camera);
+
+                // Raycast van camera naar klikpunt
+                const dir = vector.sub(camera.position).normalize();
+                const distance = -camera.position.z / dir.z;
+                const pos = camera.position.clone().add(dir.multiplyScalar(distance));
+                worldPosition = { x: pos.x, y: pos.y, z: 0 };
+            }
+
             if(!isOutOfBounds) {
                 const newShape = {
                     id: uuidv4(),
                     type: currentShape,
                     // x: e.clientX - navBarRef.current.clientWidth - width / 2,
                     // y: e.clientY - height / 2,
-                    x: -12,
-                    y: 0,
+                    x: worldPosition.x,
+                    y: worldPosition.y,
                     z: null,
                     length: width,
                     width: width,
@@ -108,7 +129,7 @@ export default function Sidebar({ setDroppedShapes, setActiveId, containerRef, t
 
     return (
         <nav className="Navbar" ref={navBarRef}>
-            <h1>Shapes</h1>
+            <h1 className="shapes-text">Shapes</h1>
             <div className={"draggables"}>
                 {shapes.map((shape) => {
                     return (
