@@ -12,11 +12,8 @@ export default function Sidebar({ setDroppedShapes, setActiveId, containerRef, t
         { type: "leftLeg", label: "LeftLeg" },
         { type: "square", label: "Square" },
         { type: "oval", label: "Oval" },
-        { type: "Arm", label: "Arm"},
-        {type: "Sphere", label: "Sphere"}
     ];
 
-console.log(camera)
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [currentShape, setCurrentShape] = useState<string | null>(null);
     const dragItemRef = useRef<HTMLDivElement | null>(null);
@@ -46,9 +43,6 @@ console.log(camera)
     }
 
     const handleMouseUp = (e) => {
-        console.log(e.clientX, window.innerWidth)
-        console.log("MOUSE POS "+((e.clientX / window.innerWidth) * 2 - 1));
-        console.log(threeJsContainerRef.current?.clientWidth)
         if (dragging && currentShape) {
             const width = dragItemRef.current?.offsetWidth;
             const height = dragItemRef.current?.offsetHeight;

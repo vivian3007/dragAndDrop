@@ -37,10 +37,6 @@ export default function TeddyBearArm({
     const [transformMode, setTransformMode] = useState<'translate' | 'rotate' | 'scale'>('translate');
     const [isDragging, setIsDragging] = useState(false);
 
-    console.log(shape);
-
-
-    console.log(data)
 
     useEffect(() => {
         const canvasWidth = size.width;

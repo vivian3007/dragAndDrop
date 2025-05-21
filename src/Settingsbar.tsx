@@ -62,9 +62,6 @@ export default function Settingsbar({
                     onClick={handlePatternNavigation}
                 >
                     Pattern
-                    {/*<Link to="/pattern" style={{ width: "100%", textDecoration: "none", color: "black" }}>*/}
-                    {/*    Pattern*/}
-                    {/*</Link>*/}
                 </Button>
             </div>
         </nav>

@@ -20,7 +20,7 @@ export default function Settingsbar({
     setShapeColor: any,
     droppedShapes: [],
 }) {
-    const PIXELS_PER_CM = 10; // 10 pixels = 1 cm
+    const PIXELS_PER_CM = 37.8; // 10 pixels = 1 cm
     const [width, setWidth] = useState<number | null>(null);
     const [height, setHeight] = useState<number | null>(null);
     const [length, setLength] = useState<number | null>(null);
@@ -59,22 +59,22 @@ export default function Settingsbar({
     const handleWidthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newScaledWidth = Number(e.target.value);
         setWidth(newScaledWidth);
-        const newBaseWidth = newScaledWidth * PIXELS_PER_CM / (activeShape?.zoom || 1);
-        handleUpdate({ width: newBaseWidth });
+        // const newBaseWidth = newScaledWidth * PIXELS_PER_CM / (activeShape?.zoom || 1);
+        handleUpdate({ width: newScaledWidth * PIXELS_PER_CM});
     };
 
     const handleHeightChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newScaledHeight = Number(e.target.value);
         setHeight(newScaledHeight);
         const newBaseHeight = newScaledHeight * PIXELS_PER_CM / (activeShape?.zoom || 1);
-        handleUpdate({ height: newBaseHeight });
+        handleUpdate({ height: newScaledHeight * PIXELS_PER_CM });
     };
 
     const handleLengthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newScaledLength = Number(e.target.value);
         setLength(newScaledLength);
         const newBaseLength = newScaledLength * PIXELS_PER_CM / (activeShape?.zoom || 1);
-        handleUpdate({ length: newBaseLength });
+        handleUpdate({ length: newScaledLength * PIXELS_PER_CM });
     };
 
     const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {

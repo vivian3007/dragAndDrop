@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useThree } from '@react-three/fiber';
+import {useLoader, useThree} from '@react-three/fiber';
 import { TransformControls } from '@react-three/drei';
+import * as THREE from 'three';
 
 export default function Sphere({
                                    id,
@@ -33,6 +34,8 @@ export default function Sphere({
     const transformControlsRef = useRef<any>(null);
     const [transformMode, setTransformMode] = useState<'translate' | 'rotate' | 'scale'>('translate');
     const [isDragging, setIsDragging] = useState(false);
+
+    const texture = useLoader(THREE.TextureLoader, '/textures/stitch-texture.jpg');
 
     useEffect(() => {
         const canvasWidth = size.width;
@@ -68,8 +71,6 @@ export default function Sphere({
         }
     }, [isSelected]);
 
-    console.log(isSelected)
-
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
             if (!isSelected) return;
@@ -104,7 +105,8 @@ export default function Sphere({
             <mesh ref={meshRef} scale={[1, 1, 1]}>
                 {/*position={[x, y, z]*/}
                 <sphereGeometry args={[1, 32, 32]} />
-                <meshStandardMaterial
+                <meshBasicMaterial
+                    map={texture}
                     color={shape?.color ?? 'white'}
                     metalness={0}
                     roughness={0.8}
