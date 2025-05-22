@@ -1,4 +1,6 @@
 import {useEffect, useState} from "react";
+import { db } from "../firebase-config.js";
+import { addDoc, getDocs, collection } from "firebase/firestore";
 import {Button} from "@mui/material";
 
 export default function YarnSettings({onUpdateYarnInfo, yarnInfo} : {onUpdateYarnInfo: any,  yarnInfo: {id: number, name: string, weight: number, mPerSkein: number, hooksize: number, material: string, color: string}}) {
@@ -8,6 +10,22 @@ export default function YarnSettings({onUpdateYarnInfo, yarnInfo} : {onUpdateYar
     const [material, setMaterial] = useState<string | null>(null);
     const [hooksize, setHooksize] = useState<number | null>(null);
     const [color, setColor] = useState<string | null>(null);
+
+    const saveToFirestore = async () => {
+        try {
+            const docRef = await addDoc(collection(db, "yarn"), {
+                name,
+                weight,
+                mPerSkein,
+                hooksize,
+                material,
+                color,
+            });
+            alert(`Yarn info opgeslagen in Firestore met ID: ${docRef.id}`);
+        } catch (error) {
+            alert("Fout bij opslaan: " + error);
+        }
+    };
 
     const handleUpdate = (updates: Partial<any>) => {
         if(yarnInfo) {
@@ -35,13 +53,13 @@ export default function YarnSettings({onUpdateYarnInfo, yarnInfo} : {onUpdateYar
     };
 
     const handleWeightChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newWeight = e.target.value;
+        const newWeight = Number(e.target.value);
         setWeight(newWeight);
         handleUpdate({weight: newWeight});
     };
 
     const handleMPerSkeinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newMPerSkein = e.target.value;
+        const newMPerSkein = Number(e.target.value);
         setMPerSkein(newMPerSkein);
         handleUpdate({mPerSkein: newMPerSkein});
     };
@@ -53,7 +71,7 @@ export default function YarnSettings({onUpdateYarnInfo, yarnInfo} : {onUpdateYar
     };
 
     const handleHooksizeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newHooksize = e.target.value;
+        const newHooksize = Number(e.target.value);
         setHooksize(newHooksize);
         handleUpdate({hooksize: newHooksize});
     };
@@ -63,8 +81,6 @@ export default function YarnSettings({onUpdateYarnInfo, yarnInfo} : {onUpdateYar
         setColor(newColor);
         handleUpdate({color: newColor});
     };
-
-    console.log(name);
 
     return (
         <div>
@@ -143,6 +159,7 @@ export default function YarnSettings({onUpdateYarnInfo, yarnInfo} : {onUpdateYar
                     />
                 </div>
             </form>
+            <Button variant="contained" color="inherit" sx={{width: 1, backgroundColor: "#F2F3AE", marginBottom: "10px"}} onClick={saveToFirestore}>Save</Button>
         </div>
     )
 }

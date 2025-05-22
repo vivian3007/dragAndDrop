@@ -46,7 +46,6 @@ export default function Sidebar({ setDroppedShapes, setActiveId, containerRef, t
         if (dragging && currentShape) {
             const width = dragItemRef.current?.offsetWidth;
             const height = dragItemRef.current?.offsetHeight;
-            // const containerRect = containerRef.current.getBoundingClientRect();
             const containerRect = threeJsContainerRef.current?.getBoundingClientRect();
             const isOutOfBounds =
                 e?.clientX - navBarRef.current.clientWidth - width / 2 < 0 ||
@@ -64,7 +63,6 @@ export default function Sidebar({ setDroppedShapes, setActiveId, containerRef, t
                 const vector = new THREE.Vector3(mouseX, mouseY, 0.5);
                 vector.unproject(camera);
 
-                // Raycast van camera naar klikpunt
                 const dir = vector.sub(camera.position).normalize();
                 const distance = -camera.position.z / dir.z;
                 const pos = camera.position.clone().add(dir.multiplyScalar(distance));
@@ -75,8 +73,6 @@ export default function Sidebar({ setDroppedShapes, setActiveId, containerRef, t
                 const newShape = {
                     id: uuidv4(),
                     type: currentShape,
-                    // x: e.clientX - navBarRef.current.clientWidth - width / 2,
-                    // y: e.clientY - height / 2,
                     x: worldPosition.x,
                     y: worldPosition.y,
                     z: null,
@@ -85,9 +81,9 @@ export default function Sidebar({ setDroppedShapes, setActiveId, containerRef, t
                     height: height,
                     color: "#FFFFFF",
                     name: null,
-                    rotateX: null,
-                    rotateY: null,
-                    rotateZ: null,
+                    rotation_x: null,
+                    rotation_y: null,
+                    rotation_z: null,
                     zIndex: 10,
                     zoom: 1,
                 };

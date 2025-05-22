@@ -1,8 +1,8 @@
-import React from "react";
-import { useState, useEffect } from "react";
+import React, {useEffect, useState} from "react";
 import { Link } from "react-router-dom";
 import { Button, Card } from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Delete";
+import {collection, getDocs} from "firebase/firestore";
+import {db} from "../firebase-config.js";
 
 interface Shape {
     id: string;
@@ -15,14 +15,29 @@ interface Shape {
     length: number;
     color: string;
     name: string;
-    rotateX: number;
-    rotateY: number;
-    rotateZ: number;
+    rotation_x: number;
+    rotation_y: number;
+    rotation_z: number;
     zIndex: number;
 }
 
 interface Yarn {
-    weight: string; // bijv. 'medium', 'bulky', enz.
+    id: string;
+    name: string;
+    weight: number;
+    mPerSkein: number;
+    hooksize: number;
+    material: string;
+    color: string;
+}
+
+interface Amigurumi {
+    id: string;
+    name: string;
+    height: number;
+    tags: [];
+    favorite: boolean;
+    yarn_id: string;
 }
 
 interface PatternProps {
@@ -34,6 +49,7 @@ const Pattern: React.FC<PatternProps> = ({ shapes, yarn }) => {
     const PIXELS_PER_CM = 37.8; // 10 pixels = 1 cm
     const [patterns, setPatterns] = useState<any[]>([]);
 
+
     const rowHeights: Record<string, number> = {
         lace: 0.25,
         superFine: 0.3,
@@ -44,6 +60,29 @@ const Pattern: React.FC<PatternProps> = ({ shapes, yarn }) => {
         superBulky: 0.7,
         jumbo: 1.0,
     };
+    //
+    // const fetchYarns = async () => {
+    //     try {
+    //         const querySnapshot = await getDocs(collection(db, "yarn"));
+    //         const yarnData: Yarn[] = querySnapshot.docs.map((doc) => ({
+    //             id: doc.id,
+    //             ...doc.data(),
+    //         } as Yarn));
+    //         setYarns(yarnData);
+    //     } catch (error) {
+    //         console.error("Fout bij ophalen van yarns:", error);
+    //         alert("Fout bij ophalen van gegevens: " + error);
+    //     }
+    // };
+    //
+    //
+    //
+    // useEffect(() => {
+    //     fetchYarns();
+    // }, []);
+    //
+    // console.log(yarns);
+
 
 
     const generatePattern = (singleShape: Shape, yarnWeight: string) => {
@@ -93,9 +132,9 @@ const Pattern: React.FC<PatternProps> = ({ shapes, yarn }) => {
             name: singleShape.name,
             width: singleShape.width,
             height: singleShape.height,
-            rotateX: singleShape.rotateX,
-            rotateY: singleShape.rotateY,
-            rotateZ: singleShape.rotateZ,
+            rotation_x: singleShape.rotation_x,
+            rotation_y: singleShape.rotation_y,
+            rotation_z: singleShape.rotation_z,
             rows,
             incArray,
             scArray,

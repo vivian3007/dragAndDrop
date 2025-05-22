@@ -25,9 +25,9 @@ export default function Sphere({
     const x = shape?.x ?? 0;
     const y = shape?.y ?? 0;
     const z = shape?.z ?? 0;
-    const rotateX = shape?.rotateX ?? 0;
-    const rotateY = shape?.rotateY ?? 0;
-    const rotateZ = shape?.rotateZ ?? 0;
+    const rotation_x = shape?.rotation_x ?? 0;
+    const rotation_y = shape?.rotation_y ?? 0;
+    const rotation_z = shape?.rotation_z ?? 0;
     const zoom = shape?.zoom ?? 1;
     const { camera, size } = useThree();
     const meshRef = useRef<THREE.Mesh>(null);
@@ -54,12 +54,12 @@ export default function Sphere({
             meshRef.current.scale.set(scaleX, scaleY, scaleZ);
             meshRef.current.position.set(x, y, z);
             meshRef.current.rotation.set(
-                rotateX * (Math.PI / 180),
-                rotateY * (Math.PI / 180),
-                rotateZ * (Math.PI / 180)
+                rotation_x * (Math.PI / 180),
+                rotation_y * (Math.PI / 180),
+                rotation_z * (Math.PI / 180)
             );
         }
-    }, [camera, size, width, height, length, zoom, x, y, z, rotateX, rotateY, rotateZ, isSelected, isDragging]);
+    }, [camera, size, width, height, length, zoom, x, y, z, rotation_x, rotation_y, rotation_z, isSelected, isDragging]);
 
     useEffect(() => {
         if (transformControlsRef.current) {
@@ -139,9 +139,9 @@ export default function Sphere({
                                 updatedShape.y = mesh.position.y;
                                 updatedShape.z = mesh.position.z;
                             } else if (transformMode === 'rotate') {
-                                updatedShape.rotateX = mesh.rotation.x * (180 / Math.PI);
-                                updatedShape.rotateY = mesh.rotation.y * (180 / Math.PI);
-                                updatedShape.rotateZ = mesh.rotation.z * (180 / Math.PI);
+                                updatedShape.rotation_x = mesh.rotation.x * (180 / Math.PI);
+                                updatedShape.rotation_y = mesh.rotation.y * (180 / Math.PI);
+                                updatedShape.rotation_z = mesh.rotation.z * (180 / Math.PI);
                             } else if (transformMode === 'scale') {
                                 const canvasWidth = size.width;
                                 const canvasHeight = size.height;

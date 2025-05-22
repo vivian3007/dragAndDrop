@@ -32,6 +32,7 @@ export default function Settingsbar({
     const [zoom, setZoom] = useState(1);
 
     const handleUpdate = (updates: Partial<any>) => {
+        console.log(updates)
         if (activeShape) {
             onUpdateShape({
                 id: activeShape.id,
@@ -86,19 +87,19 @@ export default function Settingsbar({
     const handleRotateXChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newRotateX = Number(e.target.value);
         setRotateX(newRotateX);
-        handleUpdate({ rotateX: newRotateX });
+        handleUpdate({ rotation_x: newRotateX });
     };
 
     const handleRotateYChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newRotateY = Number(e.target.value);
         setRotateY(newRotateY);
-        handleUpdate({ rotateY: newRotateY });
+        handleUpdate({ rotation_y: newRotateY });
     };
 
     const handleRotateZChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newRotateZ = Number(e.target.value);
         setRotateX(newRotateZ);
-        handleUpdate({ rotateZ: newRotateZ });
+        handleUpdate({ rotation_z: newRotateZ });
     };
 
     const handleColorChange = (newShade: ColorResult) => {
