@@ -60,30 +60,6 @@ const Pattern: React.FC<PatternProps> = ({ shapes, yarn }) => {
         superBulky: 0.7,
         jumbo: 1.0,
     };
-    //
-    // const fetchYarns = async () => {
-    //     try {
-    //         const querySnapshot = await getDocs(collection(db, "yarn"));
-    //         const yarnData: Yarn[] = querySnapshot.docs.map((doc) => ({
-    //             id: doc.id,
-    //             ...doc.data(),
-    //         } as Yarn));
-    //         setYarns(yarnData);
-    //     } catch (error) {
-    //         console.error("Fout bij ophalen van yarns:", error);
-    //         alert("Fout bij ophalen van gegevens: " + error);
-    //     }
-    // };
-    //
-    //
-    //
-    // useEffect(() => {
-    //     fetchYarns();
-    // }, []);
-    //
-    // console.log(yarns);
-
-
 
     const generatePattern = (singleShape: Shape, yarnWeight: string) => {
         const rowHeight = rowHeights[yarnWeight] * PIXELS_PER_CM ?? 4;

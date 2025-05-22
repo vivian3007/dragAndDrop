@@ -3,6 +3,9 @@ import React, {Ref, useEffect, useRef, useState} from "react";
 import Trashcan from "./Trashcan.tsx";
 import * as THREE from "three";
 import {Camera} from "three";
+import {setDoc, doc} from "firebase/firestore";
+import {db} from "../firebase-config.js";
+
 
 export default function Sidebar({ setDroppedShapes, setActiveId, containerRef, threeJsContainerRef, dragging, setDragging, camera }: { setDroppedShapes: any, setActiveId: any, containerRef: Ref<HTMLDivElement>, threeJsContainerRef: Ref<HTMLCanvasElement>, dragging: boolean, setDragging: any, camera: Camera }) {
     const shapes = [
@@ -42,7 +45,7 @@ export default function Sidebar({ setDroppedShapes, setActiveId, containerRef, t
         }
     }
 
-    const handleMouseUp = (e) => {
+    const handleMouseUp = async (e) => {
         if (dragging && currentShape) {
             const width = dragItemRef.current?.offsetWidth;
             const height = dragItemRef.current?.offsetHeight;
@@ -75,20 +78,53 @@ export default function Sidebar({ setDroppedShapes, setActiveId, containerRef, t
                     type: currentShape,
                     x: worldPosition.x,
                     y: worldPosition.y,
-                    z: null,
+                    z: 0,
                     length: width,
                     width: width,
                     height: height,
                     color: "#FFFFFF",
                     name: null,
-                    rotation_x: null,
-                    rotation_y: null,
-                    rotation_z: null,
+                    rotation_x: 0,
+                    rotation_y: 0,
+                    rotation_z: 0,
                     zIndex: 10,
                     zoom: 1,
                 };
                 setDroppedShapes((prevShapes: any[]) => [...prevShapes, newShape]);
                 setActiveId(newShape.id)
+
+                try {
+                    const shapeRef = doc(db, "shapes", newShape.id);
+
+                    const shapeData: { [key: string]: any } = {
+                        type: newShape.type,
+                        x: newShape.x ?? 0,
+                        y: newShape.y ?? 0,
+                        z: newShape.z ?? 0,
+                        width: newShape.width ?? 0,
+                        height: newShape.height ?? 0,
+                        length: newShape.length ?? 0,
+                        color: newShape.color ?? "#FFFFFF",
+                        name: newShape.name ?? null,
+                        rotation_x: newShape.rotation_x ?? 0,
+                        rotation_y: newShape.rotation_y ?? 0,
+                        rotation_z: newShape.rotation_z ?? 0,
+                        zIndex: newShape.zIndex ?? 10,
+                        zoom: newShape.zoom ?? 1,
+                    };
+
+                    Object.keys(shapeData).forEach((key) => {
+                        if (shapeData[key] === undefined) {
+                            console.warn(`Field ${key} is undefined, excluding from Firestore`);
+                            delete shapeData[key];
+                        }
+                    });
+
+                    await setDoc(shapeRef, shapeData);
+                } catch (error) {
+                    console.error("Error saving shape to Firestore:", error);
+                    alert("Error saving shape: " + error);
+                }
             }
         }
         setDragging(false);

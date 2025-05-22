@@ -10,7 +10,7 @@ import useMousePosition from "./useMousePosition";
 import {v4 as uuidv4} from "uuid";
 import Settingsbar from "./Settingsbar.tsx";
 import {Route, Routes, Link} from "react-router-dom";
-import {addDoc, collection, getDocs, doc, updateDoc, getDoc} from "firebase/firestore";
+import {collection, getDocs, doc, updateDoc, getDoc} from "firebase/firestore";
 import {db} from "../firebase-config.js";
 
 interface Amigurumi {
@@ -242,7 +242,7 @@ export default function App() {
         console.log(updatedYarnInfo)
         setYarnInfo(
         yarnInfo.id === updatedYarnInfo.id
-            ? { name: updatedYarnInfo.name, weight: updatedYarnInfo.weight, mPerSkein: updatedYarnInfo.mPerSkein, hooksize: updatedYarnInfo.hooksize, material: updatedYarnInfo.material, color: updatedYarnInfo.color }
+            ? { id: yarnInfo.id, name: updatedYarnInfo.name, weight: updatedYarnInfo.weight, mPerSkein: updatedYarnInfo.mPerSkein, hooksize: updatedYarnInfo.hooksize, material: updatedYarnInfo.material, color: updatedYarnInfo.color }
             : yarnInfo
         );
     };

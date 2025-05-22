@@ -1,6 +1,6 @@
 import {useEffect, useState} from "react";
 import { db } from "../firebase-config.js";
-import { addDoc, getDocs, collection } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import {Button} from "@mui/material";
 
 export default function YarnSettings({onUpdateYarnInfo, yarnInfo} : {onUpdateYarnInfo: any,  yarnInfo: {id: number, name: string, weight: number, mPerSkein: number, hooksize: number, material: string, color: string}}) {
@@ -11,18 +11,26 @@ export default function YarnSettings({onUpdateYarnInfo, yarnInfo} : {onUpdateYar
     const [hooksize, setHooksize] = useState<number | null>(null);
     const [color, setColor] = useState<string | null>(null);
 
+    console.log(yarnInfo)
+
     const saveToFirestore = async () => {
         try {
-            const docRef = await addDoc(collection(db, "yarn"), {
-                name,
-                weight,
-                mPerSkein,
-                hooksize,
-                material,
-                color,
-            });
-            alert(`Yarn info opgeslagen in Firestore met ID: ${docRef.id}`);
+            const yarnData = {
+                name: name ?? null,
+                weight: weight ?? 0,
+                mPerSkein: mPerSkein ?? 0,
+                hooksize: hooksize ?? 0,
+                material: material ?? null,
+                color: color ?? null,
+            };
+
+            const docId = yarnInfo.id.toString();
+            const yarnRef = doc(db, "yarn", docId);
+
+            await setDoc(yarnRef, yarnData, { merge: true });
+            console.log("bijgewerkt")
         } catch (error) {
+            console.error("Fout bij opslaan yarn:", error);
             alert("Fout bij opslaan: " + error);
         }
     };
