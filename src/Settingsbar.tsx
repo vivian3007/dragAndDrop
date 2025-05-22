@@ -36,7 +36,6 @@ export default function Settingsbar({
     };
 
     const handleSettingsChange = () => {
-        console.log("yarn settings")
         setShowYarnSettings(!showYarnSettings)
     }
 

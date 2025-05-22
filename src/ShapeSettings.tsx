@@ -32,7 +32,6 @@ export default function Settingsbar({
     const [zoom, setZoom] = useState(1);
 
     const handleUpdate = (updates: Partial<any>) => {
-        console.log(updates)
         if (activeShape) {
             onUpdateShape({
                 id: activeShape.id,
@@ -41,8 +40,6 @@ export default function Settingsbar({
             });
         }
     };
-
-    console.log(activeShape);
 
     useEffect(() => {
         setWidth(activeShape ? activeShape.width / PIXELS_PER_CM * activeShape.zoom : 50);

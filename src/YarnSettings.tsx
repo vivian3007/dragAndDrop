@@ -11,8 +11,6 @@ export default function YarnSettings({onUpdateYarnInfo, yarnInfo} : {onUpdateYar
     const [hooksize, setHooksize] = useState<number | null>(null);
     const [color, setColor] = useState<string | null>(null);
 
-    console.log(yarnInfo)
-
     const saveToFirestore = async () => {
         try {
             const yarnData = {
@@ -28,7 +26,6 @@ export default function YarnSettings({onUpdateYarnInfo, yarnInfo} : {onUpdateYar
             const yarnRef = doc(db, "yarn", docId);
 
             await setDoc(yarnRef, yarnData, { merge: true });
-            console.log("bijgewerkt")
         } catch (error) {
             console.error("Fout bij opslaan yarn:", error);
             alert("Fout bij opslaan: " + error);

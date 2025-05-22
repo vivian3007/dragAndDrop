@@ -17,6 +17,7 @@ export default function ThreeJsField({
     setActiveId,
     onUpdateShape,
     setCamera,
+    onDeleteShape,
                                      }: {
     droppedShapes: [];
     threeJsContainerRef: Ref<HTMLCanvasElement>;
@@ -24,6 +25,7 @@ export default function ThreeJsField({
     setActiveId: any;
     onUpdateShape: any;
     setCamera: any;
+    onDeleteShape: any;
 }) {
     const orbitControlsRef = useRef(null);
     const [showGrid, setShowGrid] = useState(false);
@@ -37,6 +39,7 @@ export default function ThreeJsField({
     }
 
     const handleSelect = (id) => {
+        console.log(id)
         setActiveId(activeId === id ? null : id);
     };
 
@@ -45,6 +48,9 @@ export default function ThreeJsField({
             if (event.key.toLowerCase() === 'g') {
                 setShowGrid((prev) => !prev);
             }
+            if (event.key.toLowerCase() === "delete" && activeId) {
+                onDeleteShape(activeId);
+            }
         };
 
         window.addEventListener('keydown', handleKeyPress);
@@ -52,7 +58,7 @@ export default function ThreeJsField({
         return () => {
             window.removeEventListener('keydown', handleKeyPress);
         };
-    }, []);
+    }, [activeId]);
 
 
 
@@ -60,7 +66,7 @@ export default function ThreeJsField({
         <Canvas
             camera={{position: [0, 0, 40], fov: 75}}
             ref={threeJsContainerRef}
-            style={{height: "100vh"}}
+            style={{height: "92vh"}}
         >
             <CameraSetter setCamera={setCamera}/>
             {showGrid &&

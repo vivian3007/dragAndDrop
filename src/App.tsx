@@ -1,17 +1,14 @@
 import "./styles.css";
-import Sidebar from "./Sidebar.tsx";
-import ShapeField from "./ShapeField";
-import ThreeJsField from "./ThreeJsField.tsx"
 import Pattern from "./Pattern";
-import YarnSettings from "./YarnSettings"
+import MyPatterns from "./MyPatterns";
+import Editor from "./Editor";
 import { useState, useRef, useEffect } from "react";
-import {DndContext, DragOverlay, PointerSensor, useSensor, useSensors} from "@dnd-kit/core";
-import useMousePosition from "./useMousePosition";
 import {v4 as uuidv4} from "uuid";
-import Settingsbar from "./Settingsbar.tsx";
+import Homepage from "./Homepage.tsx";
 import {Route, Routes, Link} from "react-router-dom";
-import {collection, getDocs, doc, updateDoc, getDoc} from "firebase/firestore";
+import {collection, getDocs, doc, updateDoc, getDoc, deleteDoc} from "firebase/firestore";
 import {db} from "../firebase-config.js";
+import {AppBar, Box, Container, Toolbar} from "@mui/material";
 
 interface Amigurumi {
     id: string;
@@ -71,7 +68,7 @@ export default function App() {
     const [activeId, setActiveId] = useState(null);
     const [shapeColor, setShapeColor] = useState('#FFFFFF');
 
-    const [amigurumi, setAmigurumi] = useState<Amigurumi[]>([]);
+    const [amigurumis, setAmigurumis] = useState<Amigurumi[]>([]);
     const [yarns, setYarns] = useState<Yarn[]>([]);
     const [shapes, setShapes] = useState<Shape[]>([]);
     const [amigurumiShape, setAmigurumiShape] = useState<AmigurumiShape[]>([]);
@@ -85,7 +82,7 @@ export default function App() {
                 id: doc.id,
                 ...doc.data(),
             } as Amigurumi));
-            setAmigurumi(amigurumiData);
+            setAmigurumis(amigurumiData);
             const querySnapshotYarn = await getDocs(collection(db, "yarn"));
             const yarnData: Yarn[] = querySnapshotYarn.docs.map((doc) => ({
                 id: doc.id,
@@ -116,7 +113,7 @@ export default function App() {
 
     }, []);
 
-    console.log(amigurumi)
+    console.log(amigurumis)
     console.log(amigurumiShape)
     console.log(yarns)
     console.log(shapes)
@@ -163,39 +160,36 @@ export default function App() {
     // }, []);
 
     const activeShape = droppedShapes.find((shape) => shape.id === activeId);
-    const handleDragEnd = (event) => {
-        const { over, delta } = event;
-        if (over && containerRef.current) {
-            if(over?.id === "trashcan"){
-                const updatedDroppedShapes = droppedShapes.filter(shape => shape.id !== activeShape?.id);
-                setDroppedShapes(updatedDroppedShapes);
-            }
-            const containerRect = containerRef.current.getBoundingClientRect();
-                const newX = activeShape?.x + delta.x;
-                const newY = activeShape?.y + delta.y;
-
-                const isOutOfBounds =
-                    newX < 0 ||
-                    newX + activeShape?.width > containerRect.width ||
-                    newY < 0 ||
-                    newY + activeShape?.height > containerRect.height;
-
-                if (!isOutOfBounds) {
-                    setDroppedShapes((prevShapes) =>
-                        prevShapes.map((shape) =>
-                            shape.id === activeId ? { ...shape, x: newX, y: newY } : shape
-                        )
-                    );
-                } else {
-                    console.log("Vorm buiten grenzen bij verplaatsen");
-                }
-            }
-    };
+    // const handleDragEnd = (event) => {
+    //     const { over, delta } = event;
+    //     if (over && containerRef.current) {
+    //         if(over?.id === "trashcan"){
+    //             const updatedDroppedShapes = droppedShapes.filter(shape => shape.id !== activeShape?.id);
+    //             setDroppedShapes(updatedDroppedShapes);
+    //         }
+    //         const containerRect = containerRef.current.getBoundingClientRect();
+    //             const newX = activeShape?.x + delta.x;
+    //             const newY = activeShape?.y + delta.y;
+    //
+    //             const isOutOfBounds =
+    //                 newX < 0 ||
+    //                 newX + activeShape?.width > containerRect.width ||
+    //                 newY < 0 ||
+    //                 newY + activeShape?.height > containerRect.height;
+    //
+    //             if (!isOutOfBounds) {
+    //                 setDroppedShapes((prevShapes) =>
+    //                     prevShapes.map((shape) =>
+    //                         shape.id === activeId ? { ...shape, x: newX, y: newY } : shape
+    //                     )
+    //                 );
+    //             } else {
+    //                 console.log("Vorm buiten grenzen bij verplaatsen");
+    //             }
+    //         }
+    // };
 
     const handleUpdateShape = async (updatedShape: Shape) => {
-        console.log("Updated Shape:", updatedShape);
-        console.log("Active Shape:", activeShape);
-
         setDroppedShapes((prevShapes) =>
             prevShapes.map((shape) =>
                 shape.id === updatedShape.id
@@ -236,10 +230,7 @@ export default function App() {
         }
     };
 
-    console.log(activeShape)
-
     const handleUpdateYarnInfo = (updatedYarnInfo: { id: string; name: string; weight: number; mPerSkein: number, hooksize: number, material: string, color: string }) => {
-        console.log(updatedYarnInfo)
         setYarnInfo(
         yarnInfo.id === updatedYarnInfo.id
             ? { id: yarnInfo.id, name: updatedYarnInfo.name, weight: updatedYarnInfo.weight, mPerSkein: updatedYarnInfo.mPerSkein, hooksize: updatedYarnInfo.hooksize, material: updatedYarnInfo.material, color: updatedYarnInfo.color }
@@ -247,35 +238,60 @@ export default function App() {
         );
     };
 
-    const handleDeleteShape = (id: string) => {
-        setDroppedShapes((prev) => prev.filter((shape) => shape.id !== id));
-        if (activeShape?.id === id) {
-            setActiveId(null);
-        }
-    };
+    const handleDeleteShape = async (id: string) => {
+        try {
+            if (!id || typeof id !== "string") {
+                return;
+            }
 
-    console.log(droppedShapes)
+            setDroppedShapes((prev) => prev.filter((shape) => shape.id !== id));
+            if (activeShape?.id === id) {
+                setActiveId(null);
+            }
+
+            const shapeRef = doc(db, "shapes", id);
+            const shapeSnap = await getDoc(shapeRef);
+            if (!shapeSnap.exists()) {
+                console.warn(`Shape ${id} does not exist in Firestore`);
+                return;
+            }
+            await deleteDoc(shapeRef);
+            console.log(`Shape ${id} deleted from Firestore`);
+        } catch (error: any) {
+            console.error("Error deleting shape from Firestore:", error, {
+                code: error.code,
+                message: error.message,
+            });
+
+            setDroppedShapes(droppedShapes);
+            if (activeShape?.id === id && !droppedShapes.some((shape) => shape.id === id)) {
+                setActiveId(activeShape.id);
+            }
+        }
+    }
 
     return (
         <div className="App">
-            <Routes>
-                <Route path="/" element={
-                    <DndContext onDragEnd={handleDragEnd}>
-                        <Sidebar setDroppedShapes={setDroppedShapes} setActiveId={setActiveId} containerRef={containerRef} threeJsContainerRef={threeJsContainerRef} dragging={dragging} setDragging={setDragging} camera={camera} />
-                        {/*<ShapeField*/}
-                        {/*    droppedShapes={droppedShapes}*/}
-                        {/*    containerRef={containerRef}*/}
-                        {/*    shapeColor={shapeColor}*/}
-                        {/*/>*/}
-                        <ThreeJsField droppedShapes={droppedShapes} threeJsContainerRef={threeJsContainerRef} activeId={activeId} setActiveId={setActiveId} onUpdateShape={handleUpdateShape} setCamera={setCamera} />
-                        <Settingsbar activeShape={activeShape} onUpdateShape={handleUpdateShape} onDeleteShape={handleDeleteShape} shapeColor={shapeColor} setShapeColor={setShapeColor} droppedShapes={droppedShapes} dragging={dragging} onUpdateYarnInfo={handleUpdateYarnInfo} yarnInfo={yarnInfo} />
-                    </DndContext>
+            <AppBar position={"static"} style={{ backgroundColor: "#F2F3AE", height: "8vh" }}>
+                <Container maxWidth="xl" sx={{marginLeft: 0}}>
+                    <Toolbar disableGutters>
+                        <Link to={"/"} className="navbar-button">Home</Link>
+                        <Link to={"/myPatterns"} className="navbar-button">My patterns</Link>
+                        <Link to={"/editor"} className="navbar-button">New pattern</Link>
+                    </Toolbar>
+                </Container>
+            </AppBar>
+            <Box>
+                <Routes>
+                    <Route path="/" element={<Homepage amigurumis={amigurumis} setAmigurumis={setAmigurumis} />} />
+                    <Route path="/myPatterns" element={<MyPatterns amigurumis={amigurumis} setAmigurumis={setAmigurumis} />} />
+                    <Route path="/editor" element={
+                        <Editor droppedShapes={droppedShapes} setDroppedShapes={setDroppedShapes} activeId={activeId} setActiveId={setActiveId} activeShape={activeShape} containerRef={containerRef} threeJsContainerRef={threeJsContainerRef} dragging={dragging} setDragging={setDragging} camera={camera} handleUpdateShape={handleUpdateShape} setCamera={setCamera} handleDeleteShape={handleDeleteShape} shapeColor={shapeColor} setShapeColor={setShapeColor} handleUpdateYarnInfo={handleUpdateYarnInfo} yarnInfo={yarnInfo} />
                     }
-                />
-                <Route path="/pattern" element={<Pattern shapes={droppedShapes} />} />
-                {/*<Route path="/yarnSettings" element={<YarnSettings />} />*/}
-            </Routes>
-
+                    />
+                    <Route path="/pattern" element={<Pattern shapes={droppedShapes} />} />
+                </Routes>
+            </Box>
         </div>
     );
 }
