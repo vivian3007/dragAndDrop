@@ -5,10 +5,12 @@ import Editor from "./Editor";
 import { useState, useRef, useEffect } from "react";
 import {v4 as uuidv4} from "uuid";
 import Homepage from "./Homepage.tsx";
-import {Route, Routes, Link} from "react-router-dom";
+import {Route, Routes, Link, useNavigate} from "react-router-dom";
 import {collection, getDocs, doc, updateDoc, getDoc, deleteDoc} from "firebase/firestore";
-import {db} from "../firebase-config.js";
-import {AppBar, Box, Container, Toolbar} from "@mui/material";
+import {db, auth} from "../firebase-config.js";
+import {AppBar, Box, Button, Container, Toolbar} from "@mui/material";
+import Login from "./Login.tsx";
+import { signOut } from 'firebase/auth';
 
 interface Amigurumi {
     id: string;
@@ -73,7 +75,7 @@ export default function App() {
     const [shapes, setShapes] = useState<Shape[]>([]);
     const [amigurumiShape, setAmigurumiShape] = useState<AmigurumiShape[]>([]);
 
-
+    const navigate = useNavigate();
 
     const fetchData = async () => {
         try {
@@ -270,20 +272,37 @@ export default function App() {
         }
     }
 
+    const handleLogout = async () => {
+        try {
+            await signOut(auth);
+            navigate('/');
+        } catch (error) {
+            console.error('Fout bij uitloggen:', error.message);
+        }
+    };
+
     return (
         <div className="App">
             <AppBar position={"static"} style={{ backgroundColor: "#F2F3AE", height: "8vh" }}>
                 <Container maxWidth="xl" sx={{marginLeft: 0}}>
                     <Toolbar disableGutters>
-                        <Link to={"/"} className="navbar-button">Home</Link>
+                        <Link to={"/home"} className="navbar-button">Home</Link>
                         <Link to={"/myPatterns"} className="navbar-button">My patterns</Link>
                         <Link to={"/editor"} className="navbar-button">New pattern</Link>
+                        <Button
+                            onClick={handleLogout}
+                            className="navbar-button"
+                            sx={{ color: 'black', textTransform: 'none', fontSize: 'inherit' }}
+                        >
+                            Uitloggen
+                        </Button>
                     </Toolbar>
                 </Container>
             </AppBar>
             <Box>
                 <Routes>
-                    <Route path="/" element={<Homepage amigurumis={amigurumis} setAmigurumis={setAmigurumis} />} />
+                    <Route path={"/"} element={<Login />} />
+                    <Route path="/home" element={<Homepage amigurumis={amigurumis} setAmigurumis={setAmigurumis} />} />
                     <Route path="/myPatterns" element={<MyPatterns amigurumis={amigurumis} setAmigurumis={setAmigurumis} />} />
                     <Route path="/editor" element={
                         <Editor droppedShapes={droppedShapes} setDroppedShapes={setDroppedShapes} activeId={activeId} setActiveId={setActiveId} activeShape={activeShape} containerRef={containerRef} threeJsContainerRef={threeJsContainerRef} dragging={dragging} setDragging={setDragging} camera={camera} handleUpdateShape={handleUpdateShape} setCamera={setCamera} handleDeleteShape={handleDeleteShape} shapeColor={shapeColor} setShapeColor={setShapeColor} handleUpdateYarnInfo={handleUpdateYarnInfo} yarnInfo={yarnInfo} />

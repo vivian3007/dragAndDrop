@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useThree } from '@react-three/fiber';
+import {useLoader, useThree} from '@react-three/fiber';
 import * as THREE from 'three';
 import { TransformControls } from '@react-three/drei';
 
@@ -36,6 +36,8 @@ export default function TeddyBearArm({
     const transformControlsRef = useRef<any>(null);
     const [transformMode, setTransformMode] = useState<'translate' | 'rotate' | 'scale'>('translate');
     const [isDragging, setIsDragging] = useState(false);
+
+    const texture = useLoader(THREE.TextureLoader, '/textures/stitch-texture.jpg');
 
 
     useEffect(() => {
@@ -107,11 +109,11 @@ export default function TeddyBearArm({
             <mesh position={[0, 0.5, 0]} ref={meshRef}>
                 <mesh position={[0, 0.5, 0]} ref={meshRef}>
                     <cylinderGeometry args={[0.5, 0.5, 1, 32, 1, true]} />
-                    <meshStandardMaterial color={shape?.color ?? 'white'} metalness={0} roughness={0.8} side={THREE.DoubleSide} />
+                    <meshBasicMaterial map={texture} color={shape?.color ?? 'white'} metalness={0} roughness={0.8} side={THREE.DoubleSide} />
                 </mesh>
                 <mesh position={[0, 1, 0]} ref={meshRef}>
                     <sphereGeometry args={[0.5, 32, 16]} />
-                    <meshStandardMaterial color={shape?.color ?? 'white'} metalness={0} roughness={0.8} side={THREE.DoubleSide} />
+                    <meshBasicMaterial map={texture} color={shape?.color ?? 'white'} metalness={0} roughness={0.8} side={THREE.DoubleSide} />
                 </mesh>
             </mesh>
             {isSelected && (
