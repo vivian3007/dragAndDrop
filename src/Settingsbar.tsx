@@ -7,6 +7,16 @@ import { ColorResult } from '@uiw/color-convert';
 import YarnSettings from "./YarnSettings.tsx";
 import ShapeSettings from "./ShapeSettings.tsx"
 
+interface Amigurumi {
+    id: string;
+    name: string;
+    height: number | null;
+    tags: string[];
+    favorite: boolean;
+    yarn_id: string | null;
+    user_id: string;
+}
+
 export default function Settingsbar({
                                         activeShape,
                                         onUpdateShape,
@@ -15,7 +25,7 @@ export default function Settingsbar({
                                         setShapeColor,
                                         droppedShapes,
                                         onUpdateYarnInfo,
-                                        yarnInfo
+                                        yarnInfo,
                                     }: {
     activeShape: any,
     onUpdateShape: any,
@@ -24,14 +34,15 @@ export default function Settingsbar({
     setShapeColor: any,
     droppedShapes: [],
     onUpdateYarnInfo: any,
-    yarnInfo: {}
+    yarnInfo: {},
 }) {
     const [showYarnSettings, setShowYarnSettings] = useState(false)
     const navigate = useNavigate();
+    const currentAmigurumiId = localStorage.getItem("amigurumi")
 
     const handlePatternNavigation = () => {
-        navigate('/pattern', {
-            state: { shapes: droppedShapes },
+        navigate(`/${currentAmigurumiId}/pattern`, {
+            state: { shapes: droppedShapes, yarnInfo: yarnInfo },
         });
     };
 

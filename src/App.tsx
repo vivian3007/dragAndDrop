@@ -1,19 +1,19 @@
 import "./styles.css";
 import Pattern from "./Pattern";
 import MyPatterns from "./MyPatterns";
+import NewPattern from "./NewPattern";
 import Editor from "./Editor";
 import { useState, useRef, useEffect } from "react";
 import {v4 as uuidv4} from "uuid";
 import Homepage from "./Homepage.tsx";
 import {Route, Routes, Link, useNavigate} from "react-router-dom";
-import {collection, getDocs, doc, updateDoc, getDoc, deleteDoc} from "firebase/firestore";
+import {collection, getDocs, doc, updateDoc, getDoc, deleteDoc, where, query, documentId} from "firebase/firestore";
 import {db, auth} from "../firebase-config.js";
 import {AppBar, Box, Button, Container, Toolbar} from "@mui/material";
 import Login from "./Login.tsx";
 import { signOut } from 'firebase/auth';
 
 interface Amigurumi {
-    id: string;
     name: string;
     height: number;
     tags: [];
@@ -22,15 +22,13 @@ interface Amigurumi {
 }
 
 interface AmigurumiShape {
-    id: string;
     amigurumi_id: string;
     shape_id: string;
 }
 
 interface Yarn {
-    id: string;
     name: string;
-    weight: number;
+    weight: string;
     mPerSkein: number;
     hooksize: number;
     material: string;
@@ -38,7 +36,6 @@ interface Yarn {
 }
 
 interface Shape {
-    id: string;
     name: string;
     type: string;
     x: number;
@@ -58,9 +55,7 @@ export default function App() {
     const [droppedShapes, setDroppedShapes] = useState<Shape[]
         // { id: string; type: string; x: number; y: number,z: number, width: number, height: number, length:number, color: string, name: string, zoom: number, rotation_x: number, rotation_y: number, rotation_z: number }[]
     >([]);
-    const [yarnInfo, setYarnInfo] = useState<
-        { id: string; name: string; weight: number; mPerSkein: number, hooksize: number, material: string, color: string }
-    >({});
+    const [yarnInfo, setYarnInfo] = useState<Yarn>({name: null, weight: null, hooksize: null, mPerSkein: null, material: null, color: null});
     const containerRef = useRef<HTMLDivElement>(null);
     const threeJsContainerRef = useRef<HTMLDivElement>(null);
 
@@ -74,6 +69,8 @@ export default function App() {
     const [yarns, setYarns] = useState<Yarn[]>([]);
     const [shapes, setShapes] = useState<Shape[]>([]);
     const [amigurumiShape, setAmigurumiShape] = useState<AmigurumiShape[]>([]);
+
+    console.log("yarn:", yarnInfo);
 
     const navigate = useNavigate();
 
@@ -91,12 +88,48 @@ export default function App() {
                 ...doc.data(),
             } as Yarn));
             setYarns(yarnData);
-            const querySnapshotShapes = await getDocs(collection(db, "shapes"));
-            const shapeData: Shape[] = querySnapshotShapes.docs.map((doc) => ({
-                id: doc.id,
-                ...doc.data(),
-            } as Shape));
-            setDroppedShapes(shapeData);
+            const storedAmigurumi = localStorage.getItem("amigurumi");
+            if (storedAmigurumi) {
+                try {
+                    const amigurumiId: string = storedAmigurumi;
+                    const selectedAmigurumi = amigurumiData.find((amigurumi) => amigurumi.id === amigurumiId);
+                    if (amigurumiId) {
+                        if (selectedAmigurumi.yarn_id) {
+                            const yarnQuery = query(
+                                collection(db, "yarn"),
+                                where(documentId(), "==", selectedAmigurumi.yarn_id)
+                            );
+                            const querySnapshotYarn = await getDocs(yarnQuery);
+                            const yarnInfo = querySnapshotYarn.docs.map((doc) => ({
+                                id: doc.id,
+                                ...doc.data(),
+                            } as Yarn));
+                            setYarnInfo(yarnInfo[0]);
+                        } else {
+                            setYarnInfo({name: null, weight: null, mPerSkein: null, hooksize: null, color: null, material: null})
+                            console.warn("Amigurumi has no yarn_id");
+                        }
+                        const shapesQuery = query(
+                            collection(db, "shapes"),
+                            where("amigurumi_id", "==", amigurumiId)
+                        );
+                        const querySnapshotShapes = await getDocs(shapesQuery);
+                        const shapeData: Shape[] = querySnapshotShapes.docs.map((doc) => ({
+                            id: doc.id,
+                            ...doc.data(),
+                        } as Shape));
+                        setDroppedShapes(shapeData);
+                    } else {
+                        setDroppedShapes([]);
+                    }
+                } catch (parseError) {
+                    localStorage.removeItem("amigurumi");
+                    setDroppedShapes([]);
+                }
+            } else {
+                console.warn("No amigurumi found in localStorage");
+                setDroppedShapes([]);
+            }
             const querySnapshotAmigurumiShape = await getDocs(collection(db, "amigurumi_shape"));
             const amigurumiShapeData: AmigurumiShape[] = querySnapshotAmigurumiShape.docs.map((doc) => ({
                 id: doc.id,
@@ -111,14 +144,14 @@ export default function App() {
 
     useEffect(() => {
         fetchData();
-            setYarnInfo( {id: uuidv4(), name: null, weight: null, mPerSkein: null, hooksize: null, material: null, color: null});
+        // setYarnInfo( {id: uuidv4(), name: null, weight: null, mPerSkein: null, hooksize: null, material: null, color: null});
 
     }, []);
 
-    console.log(amigurumis)
-    console.log(amigurumiShape)
-    console.log(yarns)
-    console.log(shapes)
+    // console.log(amigurumis)
+    // console.log(amigurumiShape)
+    // console.log(yarns)
+    // console.log(shapes)
 
     // useEffect(() => {
     //     const newShape1 = {
@@ -288,14 +321,13 @@ export default function App() {
                     <Toolbar disableGutters>
                         <Link to={"/home"} className="navbar-button">Home</Link>
                         <Link to={"/myPatterns"} className="navbar-button">My patterns</Link>
-                        <Link to={"/editor"} className="navbar-button">New pattern</Link>
-                        <Button
+                        <Link to={"/newPattern"} className="navbar-button">New pattern</Link>
+                        <a
                             onClick={handleLogout}
                             className="navbar-button"
-                            sx={{ color: 'black', textTransform: 'none', fontSize: 'inherit' }}
                         >
                             Uitloggen
-                        </Button>
+                        </a>
                     </Toolbar>
                 </Container>
             </AppBar>
@@ -303,12 +335,13 @@ export default function App() {
                 <Routes>
                     <Route path={"/"} element={<Login />} />
                     <Route path="/home" element={<Homepage amigurumis={amigurumis} setAmigurumis={setAmigurumis} />} />
-                    <Route path="/myPatterns" element={<MyPatterns amigurumis={amigurumis} setAmigurumis={setAmigurumis} />} />
-                    <Route path="/editor" element={
-                        <Editor droppedShapes={droppedShapes} setDroppedShapes={setDroppedShapes} activeId={activeId} setActiveId={setActiveId} activeShape={activeShape} containerRef={containerRef} threeJsContainerRef={threeJsContainerRef} dragging={dragging} setDragging={setDragging} camera={camera} handleUpdateShape={handleUpdateShape} setCamera={setCamera} handleDeleteShape={handleDeleteShape} shapeColor={shapeColor} setShapeColor={setShapeColor} handleUpdateYarnInfo={handleUpdateYarnInfo} yarnInfo={yarnInfo} />
+                    <Route path="/myPatterns" element={<MyPatterns amigurumis={amigurumis} setAmigurumis={setAmigurumis} yarnInfo={yarnInfo} />} />
+                    <Route path="/newPattern" element={<NewPattern amigurumis={amigurumis} setAmigurumis={setAmigurumis} setDroppedShapes={setDroppedShapes} droppedShapes={droppedShapes} />} />
+                    <Route path="/:amigurumi_id/editor" element={
+                        <Editor droppedShapes={droppedShapes} setDroppedShapes={setDroppedShapes} activeId={activeId} setActiveId={setActiveId} activeShape={activeShape} containerRef={containerRef} threeJsContainerRef={threeJsContainerRef} dragging={dragging} setDragging={setDragging} camera={camera} handleUpdateShape={handleUpdateShape} setCamera={setCamera} handleDeleteShape={handleDeleteShape} shapeColor={shapeColor} setShapeColor={setShapeColor} handleUpdateYarnInfo={handleUpdateYarnInfo} yarnInfo={yarnInfo} setYarnInfo={setYarnInfo} yarns={yarns} />
                     }
                     />
-                    <Route path="/pattern" element={<Pattern shapes={droppedShapes} />} />
+                    <Route path="/:amigurumi_id/pattern" element={<Pattern shapes={droppedShapes} yarnInfo={yarnInfo} />} />
                 </Routes>
             </Box>
         </div>

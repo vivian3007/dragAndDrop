@@ -6,6 +6,15 @@ import {Camera} from "three";
 import {setDoc, doc} from "firebase/firestore";
 import {db} from "../firebase-config.js";
 
+interface Amigurumi {
+    id: string;
+    name: string;
+    height: number | null;
+    tags: string[];
+    favorite: boolean;
+    yarn_id: string | null;
+    user_id: string;
+}
 
 export default function Sidebar({ setDroppedShapes, setActiveId, containerRef, threeJsContainerRef, dragging, setDragging, camera }: { setDroppedShapes: any, setActiveId: any, containerRef: Ref<HTMLDivElement>, threeJsContainerRef: Ref<HTMLCanvasElement>, dragging: boolean, setDragging: any, camera: Camera }) {
     const shapes = [
@@ -21,6 +30,7 @@ export default function Sidebar({ setDroppedShapes, setActiveId, containerRef, t
     const [currentShape, setCurrentShape] = useState<string | null>(null);
     const dragItemRef = useRef<HTMLDivElement | null>(null);
     const navBarRef = useRef<HTMLDivElement>(null);
+    const currentAmigurumiId = localStorage.getItem("amigurumi");
 
     const getEventCoordinates = (e: any) => {
         if (e.touches && e.touches.length > 0) {
@@ -62,7 +72,6 @@ export default function Sidebar({ setDroppedShapes, setActiveId, containerRef, t
 
             let worldPosition = { x: 0, y: 0, z: 0 };
             if (camera) {
-                console.log("camera")
                 const vector = new THREE.Vector3(mouseX, mouseY, 0.5);
                 vector.unproject(camera);
 
@@ -111,6 +120,7 @@ export default function Sidebar({ setDroppedShapes, setActiveId, containerRef, t
                         rotation_z: newShape.rotation_z ?? 0,
                         zIndex: newShape.zIndex ?? 10,
                         zoom: newShape.zoom ?? 1,
+                        amigurumi_id: currentAmigurumiId,
                     };
 
                     Object.keys(shapeData).forEach((key) => {

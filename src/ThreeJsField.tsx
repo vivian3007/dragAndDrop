@@ -45,6 +45,10 @@ export default function ThreeJsField({
 
     useEffect(() => {
         const handleKeyPress = (event) => {
+            const activeElement = document.activeElement as HTMLElement;
+            if (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA') {
+                return;
+            }
             if (event.key.toLowerCase() === 'g') {
                 setShowGrid((prev) => !prev);
             }

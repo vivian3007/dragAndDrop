@@ -3,6 +3,7 @@ body {
     /*overflow: hidden;*/
     background-color: #EACBD2;
     height: 100vh;
+    overflow-x: hidden;
 }
 
 .App {
@@ -25,6 +26,7 @@ body {
     color: black;
     font-weight: bold;
     font-size: 1.5em;
+    cursor: pointer;
 }
 
 .navbar-button:hover{
@@ -185,10 +187,11 @@ body {
     width: 100%;
     display: flex;
     justify-content: space-between;
+    align-items: center;
 }
 
-.input-text input {
-    height: 20px;
+.input-text input, .input-text select {
+    height: 25px;
 }
 
 .pattern{
@@ -211,6 +214,31 @@ body {
 
 .pattern-image{
     width: 33vw;
+}
+
+.my-pattern{
+    width: 100vw;
+    display: flex;
+    margin: 20px;
+}
+
+.my-pattern-container {
+    columns: 3;
+}
+
+.my-pattern-text-container {
+    margin: 0 0 20px 0;
+    padding: 20px;
+    width: 30vw;
+    height: auto;
+    break-inside: avoid;
+}
+
+.new-pattern-form {
+    width: 50%;
+    max-width: 800px;
+    margin: auto;
+    padding: 2%;
 }
 
 @media (max-width: 768px) {
@@ -312,7 +340,7 @@ body {
         margin-right: 0;
     }
 
-    .input-text input {
+    .input-text input, .input-text select {
         height: 1.8rem;
         font-size: 1.1rem;
     }
@@ -335,5 +363,26 @@ body {
     .pattern-image {
         width: 100%;
         padding: 15px;
+    }
+
+    .my-pattern {
+        flex-direction: column;
+    }
+
+    .my-pattern-container {
+        width: 80%;
+        column-count: 1;
+    }
+
+    .my-pattern-text-container {
+        width: 100%;
+        margin: 0 15px 15px 0;
+        padding: 15px;
+    }
+
+    .new-pattern-form {
+        width: 85%;
+        margin: 0;
+        padding: 2%;
     }
 }

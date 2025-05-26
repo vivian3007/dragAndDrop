@@ -76,6 +76,10 @@ export default function TeddyBearArm({
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
+            const activeElement = document.activeElement as HTMLElement;
+            if (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA') {
+                return;
+            }
             if (!isSelected) return;
             switch (event.key.toLowerCase()) {
                 case 't':

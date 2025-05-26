@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from "react";
-import { Link } from "react-router-dom";
+import {Link, useLocation} from "react-router-dom";
 import {AppBar, Button, Card, Container, Toolbar} from "@mui/material";
 import {collection, getDocs} from "firebase/firestore";
 import {db} from "../firebase-config.js";
@@ -24,7 +24,7 @@ interface Shape {
 interface Yarn {
     id: string;
     name: string;
-    weight: number;
+    weight: string;
     mPerSkein: number;
     hooksize: number;
     material: string;
@@ -45,20 +45,23 @@ interface PatternProps {
     yarn: Yarn;
 }
 
-const Pattern: React.FC<PatternProps> = ({ shapes, yarn }) => {
+const Pattern: React.FC<PatternProps> = ({ shapes, yarnInfo }) => {
     const PIXELS_PER_CM = 37.8; // 10 pixels = 1 cm
     const [patterns, setPatterns] = useState<any[]>([]);
+    const location = useLocation();
 
+    shapes = location.state.shapes;
+    yarnInfo = location.state.yarnInfo;
 
     const rowHeights: Record<string, number> = {
-        lace: 0.25,
-        superFine: 0.3,
-        fine: 0.35,
-        light: 0.4,
-        medium: 0.45,
-        bulky: 0.55,
-        superBulky: 0.7,
-        jumbo: 1.0,
+        Lace: 0.25,
+        SuperFine: 0.3,
+        Fine: 0.35,
+        Light: 0.4,
+        Medium: 0.45,
+        Bulky: 0.55,
+        SuperBulky: 0.7,
+        Jumbo: 1.0,
     };
 
     const generatePattern = (singleShape: Shape, yarnWeight: string) => {
@@ -120,13 +123,13 @@ const Pattern: React.FC<PatternProps> = ({ shapes, yarn }) => {
     };
 
     useEffect(() => {
-        if (shapes && shapes.length > 0) {
-            const newPatterns = shapes.map((singleShape) => generatePattern(singleShape, "medium"));
+        if (shapes && shapes.length > 0 && yarnInfo) {
+            const newPatterns = shapes.map((singleShape) => generatePattern(singleShape, yarnInfo.weight));
             setPatterns(newPatterns);
         } else {
             setPatterns([]);
         }
-    }, [shapes, yarn]);
+    }, [shapes, yarnInfo]);
 
     return (
         <div>
@@ -182,7 +185,7 @@ const Pattern: React.FC<PatternProps> = ({ shapes, yarn }) => {
                     )}
                 </div>
                 <div className="pattern-image">
-                    <Link to="/editor">
+                    <Link to="/myPatterns">
                         <Button
                             variant="contained"
                             color="inherit"
