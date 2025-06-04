@@ -2,54 +2,18 @@ import "./styles.css";
 import Pattern from "./Pattern";
 import MyPatterns from "./MyPatterns";
 import NewPattern from "./NewPattern";
+import Account from "./Account";
 import Editor from "./Editor";
-import { useState, useRef, useEffect } from "react";
+import Favorites from "./Favorites";
+import {useState, useRef, useEffect, useCallback} from "react";
 import {v4 as uuidv4} from "uuid";
 import Homepage from "./Homepage.tsx";
-import {Route, Routes, Link, useNavigate} from "react-router-dom";
+import {Route, Routes, Link, useNavigate, NavLink, useLocation} from "react-router-dom";
 import {collection, getDocs, doc, updateDoc, getDoc, deleteDoc, where, query, documentId} from "firebase/firestore";
 import {db, auth} from "../firebase-config.js";
 import {AppBar, Box, Button, Container, Toolbar} from "@mui/material";
 import Login from "./Login.tsx";
 import { signOut } from 'firebase/auth';
-
-interface Amigurumi {
-    name: string;
-    height: number;
-    tags: [];
-    favorite: boolean;
-    yarn_id: string;
-}
-
-interface AmigurumiShape {
-    amigurumi_id: string;
-    shape_id: string;
-}
-
-interface Yarn {
-    name: string;
-    weight: string;
-    mPerSkein: number;
-    hooksize: number;
-    material: string;
-    color: string;
-}
-
-interface Shape {
-    name: string;
-    type: string;
-    x: number;
-    y: number;
-    z: number;
-    width: number;
-    height: number;
-    length: number;
-    color: string;
-    rotation_x: number;
-    rotation_y: number;
-    rotation_z: number;
-    zoom: number;
-}
 
 export default function App() {
     const [droppedShapes, setDroppedShapes] = useState<Shape[]
@@ -67,11 +31,13 @@ export default function App() {
 
     const [amigurumis, setAmigurumis] = useState<Amigurumi[]>([]);
     const [yarns, setYarns] = useState<Yarn[]>([]);
-    const [shapes, setShapes] = useState<Shape[]>([]);
-    const [amigurumiShape, setAmigurumiShape] = useState<AmigurumiShape[]>([]);
 
-    console.log("yarn:", yarnInfo);
+    const [setView, setSetView] = useState<(viewKey: string) => void>(() => () => {});
 
+    const [transformMode, setTransformMode] = useState<'translate' | 'rotate' | 'scale'>('translate');
+
+
+    const location = useLocation();
     const navigate = useNavigate();
 
     const fetchData = async () => {
@@ -130,12 +96,6 @@ export default function App() {
                 console.warn("No amigurumi found in localStorage");
                 setDroppedShapes([]);
             }
-            const querySnapshotAmigurumiShape = await getDocs(collection(db, "amigurumi_shape"));
-            const amigurumiShapeData: AmigurumiShape[] = querySnapshotAmigurumiShape.docs.map((doc) => ({
-                id: doc.id,
-                ...doc.data(),
-            } as AmigurumiShape));
-            setAmigurumiShape(amigurumiShapeData);
         } catch (error) {
             console.error("Fout bij ophalen van amigurumiShape:", error);
             alert("Fout bij ophalen van gegevens: " + error);
@@ -305,6 +265,11 @@ export default function App() {
         }
     }
 
+    const onSetView = useCallback((setViewFn: (viewKey: string) => void) => {
+        console.log('onSetView called in App with:', setViewFn);
+        setSetView(() => setViewFn);
+    }, []);
+
     const handleLogout = async () => {
         try {
             await signOut(auth);
@@ -316,32 +281,60 @@ export default function App() {
 
     return (
         <div className="App">
-            <AppBar position={"static"} style={{ backgroundColor: "#F2F3AE", height: "8vh" }}>
-                <Container maxWidth="xl" sx={{marginLeft: 0}}>
-                    <Toolbar disableGutters>
-                        <Link to={"/home"} className="navbar-button">Home</Link>
-                        <Link to={"/myPatterns"} className="navbar-button">My patterns</Link>
-                        <Link to={"/newPattern"} className="navbar-button">New pattern</Link>
-                        <a
-                            onClick={handleLogout}
-                            className="navbar-button"
-                        >
-                            Uitloggen
-                        </a>
-                    </Toolbar>
-                </Container>
-            </AppBar>
+            {location.pathname !== '/' ? (
+                <AppBar position="static" style={{ backgroundColor: "#F2F3AE", height: "8vh" }}>
+                    <Container maxWidth="xl" sx={{ marginLeft: 0 }}>
+                        <Toolbar disableGutters>
+                            <NavLink
+                                to="/home"
+                                className={({ isActive }) => `navbar-button ${isActive ? 'active' : ''}`}
+                            >
+                                Home
+                            </NavLink>
+                            <NavLink
+                                to="/myPatterns"
+                                className={({ isActive }) => `navbar-button ${isActive ? 'active' : ''}`}
+                            >
+                                My patterns
+                            </NavLink>
+                            <NavLink
+                                to="/favorites"
+                                className={({ isActive }) => `navbar-button ${isActive ? 'active' : ''}`}
+                            >
+                                Favorite patterns
+                            </NavLink>
+                            <NavLink
+                                to="/newPattern"
+                                className={({ isActive }) => `navbar-button ${isActive ? 'active' : ''}`}
+                            >
+                                New pattern
+                            </NavLink>
+                            <NavLink
+                                to={"/account"}
+                                className={({ isActive }) => `navbar-button ${isActive ? 'active' : ''}`}
+                            >
+                                Account
+                            </NavLink>
+                            <a onClick={handleLogout} className="navbar-button">
+                                Log out
+                            </a>
+                        </Toolbar>
+                    </Container>
+                </AppBar>
+            ) : null}
             <Box>
                 <Routes>
                     <Route path={"/"} element={<Login />} />
-                    <Route path="/home" element={<Homepage amigurumis={amigurumis} setAmigurumis={setAmigurumis} />} />
+                    <Route path="/home" element={<Homepage amigurumis={amigurumis} setAmigurumis={setAmigurumis} yarnInfo={yarnInfo} />} />
                     <Route path="/myPatterns" element={<MyPatterns amigurumis={amigurumis} setAmigurumis={setAmigurumis} yarnInfo={yarnInfo} />} />
+                    <Route path="/favorites" element={<Favorites amigurumis={amigurumis} setAmigurumis={setAmigurumis} yarnInfo={yarnInfo} />} />
                     <Route path="/newPattern" element={<NewPattern amigurumis={amigurumis} setAmigurumis={setAmigurumis} setDroppedShapes={setDroppedShapes} droppedShapes={droppedShapes} />} />
                     <Route path="/:amigurumi_id/editor" element={
-                        <Editor droppedShapes={droppedShapes} setDroppedShapes={setDroppedShapes} activeId={activeId} setActiveId={setActiveId} activeShape={activeShape} containerRef={containerRef} threeJsContainerRef={threeJsContainerRef} dragging={dragging} setDragging={setDragging} camera={camera} handleUpdateShape={handleUpdateShape} setCamera={setCamera} handleDeleteShape={handleDeleteShape} shapeColor={shapeColor} setShapeColor={setShapeColor} handleUpdateYarnInfo={handleUpdateYarnInfo} yarnInfo={yarnInfo} setYarnInfo={setYarnInfo} yarns={yarns} />
+                        <Editor droppedShapes={droppedShapes} setDroppedShapes={setDroppedShapes} activeId={activeId} setActiveId={setActiveId} activeShape={activeShape} containerRef={containerRef} threeJsContainerRef={threeJsContainerRef} dragging={dragging} setDragging={setDragging} camera={camera} handleUpdateShape={handleUpdateShape} setCamera={setCamera} camera={camera} handleDeleteShape={handleDeleteShape} shapeColor={shapeColor} setShapeColor={setShapeColor} handleUpdateYarnInfo={handleUpdateYarnInfo} yarnInfo={yarnInfo} setYarnInfo={setYarnInfo} yarns={yarns} onSetView={onSetView} setView={setView} transformMode={transformMode} setTransformMode={setTransformMode} />
                     }
                     />
                     <Route path="/:amigurumi_id/pattern" element={<Pattern shapes={droppedShapes} yarnInfo={yarnInfo} />} />
+                    <Route path="/account" element={<Account />} />
                 </Routes>
             </Box>
         </div>

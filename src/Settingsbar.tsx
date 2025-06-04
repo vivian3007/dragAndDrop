@@ -6,17 +6,6 @@ import Sketch from "@uiw/react-color-sketch";
 import { ColorResult } from '@uiw/color-convert';
 import YarnSettings from "./YarnSettings.tsx";
 import ShapeSettings from "./ShapeSettings.tsx"
-
-interface Amigurumi {
-    id: string;
-    name: string;
-    height: number | null;
-    tags: string[];
-    favorite: boolean;
-    yarn_id: string | null;
-    user_id: string;
-}
-
 export default function Settingsbar({
                                         activeShape,
                                         onUpdateShape,

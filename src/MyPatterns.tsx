@@ -1,48 +1,11 @@
 import React from 'react';
-import {Card, Typography, CircularProgress, Button} from '@mui/material';
+import {Card, Typography, CircularProgress, Button, Box, Chip} from '@mui/material';
 import { Favorite, FavoriteBorder } from '@mui/icons-material';
 import { doc, updateDoc, getDocs } from 'firebase/firestore';
 import { db, auth } from '../firebase-config.js';
 import { useCollection } from 'react-firebase-hooks/firestore';
 import { query, collection, where } from 'firebase/firestore';
 import {useNavigate} from "react-router-dom";
-
-interface Amigurumi {
-    id: string;
-    name: string;
-    height: number;
-    tags: string[];
-    favorite: boolean;
-    yarn_id: string;
-    ownerEmail: string;
-}
-
-interface Shape {
-    id: string;
-    name: string;
-    type: string;
-    x: number;
-    y: number;
-    z: number;
-    width: number;
-    height: number;
-    length: number;
-    color: string;
-    rotation_x: number;
-    rotation_y: number;
-    rotation_z: number;
-    zoom: number;
-}
-
-interface Yarn {
-    id: string;
-    name: string;
-    weight: string;
-    mPerSkein: number;
-    hooksize: number;
-    material: string;
-    color: string;
-}
 
 const MyPatterns = ({setCurrentAmigurumi, yarnInfo} : {setCurrentAmigurumi: any, yarnInfo: Yarn}) => {
     const loggedInUser = auth.currentUser?.email;
@@ -61,6 +24,17 @@ const MyPatterns = ({setCurrentAmigurumi, yarnInfo} : {setCurrentAmigurumi: any,
             ...doc.data(),
         })) as Amigurumi[]
         : [];
+
+    const src = [
+        "duck",
+        "cow",
+        "cat"
+    ]
+
+    const getRandomImage = () => {
+        const randomIndex = Math.floor(Math.random() * src.length);
+        return `../public/img/${src[randomIndex]}.jpg`;
+    };
 
     const handleFavoriteChange = async (amigurumi: Amigurumi) => {
         try {
@@ -129,47 +103,50 @@ const MyPatterns = ({setCurrentAmigurumi, yarnInfo} : {setCurrentAmigurumi: any,
                 ) : (
                     amigurumis.map((amigurumi) => (
                         <Card key={amigurumi.id} className="my-pattern-text-container">
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <h1 style={{ marginTop: 0, marginBottom: 0 }}>{amigurumi.name}</h1>
+                            <img src={getRandomImage()} alt={amigurumi.name} className="amigurumi-image"/>
+                            <h1 style={{marginTop: 20, marginBottom: 20}}>{amigurumi.name}</h1>
+                            {/*<h3>Tags</h3>*/}
+                            <Box sx={{display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2}}>
+                                {amigurumi.tags.map((tag) => (
+                                    <Chip
+                                        key={tag}
+                                        label={tag}
+                                        color="inherit"
+                                    />
+                                ))}
+                            </Box>
+                            <div style={{display: 'flex', gap: '15px', marginTop: 20, flexWrap: "wrap", width: "100%", justifyContent: "space-between"}}>
+                                <div style={{display: "flex", gap: "15px", width: "80%"}}>
+                                    <Button
+                                        type="button"
+                                        variant="contained"
+                                        color="inherit"
+                                        sx={{marginBottom: "20px", width: 1, backgroundColor: "#d4929a"}}
+                                        onClick={() => handleEditClick(amigurumi)}
+                                    >
+                                        Edit
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="contained"
+                                        color="inherit"
+                                        sx={{marginBottom: "20px", width: 1, backgroundColor: "#d4929a"}}
+                                        onClick={() => handlePatternClick(amigurumi)}
+                                    >
+                                        Pattern
+                                    </Button>
+                                </div>
                                 {amigurumi.favorite ? (
                                     <Favorite
-                                        sx={{ color: 'red', fontSize: '1.5rem', cursor: 'pointer' }}
+                                        sx={{color: 'red', fontSize: '2.5rem', cursor: 'pointer', height: "2.5rem"}}
                                         onClick={() => handleFavoriteChange(amigurumi)}
                                     />
                                 ) : (
                                     <FavoriteBorder
-                                        sx={{ color: 'grey', fontSize: '1.5rem', cursor: 'pointer' }}
+                                        sx={{color: 'grey', fontSize: '2.5rem', cursor: 'pointer'}}
                                         onClick={() => handleFavoriteChange(amigurumi)}
                                     />
                                 )}
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <h3>Tags</h3>
-                                <ul>
-                                    {amigurumi.tags.map((tag, index) => (
-                                        <li key={index}>{tag}</li>
-                                    ))}
-                                </ul>
-                            </div>
-                            <div style={{display: "flex", justifyContent: "space-between"}}>
-                                <Button
-                                    type="button"
-                                    variant="contained"
-                                    color="inherit"
-                                    sx={{marginBottom: "20px", width: 0.49, backgroundColor: "#d4929a"}}
-                                    onClick={() => handleEditClick(amigurumi)}
-                                >
-                                    Edit
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant="contained"
-                                    color="inherit"
-                                    sx={{marginBottom: "20px", width: 0.49, backgroundColor: "#d4929a"}}
-                                    onClick={() => handlePatternClick(amigurumi)}
-                                >
-                                    Pattern
-                                </Button>
                             </div>
                         </Card>
                     ))

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {useLoader, useThree} from '@react-three/fiber';
-import { TransformControls } from '@react-three/drei';
+import TransformControlsThree from "./TransformControlsThree.tsx";
 import * as THREE from 'three';
 
 export default function Sphere({
@@ -9,7 +9,9 @@ export default function Sphere({
                                    orbitControlsRef,
                                    isSelected,
                                    onSelect,
-                                   onUpdateShape
+                                   onUpdateShape,
+    transformMode,
+    setTransformMode
                                }: {
     id: string;
     data: { shape: any };
@@ -17,6 +19,8 @@ export default function Sphere({
     isSelected: boolean;
     onSelect: (id: string) => void;
     onUpdateShape: (shape: any) => void;
+    transformMode: any,
+    setTransformMode: any
 }) {
     const shape = data?.shape;
     const width = shape?.width ?? 50;
@@ -32,7 +36,6 @@ export default function Sphere({
     const { camera, size } = useThree();
     const meshRef = useRef<THREE.Mesh>(null);
     const transformControlsRef = useRef<any>(null);
-    const [transformMode, setTransformMode] = useState<'translate' | 'rotate' | 'scale'>('translate');
     const [isDragging, setIsDragging] = useState(false);
 
     const texture = useLoader(THREE.TextureLoader, '/textures/stitch-texture.jpg');
@@ -61,44 +64,6 @@ export default function Sphere({
         }
     }, [camera, size, width, height, length, zoom, x, y, z, rotation_x, rotation_y, rotation_z, isSelected, isDragging]);
 
-    useEffect(() => {
-        if (transformControlsRef.current) {
-            transformControlsRef.current.traverse((child: any) => {
-                if (child.isMesh) {
-                    child.renderOrder = 999;
-                }
-            });
-        }
-    }, [isSelected]);
-
-    useEffect(() => {
-        const handleKeyDown = (event: KeyboardEvent) => {
-            const activeElement = document.activeElement as HTMLElement;
-            if (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA') {
-                return;
-            }
-            if (!isSelected) return;
-            switch (event.key.toLowerCase()) {
-                case 't':
-                    setTransformMode('translate');
-                    break;
-                case 'r':
-                    setTransformMode('rotate');
-                    break;
-                case 's':
-                    setTransformMode('scale');
-                    break;
-                default:
-                    break;
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-        };
-    }, [isSelected]);
-
     return (
         <group
             onClick={(e) => {
@@ -117,61 +82,7 @@ export default function Sphere({
                 />
             </mesh>
             {isSelected && (
-                <TransformControls
-                    ref={transformControlsRef}
-                    object={meshRef.current}
-                    mode={transformMode}
-                    onMouseDown={() => {
-                        setIsDragging(true);
-                        if (orbitControlsRef.current) {
-                            orbitControlsRef.current.enabled = false;
-                        }
-                    }}
-                    onMouseUp={() => {
-                        setIsDragging(false);
-                        if (orbitControlsRef.current) {
-                            orbitControlsRef.current.enabled = true;
-                        }
-                    }}
-                    onObjectChange={() => {
-                        if (meshRef.current && shape) {
-                            const mesh = meshRef.current;
-                            const updatedShape: any = { ...shape };
-
-                            if (transformMode === 'translate') {
-                                updatedShape.x = mesh.position.x;
-                                updatedShape.y = mesh.position.y;
-                                updatedShape.z = mesh.position.z;
-                            } else if (transformMode === 'rotate') {
-                                updatedShape.rotation_x = mesh.rotation.x * (180 / Math.PI);
-                                updatedShape.rotation_y = mesh.rotation.y * (180 / Math.PI);
-                                updatedShape.rotation_z = mesh.rotation.z * (180 / Math.PI);
-                            } else if (transformMode === 'scale') {
-                                const canvasWidth = size.width;
-                                const canvasHeight = size.height;
-                                const scaleFactor = 0.01;
-
-                                const scaleX = mesh.scale.x;
-                                const scaleY = mesh.scale.y;
-                                const scaleZ = mesh.scale.z;
-
-                                const scaledWidth = (scaleX / scaleFactor) * canvasWidth / canvasWidth;
-                                const scaledHeight = (scaleY / scaleFactor) * canvasHeight / canvasHeight;
-                                const scaledLength = (scaleZ / scaleFactor) * canvasWidth / canvasWidth;
-                                const newZoom = scaleX / (width * scaleFactor);
-
-                                updatedShape.width = scaledWidth / newZoom;
-                                updatedShape.height = scaledHeight / newZoom;
-                                updatedShape.length = scaledLength / newZoom;
-                                updatedShape.zoom = newZoom;
-                            }
-
-                            console.log("updatedShape", updatedShape)
-
-                            onUpdateShape(updatedShape);
-                        }
-                    }}
-                />
+                <TransformControlsThree transformRef={transformControlsRef} object={meshRef.current} transformMode={transformMode} setTransformMode={setTransformMode} isSelected={isSelected} setIsDragging={setIsDragging} orbitControlsRef={orbitControlsRef} meshRef={meshRef} size={size} onUpdateShape={onUpdateShape} shape={shape} width={width} />
             )}
         </group>
     );

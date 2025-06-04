@@ -7,10 +7,10 @@ import { useCollection } from 'react-firebase-hooks/firestore';
 import { query, collection } from 'firebase/firestore';
 import {useNavigate} from "react-router-dom";
 
-const Homepage = ({yarnInfo} : {yarnInfo: Yarn}) => {
+const Favorites = ({yarnInfo} : {yarnInfo: Yarn}) => {
     const navigate = useNavigate();
 
-    const [snapshot, loading, error] = useCollection(query(collection(db, 'amigurumi')));
+    const [snapshot, loading, error] = useCollection(query(collection(db, 'amigurumi'), where('favorite', '==', true)));
     const amigurumis = snapshot
         ? snapshot.docs.map((doc) => ({
             id: doc.id,
@@ -74,16 +74,16 @@ const Homepage = ({yarnInfo} : {yarnInfo: Yarn}) => {
                     <Card key={amigurumi.id} className="my-pattern-text-container">
                         <img src={getRandomImage()} alt={amigurumi.name} className="amigurumi-image"/>
                         <h1 style={{marginTop: 20, marginBottom: 20}}>{amigurumi.name}</h1>
-                {/*<h3>Tags</h3>*/}
-                    <Box sx={{display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2}}>
-                {amigurumi.tags.map((tag) => (
-                    <Chip
-                        key={tag}
-                        label={tag}
-                        color="inherit"
-                    />
-                ))}
-            </Box>
+                        {/*<h3>Tags</h3>*/}
+                        <Box sx={{display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2}}>
+                            {amigurumi.tags.map((tag) => (
+                                <Chip
+                                    key={tag}
+                                    label={tag}
+                                    color="inherit"
+                                />
+                            ))}
+                        </Box>
                         <div style={{
                             display: 'flex',
                             gap: '15px',
@@ -117,8 +117,7 @@ const Homepage = ({yarnInfo} : {yarnInfo: Yarn}) => {
                 ))}
             </div>
         </div>
-    )
-        ;
+    );
 };
 
-export default Homepage;
+export default Favorites;

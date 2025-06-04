@@ -5,43 +5,6 @@ import ThreeJsField from "./ThreeJsField.tsx";
 import Settingsbar from "./Settingsbar.tsx";
 import Sidebar from "./Sidebar.tsx";
 
-interface Shape {
-    id: string;
-    name: string;
-    type: string;
-    x: number;
-    y: number;
-    z: number;
-    width: number;
-    height: number;
-    length: number;
-    color: string;
-    rotation_x: number;
-    rotation_y: number;
-    rotation_z: number;
-    zoom: number;
-}
-
-interface Amigurumi {
-    id: string;
-    name: string;
-    height: number | null;
-    tags: string[];
-    favorite: boolean;
-    yarn_id: string | null;
-    user_id: string;
-}
-
-interface Yarn {
-    id: string;
-    name: string;
-    weight: number;
-    mPerSkein: number;
-    hooksize: number;
-    material: string;
-    color: string;
-}
-
 const Editor = ({
                     droppedShapes,
                     setDroppedShapes,
@@ -61,7 +24,11 @@ const Editor = ({
                     setShapeColor,
                     yarnInfo,
                     setYarnInfo,
-                    yarns
+                    yarns,
+    onSetView,
+    setView,
+    transformMode,
+    setTransformMode
                 }: {
     droppedShapes: Shape[];
     setDroppedShapes: React.Dispatch<React.SetStateAction<Shape[]>>;
@@ -82,6 +49,10 @@ const Editor = ({
     yarnInfo: Yarn;
     setYarnInfo: any;
     yarns: Yarn[];
+    onSetView: (setView: (viewKey: string) => void) => void;
+    setView: any;
+    transFormMode: any,
+    setTransformMode: any;
 }) => {
     const location = useLocation();
 
@@ -115,6 +86,8 @@ const Editor = ({
                 dragging={dragging}
                 setDragging={setDragging}
                 camera={camera}
+                setView={setView}
+                setTransformMode={setTransformMode}
             />
             <ThreeJsField
                 droppedShapes={droppedShapes}
@@ -123,7 +96,11 @@ const Editor = ({
                 setActiveId={setActiveId}
                 onUpdateShape={handleUpdateShape}
                 setCamera={setCamera}
+                camera={camera}
                 onDeleteShape={handleDeleteShape}
+                onSetView={onSetView}
+                transformMode={transformMode}
+                setTransformMode={setTransformMode}
             />
             <Settingsbar
                 activeShape={activeShape}

@@ -136,7 +136,7 @@ export default function YarnSettings({onUpdateYarnInfo, yarnInfo} : {onUpdateYar
                     <label>Yarn weight: </label>
                     <select
                         id="part"
-                        value={weight}
+                        value={weight ?? null}
                         onChange={(e) => {setWeight(e.target.value)}}
                         required={true}
                     >

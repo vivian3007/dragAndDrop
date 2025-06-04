@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Button } from "@mui/material";
+import {Box, Button} from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import Trashcan from "./Trashcan.tsx";
 import Sketch from "@uiw/react-color-sketch";
@@ -30,6 +30,9 @@ export default function Settingsbar({
     const [rotateZ, setRotateZ] = useState<number | null>(null);
     const [zIndex, setZIndex] = useState(10);
     const [zoom, setZoom] = useState(1);
+    const [x, setX] = useState<number | null>(null);
+    const [y, setY] = useState<number | null>(null);
+    const [z, setZ] = useState<number | null>(null);
 
     const handleUpdate = (updates: Partial<any>) => {
         if (activeShape) {
@@ -42,17 +45,41 @@ export default function Settingsbar({
     };
 
     useEffect(() => {
+        setX(activeShape?.x);
+        setY(activeShape?.y);
+        setZ(activeShape?.z);
         setWidth(activeShape ? activeShape.width / PIXELS_PER_CM * activeShape.zoom : 50);
         setHeight(activeShape ? activeShape.height / PIXELS_PER_CM * activeShape.zoom : 50);
         setLength(activeShape ? activeShape.length / PIXELS_PER_CM * activeShape.zoom : 50);
         setName(activeShape?.name || null);
         setShapeColor(activeShape?.color || '#FFFFFF');
-        setRotateX(activeShape?.rotateX || 0);
-        setRotateY(activeShape?.rotateY || 0)
-        setRotateZ(activeShape?.rotateZ || 0)
+        setRotateX(activeShape?.rotation_x || 0);
+        setRotateY(activeShape?.rotation_y || 0)
+        setRotateZ(activeShape?.rotation_z || 0)
         setZIndex(activeShape?.zIndex || 10);
         setZoom(activeShape?.zoom || 1);
     }, [activeShape]);
+
+    const handleXChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newScaledX = Number(e.target.value);
+        setX(newScaledX);
+        // const newBaseWidth = newScaledWidth * PIXELS_PER_CM / (activeShape?.zoom || 1);
+        handleUpdate({ x: newScaledX});
+    };
+
+    const handleYChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newScaledY = Number(e.target.value);
+        setY(newScaledY);
+        // const newBaseWidth = newScaledWidth * PIXELS_PER_CM / (activeShape?.zoom || 1);
+        handleUpdate({ y: newScaledY });
+    };
+
+    const handleZChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newScaledZ = Number(e.target.value);
+        setZ(newScaledZ);
+        // const newBaseWidth = newScaledWidth * PIXELS_PER_CM / (activeShape?.zoom || 1);
+        handleUpdate({ z: newScaledZ });
+    };
 
     const handleWidthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newScaledWidth = Number(e.target.value);
@@ -142,9 +169,10 @@ export default function Settingsbar({
 
     return (
             <div>
-                <h1>Settings: {activeShape?.name}</h1>
                 {activeShape ? (
                     <form>
+                        <h1>Settings: {activeShape?.name}</h1>
+                        <p>{activeShape.id}</p>
                         <div className="input-text">
                             <label>Name: </label>
                             <input
@@ -154,6 +182,45 @@ export default function Settingsbar({
                                 onChange={handleNameChange}
                                 required={true}
                                 placeholder="Give this part a name"
+                            />
+                        </div>
+                        <div className="input-text">
+                            <label htmlFor="x">X: </label>
+                            <input
+                                type="number"
+                                id="x"
+                                value={x !== null ? Math.round(x) : ""}
+                                onChange={handleXChange}
+                                min="1"
+                                step="1"
+                                required={true}
+                                placeholder="Give this part a x"
+                            />
+                        </div>
+                        <div className="input-text">
+                            <label htmlFor="y">Y: </label>
+                            <input
+                                type="number"
+                                id="y"
+                                value={y !== null ? Math.round(y) : ""}
+                                onChange={handleYChange}
+                                min="1"
+                                step="1"
+                                required={true}
+                                placeholder="Give this part a y"
+                            />
+                        </div>
+                        <div className="input-text">
+                            <label htmlFor="z">Z: </label>
+                            <input
+                                type="number"
+                                id="z"
+                                value={z !== null ? Math.round(z) : ""}
+                                onChange={handleZChange}
+                                min="1"
+                                step="1"
+                                required={true}
+                                placeholder="Give this part a z"
                             />
                         </div>
                         <div className="input-text">
@@ -262,12 +329,17 @@ export default function Settingsbar({
                         />
                     </form>
                 ) : (
-                    <ul>
-                        <li>T: translate</li>
-                        <li>S: scale</li>
-                        <li>R: rotate</li>
-                        <li>G: show grid</li>
-                    </ul>
+                    <div>
+                        <h1>Follow these steps:</h1>
+                        <Box className="steps-box">
+                            <ol className="steps">
+                                <li>Go to <b>yarn settings</b> and fill in the details about your yarn</li>
+                                <li><b>Drag a shape</b> from the sidebar on the left and drop it on the canvas</li>
+                                <li>Modify the shape with the <b>settings</b> in the bar on the right, or with the <b>transform functions</b></li>
+                                <li>When happy with your amigurumi, click on the <b>'pattern' button</b> in the sidebar on the right</li>
+                            </ol>
+                        </Box>
+                    </div>
                 )}
             </div>
     );

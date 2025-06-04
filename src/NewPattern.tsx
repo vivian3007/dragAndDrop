@@ -5,33 +5,6 @@ import { setDoc, doc } from 'firebase/firestore';
 import { db, auth } from '../firebase-config.js';
 import { useNavigate } from 'react-router-dom';
 
-interface Amigurumi {
-    id: string;
-    name: string;
-    height: number | null;
-    tags: string[];
-    favorite: boolean;
-    yarn_id: string | null;
-    user_id: string;
-}
-
-interface Shape {
-    id: string;
-    name: string;
-    type: string;
-    x: number;
-    y: number;
-    z: number;
-    width: number;
-    height: number;
-    length: number;
-    color: string;
-    rotation_x: number;
-    rotation_y: number;
-    rotation_z: number;
-    zoom: number;
-}
-
 const NewPattern = ({ setDroppedShapes, droppedShapes }: { setDroppedShapes: React.Dispatch<React.SetStateAction<Shape[]>>, droppedShapes: Shape[] }) => {
     const navigate = useNavigate();
     const loggedInUser = auth.currentUser?.email;
@@ -55,12 +28,12 @@ const NewPattern = ({ setDroppedShapes, droppedShapes }: { setDroppedShapes: Rea
         }));
     };
 
-    const handleFavoriteChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData((prev) => ({
-            ...prev,
-            favorite: e.target.checked,
-        }));
-    };
+    // const handleFavoriteChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    //     setFormData((prev) => ({
+    //         ...prev,
+    //         favorite: e.target.checked,
+    //     }));
+    // };
 
     const handleTagInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setTagInput(e.target.value);
@@ -179,17 +152,17 @@ const NewPattern = ({ setDroppedShapes, droppedShapes }: { setDroppedShapes: Rea
                                 />
                             ))}
                         </Box>
-                        <FormControlLabel
-                            control={
-                                <Checkbox
-                                    checked={formData.favorite}
-                                    onChange={handleFavoriteChange}
-                                    name="favorite"
-                                    style={{color: "#d4929a", fill: "#d4929a"}}
-                                />
-                            }
-                            label="Mark as favorite"
-                        />
+                        {/*<FormControlLabel*/}
+                        {/*    control={*/}
+                        {/*        <Checkbox*/}
+                        {/*            checked={formData.favorite}*/}
+                        {/*            onChange={handleFavoriteChange}*/}
+                        {/*            name="favorite"*/}
+                        {/*            style={{color: "#d4929a", fill: "#d4929a"}}*/}
+                        {/*        />*/}
+                        {/*    }*/}
+                        {/*    label="Mark as favorite"*/}
+                        {/*/>*/}
                         {error && (
                             <Typography color="error" sx={{ mt: 2 }}>
                                 {error}

@@ -33,21 +33,64 @@ body {
     background-color: #c2c28b;
 }
 
-.navbar-button:focus{
+.navbar-button.active{
     background-color: #c2c28b;
 }
 
 .Navbar {
-    width: 20vw;
-    height: 92vh;
+    width: 15vw;
+    height: 88vh;
     background-color: #d4929a;
-    /*margin-right: 10px;*/
     display: flex;
     flex-direction: column;
     align-items: center;
-    /*justify-content: center;*/
      overflow-y: auto;
     overflow-x: hidden;
+    padding: 2vh;
+}
+
+.shapebar {
+    width: 100%;
+    height: 70%;
+    /*background-color: #EACBD2;*/
+    /*margin-right: 10px;*/
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    padding-left: 20px;
+    /*justify-content: center;*/
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.toolbar {
+    width: 100%;
+    height: 30%;
+    /*background-color: green;*/
+    /*margin-right: 10px;*/
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    /*justify-content: center;*/
+    overflow-y: auto;
+    overflow-x: hidden;
+    margin-top: 20px;
+}
+
+.toolbar-category {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    gap: 5px;
+}
+
+.toolbar-category button {
+    background-color: #F2F3AE;
+    color: black;
+}
+
+.shapes-text {
+    margin: 10px 0 10px 0;
 }
 
 .settings-bar {
@@ -66,6 +109,20 @@ body {
     overflow-x: hidden;
     /*left: 70vw;*/
     /* overflow: scroll; */
+}
+
+.steps {
+    line-height: 2;
+}
+
+.steps li {
+    margin-bottom: 20px;
+}
+
+.steps-box {
+    background-color: #EACBD2;
+    padding: 10px 20px 10px 0;
+    margin-top: 20px;
 }
 
 .navlink {
@@ -98,7 +155,7 @@ body {
 
 .Arm {
     width: 120px;
-    height: 180px;
+    height: 120px;
     background-color: #FFFFFF;
     border-radius: 60px 60px 0 0;
 }
@@ -223,15 +280,25 @@ body {
 }
 
 .my-pattern-container {
-    columns: 3;
+    /*columns: 5;*/
+    /*column-gap: 30px;*/
+    /*gap: 25px;*/
+    width: 100vw;
+    padding-right: 40px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(max(16vw, 200px), 1fr));
 }
 
 .my-pattern-text-container {
-    margin: 0 0 20px 0;
-    padding: 20px;
-    width: 30vw;
+    margin: 0 20px 20px 0;
+    padding: 30px;
+    /*width: 16vw;*/
     height: auto;
     break-inside: avoid;
+}
+
+.amigurumi-image{
+    width: 100%;
 }
 
 .new-pattern-form {
@@ -278,16 +345,45 @@ body {
         flex-direction: row;
     }
 
+    .shapebar {
+        width: 100%;
+        height: 100%;
+        background-color: #EACBD2;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    .toolbar {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: start;
+        overflow-y: auto;
+        overflow-x: hidden;
+        margin-left: 20px;
+    }
+
+    .toolbar-category {
+        display: flex;
+        flex-wrap: wrap;
+        width: 100%;
+        gap: 5px;
+    }
+
     .draggables {
         display: flex;
-        flex-direction: row;
+        /*flex-direction: row;*/
         justify-content: start;
         margin: 20px;
     }
 
-    .shapes-text {
-        writing-mode: sideways-lr;
-    }
+    /*.shapes-text {*/
+    /*    writing-mode: sideways-lr;*/
+    /*}*/
 
     .circle, .square {
         width: min(80px, 25vw);
@@ -370,15 +466,32 @@ body {
     }
 
     .my-pattern-container {
-        width: 80%;
-        column-count: 1;
+        /*columns: 5;*/
+        /*column-gap: 30px;*/
+        /*gap: 25px;*/
+        width: 100vw;
+        display: grid;
+        grid-template-columns: 1fr;
     }
 
     .my-pattern-text-container {
-        width: 100%;
-        margin: 0 15px 15px 0;
-        padding: 15px;
+        margin: 0 45px 10px 0;
+        padding: 30px;
+        /*width: 16vw;*/
+        height: auto;
+        break-inside: avoid;
     }
+
+    /*.my-pattern-container {*/
+    /*    width: 80%;*/
+    /*    column-count: 1;*/
+    /*}*/
+
+    /*.my-pattern-text-container {*/
+    /*    width: 100%;*/
+    /*    margin: 0 15px 15px 0;*/
+    /*    padding: 15px;*/
+    /*}*/
 
     .new-pattern-form {
         width: 85%;

@@ -1,57 +1,16 @@
 import React, {useEffect, useState} from "react";
-import {Link, useLocation} from "react-router-dom";
+import {Link, useLocation, useNavigate} from "react-router-dom";
 import {AppBar, Button, Card, Container, Toolbar} from "@mui/material";
 import {collection, getDocs} from "firebase/firestore";
 import {db} from "../firebase-config.js";
+import generateSpherePattern from "./patterns/generateSpherePattern";
+import generateArmPattern from "./patterns/generateArmPattern";
 
-interface Shape {
-    id: string;
-    type: string;
-    x: number;
-    y: number;
-    z: number;
-    width: number;
-    height: number;
-    length: number;
-    color: string;
-    name: string;
-    rotation_x: number;
-    rotation_y: number;
-    rotation_z: number;
-    zIndex: number;
-}
-
-interface Yarn {
-    id: string;
-    name: string;
-    weight: string;
-    mPerSkein: number;
-    hooksize: number;
-    material: string;
-    color: string;
-}
-
-interface Amigurumi {
-    id: string;
-    name: string;
-    height: number;
-    tags: [];
-    favorite: boolean;
-    yarn_id: string;
-}
-
-interface PatternProps {
-    shapes: Shape[];
-    yarn: Yarn;
-}
-
-const Pattern: React.FC<PatternProps> = ({ shapes, yarnInfo }) => {
+const Pattern = ({ shapes, yarnInfo } : {shapes: Shape[], yarn: Yarn}) => {
     const PIXELS_PER_CM = 37.8; // 10 pixels = 1 cm
     const [patterns, setPatterns] = useState<any[]>([]);
     const location = useLocation();
-
-    shapes = location.state.shapes;
-    yarnInfo = location.state.yarnInfo;
+    const navigate = useNavigate();
 
     const rowHeights: Record<string, number> = {
         Lace: 0.25,
@@ -64,72 +23,34 @@ const Pattern: React.FC<PatternProps> = ({ shapes, yarnInfo }) => {
         Jumbo: 1.0,
     };
 
-    const generatePattern = (singleShape: Shape, yarnWeight: string) => {
-        const rowHeight = rowHeights[yarnWeight] * PIXELS_PER_CM ?? 4;
-        const shapeHeight = singleShape.width > singleShape.height ? singleShape.width : singleShape.height;
-        const shapeWidth = singleShape.width > singleShape.height ? singleShape.height : singleShape.width;
+    shapes = location.state.shapes;
+    yarnInfo = location.state.yarnInfo;
 
-        const rows = shapeHeight ? shapeHeight / rowHeight : 0;
-        const extraScRows = shapeHeight && shapeWidth ? (shapeHeight - shapeWidth) / rowHeight : 0;
-        const incRows = Math.floor((rows - extraScRows) / 3);
-        const decRows = Math.floor(incRows - 1);
-        const scRows = Math.floor(rows - incRows - decRows);
+    const isValidYarnWeight = yarnInfo.weight in rowHeights;
 
-        const rowArray = [];
-        const incArray = [];
-        const scArray = [];
-        const decArray = [];
+    const yarnWeight = isValidYarnWeight ? yarnInfo.weight : "Medium";
 
-        for (let i = 1; i < rows + 1; i++) {
-            rowArray.push(i);
-        }
-
-        for (let i = 1; i < incRows; i++) {
-            incArray.push(`Row ${rowArray[i + 1]}: 1inc, ${i}sc (${12 + i * 6})`);
-        }
-
-        const maxStitches = incRows * 6;
-
-        if (scRows > 0) {
-            const startRow = incRows + 2;
-            const endRow = incRows + scRows;
-            const rowText = scRows === 1 ? `Row ${startRow}` : `Row ${startRow}-${endRow}`;
-            scArray.push(`${rowText}: ${maxStitches}sc (${maxStitches})`);
-        }
-
-        let currentStitches = maxStitches;
-
-        for (let i = 0; i < decRows - 1; i++) {
-            currentStitches -= 6;
-            const rowIndex = incRows + scRows + i;
-            decArray.push(`Row ${rowArray[rowIndex]}: 1dec, ${decRows - i - 1}sc (${currentStitches})`);
-        }
-
-        return {
-            type: singleShape.type,
-            color: singleShape.color,
-            name: singleShape.name,
-            width: singleShape.width,
-            height: singleShape.height,
-            rotation_x: singleShape.rotation_x,
-            rotation_y: singleShape.rotation_y,
-            rotation_z: singleShape.rotation_z,
-            rows,
-            incArray,
-            scArray,
-            decArray,
-            rowArray,
-        };
-    };
+    console.log(yarnWeight)
 
     useEffect(() => {
         if (shapes && shapes.length > 0 && yarnInfo) {
-            const newPatterns = shapes.map((singleShape) => generatePattern(singleShape, yarnInfo.weight));
+            const newPatterns = shapes.map((singleShape) => {
+                switch (singleShape.type) {
+                    case "Sphere":
+                        return generateSpherePattern(singleShape, yarnWeight, PIXELS_PER_CM, rowHeights);
+                    case "Arm":
+                        return generateArmPattern(singleShape, yarnWeight, PIXELS_PER_CM, rowHeights);
+                    default:
+                        return null;
+                }
+            }).filter(pattern => pattern !== null);
             setPatterns(newPatterns);
         } else {
             setPatterns([]);
         }
     }, [shapes, yarnInfo]);
+
+    console.log(patterns)
 
     return (
         <div>
@@ -166,8 +87,13 @@ const Pattern: React.FC<PatternProps> = ({ shapes, yarnInfo }) => {
                                         {pattern.decArray.map((row, idx) => (
                                             <li key={idx}>{row}</li>
                                         ))}
-                                        <li>Row {pattern.rowArray.length}: 6dec (6)</li>
-                                        <li>Sew closed</li>
+                                        {pattern.type !== "Arm" ? (
+                                            <>
+                                                <li>Row {pattern.rowArray.length - 1}: 6dec (6)</li>
+                                                <li>Sew closed</li>
+                                            </>
+                                        ) : null}
+
                                     </ul>
                                     <div
                                         className={`shape ${pattern.type}`}
@@ -185,15 +111,14 @@ const Pattern: React.FC<PatternProps> = ({ shapes, yarnInfo }) => {
                     )}
                 </div>
                 <div className="pattern-image">
-                    <Link to="/myPatterns">
                         <Button
                             variant="contained"
                             color="inherit"
                             style={{ position: "sticky", marginLeft: 20, backgroundColor: "#F2F3AE", color: "black" }}
+                            onClick={() => {navigate(-1)}}
                         >
                             Go back
                         </Button>
-                    </Link>
                 </div>
             </div>
         </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, TextField, Button, Typography, Container, Alert, Tabs, Tab } from '@mui/material';
+import {Box, TextField, Button, Typography, Container, Alert, Tabs, Tab, Card} from '@mui/material';
 import { auth, db } from '../firebase-config.js';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
@@ -36,16 +36,16 @@ const Login = () => {
         } catch (err) {
             switch (err.code) {
                 case 'auth/invalid-credential':
-                    setError('Ongeldige inloggegevens.');
+                    setError('Invalid credentials.');
                     break;
                 case 'auth/user-not-found':
-                    setError('Gebruiker niet gevonden.');
+                    setError('User not found.');
                     break;
                 case 'auth/wrong-password':
-                    setError('Onjuist wachtwoord.');
+                    setError('Wrong password.');
                     break;
                 default:
-                    setError('Er is een fout opgetreden. Probeer het opnieuw.');
+                    setError('Something went wrong. Try again.');
             }
         }
     };
@@ -65,22 +65,22 @@ const Login = () => {
         } catch (err) {
             switch (err.code) {
                 case 'auth/email-already-in-use':
-                    setError('Dit e-mailadres is al in gebruik.');
+                    setError('This email adress is already in use.');
                     break;
                 case 'auth/invalid-email':
-                    setError('Ongeldig e-mailadres.');
+                    setError('This email adress is invalid.');
                     break;
                 case 'auth/weak-password':
-                    setError('Wachtwoord is te zwak. Gebruik minstens 6 tekens.');
+                    setError('Password is too weak. Use at least 6 characters.');
                     break;
                 default:
-                    setError('Er is een fout opgetreden bij registratie.');
+                    setError('Something went wrong with your registration.');
             }
         }
     };
 
     return (
-        <Container maxWidth="xs">
+        <div className="pattern">
             <Box
                 sx={{
                     display: 'flex',
@@ -88,55 +88,58 @@ const Login = () => {
                     alignItems: 'center',
                     mt: 8,
                 }}
+                className="new-pattern-form"
             >
-                <Typography component="h1" variant="h5">
-                    {tabValue === 0 ? 'Inloggen' : 'Registreren'}
-                </Typography>
-                <Tabs value={tabValue} onChange={handleTabChange} sx={{ mt: 2 }}>
-                    <Tab label="Inloggen" />
-                    <Tab label="Registreren" />
-                </Tabs>
-                <Box component="form" onSubmit={tabValue === 0 ? handleLogin : handleRegister} sx={{ mt: 1 }}>
-                    <TextField
-                        margin="normal"
-                        required
-                        fullWidth
-                        id="email"
-                        label="E-mailadres"
-                        name="email"
-                        autoComplete="email"
-                        autoFocus
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                    />
-                    <TextField
-                        margin="normal"
-                        required
-                        fullWidth
-                        name="password"
-                        label="Wachtwoord"
-                        type="password"
-                        id="password"
-                        autoComplete={tabValue === 0 ? 'current-password' : 'new-password'}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                    />
-                    {error && (
-                        <Alert severity="error" sx={{ mt: 2 }}>
-                            {error}
-                        </Alert>
-                    )}
-                    <Button
-                        type="submit"
-                        fullWidth
-                        variant="contained"
-                        sx={{ mt: 3, mb: 2 }}
-                    >
-                        {tabValue === 0 ? 'Inloggen' : 'Account aanmaken'}
-                    </Button>
-                </Box>
+                <Card sx={{padding: 3}}>
+                    <Typography component="h1" variant="h5">
+                        {tabValue === 0 ? 'Log in' : 'Register'}
+                    </Typography>
+                    <Tabs value={tabValue} onChange={handleTabChange} sx={{ mt: 2 }}>
+                        <Tab label="Log in" />
+                        <Tab label="Register" />
+                    </Tabs>
+                    <Box component="form" onSubmit={tabValue === 0 ? handleLogin : handleRegister} sx={{ mt: 1 }}>
+                        <TextField
+                            margin="normal"
+                            required
+                            fullWidth
+                            id="email"
+                            label="Email adress"
+                            name="email"
+                            autoComplete="email"
+                            autoFocus
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                        />
+                        <TextField
+                            margin="normal"
+                            required
+                            fullWidth
+                            name="password"
+                            label="Password"
+                            type="password"
+                            id="password"
+                            autoComplete={tabValue === 0 ? 'current-password' : 'new-password'}
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                        />
+                        {error && (
+                            <Alert severity="error" sx={{ mt: 2 }}>
+                                {error}
+                            </Alert>
+                        )}
+                        <Button
+                            type="submit"
+                            fullWidth
+                            variant="contained"
+                            sx={{ mt: 3, mb: 2, backgroundColor: "#d4929a" }}
+                        >
+                            {tabValue === 0 ? 'Log in' : 'Register'}
+                        </Button>
+                    </Box>
+                </Card>
             </Box>
-        </Container>
+        </div>
     );
 };
 
