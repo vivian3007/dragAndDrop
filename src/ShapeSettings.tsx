@@ -224,7 +224,7 @@ export default function Settingsbar({
                 {activeShape ? (
                     <form>
                         <h1>Settings: {activeShape?.name}</h1>
-                        <p>{activeShape.id}</p>
+                        {/*<p>{activeShape.id}</p>*/}
                         <div className="shape-settings-group">
                             <h3 className="shape-settings-title">General info</h3>
                             <div className="input-text">

@@ -54,6 +54,15 @@ export default function ThreeJsField({
 }) {
     const orbitControlsRef = useRef<any>(null);
     const [showGrid, setShowGrid] = useState(false);
+    const [currentView, setCurrentView] = useState<'front' | 'back' | 'left' | 'right' | 'top'>('front');
+
+    const gridRotations: Record<string, [number, number, number]> = {
+        front: [Math.PI / 2, 0, 0],
+        back: [Math.PI / 2, 0, 0],
+        left: [Math.PI / 2, 0, Math.PI / 2],
+        right: [Math.PI / 2, 0, -Math.PI / 2],
+        top: [0, 0, 0],
+    };
 
     useEffect(() => {
         const handleKeyPress = (event: KeyboardEvent) => {
@@ -120,12 +129,13 @@ export default function ThreeJsField({
                 intersections={intersections}
                 meshes={meshes}
                 setMeshes={setMeshes}
+                setCurrentView={setCurrentView}
             />
             {showGrid && (
                 <primitive
                     object={new GridHelper(50, 30, '#6f6f6f', '#9d9d9d')}
                     position={[0, 0, 0]}
-                    rotation={[Math.PI / 2, 0, 0]}
+                    rotation={gridRotations[currentView] || [Math.PI / 2, 0, 0]}
                 />
             )}
             <ambientLight intensity={0.4} />

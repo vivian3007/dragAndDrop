@@ -23,6 +23,7 @@ export default function SceneController({
                                             setIntersections,
                                             meshes,
                                             setMeshes,
+                                            setCurrentView,
                                         }: {
     orbitControlsRef: React.RefObject<any>;
     onSetView: (setView: (viewKey: string) => void) => void;
@@ -35,6 +36,7 @@ export default function SceneController({
     intersections: any;
     meshes: any;
     setMeshes: any;
+    setCurrentView: (view: 'front' | 'back' | 'left' | 'right' | 'top') => void;
 }) {
     const { camera, scene } = useThree();
 
@@ -52,6 +54,7 @@ export default function SceneController({
                 orbitControlsRef.current.update();
             }
             setCamera(camera);
+            setCurrentView(viewKey);
         }
     };
 
