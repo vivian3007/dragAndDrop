@@ -74,12 +74,12 @@ const Account: React.FC = () => {
           </Typography>
           <CardContent sx={{ textAlign: 'center' }}>
             <Avatar
-              src={user.photoURL || undefined}
+              src={user.photoURL || "../img/avatar.jpg"}
               alt={user.displayName || 'User'}
               sx={{ width: 100, height: 100, mx: 'auto', mb: 2 }}
             />
             <Typography variant="body1" color="text.secondary" gutterBottom>
-              Name: {user.displayName || 'N/A'}
+              Name: {user.displayName || 'Vivian Vlaanderen'}
             </Typography>
             <Typography variant="body1" color="text.secondary" gutterBottom>
               Email: {user.email || 'N/A'}
