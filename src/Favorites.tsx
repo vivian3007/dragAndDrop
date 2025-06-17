@@ -21,7 +21,9 @@ const Favorites = ({yarnInfo, intersections} : {yarnInfo: Yarn, intersections: a
     const src = [
         "duck",
         "cow",
-        "cat"
+        "cat",
+        "dog",
+        "bunny"
     ]
 
     const getRandomImage = () => {

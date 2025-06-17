@@ -1,7 +1,7 @@
 import React from 'react';
 import {Card, Typography, CircularProgress, Button, Box, Chip} from '@mui/material';
-import { Favorite, FavoriteBorder } from '@mui/icons-material';
-import { doc, updateDoc, getDocs } from 'firebase/firestore';
+import { Favorite, FavoriteBorder, Delete } from '@mui/icons-material';
+import { doc, updateDoc, getDocs, deleteDoc } from 'firebase/firestore';
 import { db, auth } from '../firebase-config.js';
 import { useCollection } from 'react-firebase-hooks/firestore';
 import { query, collection, where } from 'firebase/firestore';
@@ -29,7 +29,9 @@ const MyPatterns = ({yarnInfo, intersections, camera, scene, setIntersections, m
     const src = [
         "duck",
         "cow",
-        "cat"
+        "cat",
+        "dog",
+        "bunny"
     ]
 
     const getRandomImage = () => {
@@ -94,6 +96,18 @@ const MyPatterns = ({yarnInfo, intersections, camera, scene, setIntersections, m
         }
     };
 
+    const handleDeleteAmigurumi = async (amigurumi: Amigurumi) => {
+        if (window.confirm(`Weet je zeker dat je "${amigurumi.name}" wilt verwijderen?`)) {
+            try {
+                await deleteDoc(doc(db, 'amigurumi', amigurumi.id));
+                // Optioneel: feedback/toast of refresh
+            } catch (error) {
+                console.error('Fout bij verwijderen van amigurumi:', error);
+                alert('Fout bij verwijderen van amigurumi');
+            }
+        }
+    };
+
     if (loading) {
         return <CircularProgress />;
     }
@@ -126,13 +140,13 @@ const MyPatterns = ({yarnInfo, intersections, camera, scene, setIntersections, m
                                     />
                                 ))}
                             </Box>
-                            <div style={{display: 'flex', gap: '15px', marginTop: 20, flexWrap: "wrap", width: "100%", justifyContent: "space-between"}}>
-                                <div style={{display: "flex", gap: "15px", width: "80%"}}>
+                            <div style={{display: 'flex', gap: '5px', marginTop: 20, flexWrap: "wrap", width: "100%", justifyContent: "space-between"}}>
+                                <div style={{display: "flex", gap: "5px", width: "65%"}}>
                                     <Button
                                         type="button"
                                         variant="contained"
                                         color="inherit"
-                                        sx={{marginBottom: "20px", width: 1, backgroundColor: "#d4929a"}}
+                                        sx={{ width: 1, backgroundColor: "#d4929a"}}
                                         onClick={() => handleEditClick(amigurumi)}
                                     >
                                         Edit
@@ -141,23 +155,30 @@ const MyPatterns = ({yarnInfo, intersections, camera, scene, setIntersections, m
                                         type="button"
                                         variant="contained"
                                         color="inherit"
-                                        sx={{marginBottom: "20px", width: 1, backgroundColor: "#d4929a"}}
+                                        sx={{ width: 1, backgroundColor: "#d4929a"}}
                                         onClick={() => handlePatternClick(amigurumi)}
                                     >
                                         Pattern
                                     </Button>
                                 </div>
-                                {amigurumi.favorite ? (
-                                    <Favorite
-                                        sx={{color: 'red', fontSize: '2.5rem', cursor: 'pointer', height: "2.5rem"}}
-                                        onClick={() => handleFavoriteChange(amigurumi)}
-                                    />
-                                ) : (
-                                    <FavoriteBorder
+                                <div style={{display: 'flex', gap: '10px', alignItems: 'center'}}>
+                                    {amigurumi.favorite ? (
+                                        <Favorite
+                                            sx={{color: 'red', fontSize: '2.5rem', cursor: 'pointer', height: "2.5rem"}}
+                                            onClick={() => handleFavoriteChange(amigurumi)}
+                                        />
+                                    ) : (
+                                        <FavoriteBorder
+                                            sx={{color: 'grey', fontSize: '2.5rem', cursor: 'pointer'}}
+                                            onClick={() => handleFavoriteChange(amigurumi)}
+                                        />
+                                    )}
+                                    <Delete
                                         sx={{color: 'grey', fontSize: '2.5rem', cursor: 'pointer'}}
-                                        onClick={() => handleFavoriteChange(amigurumi)}
+                                        onClick={() => handleDeleteAmigurumi(amigurumi)}
+                                        titleAccess="Verwijder patroon"
                                     />
-                                )}
+                                </div>
                             </div>
                         </Card>
                     ))

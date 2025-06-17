@@ -21,7 +21,9 @@ const Homepage = ({yarnInfo, intersections} : {yarnInfo: Yarn, intersections: an
     const src = [
         "duck",
         "cow",
-        "cat"
+        "cat",
+        "dog",
+        "bunny"
     ]
 
     const getRandomImage = () => {
