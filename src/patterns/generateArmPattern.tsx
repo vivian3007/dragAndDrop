@@ -1,4 +1,4 @@
-const generateArmPattern = (singleShape: Shape, yarnWeight: string, PIXELS_PER_CM: number, rowHeights: Record<string, number>) => {
+const generateArmPattern = (singleShape: Shape, yarnWeight: string, PIXELS_PER_CM: number, rowHeights: Record<string, number>, intersections, shapes) => {
     const rowHeight = rowHeights[yarnWeight] * PIXELS_PER_CM ?? 4;
     const shapeHeight = singleShape.height;
     const shapeWidth = singleShape.width;
@@ -12,6 +12,34 @@ const generateArmPattern = (singleShape: Shape, yarnWeight: string, PIXELS_PER_C
     const incArray = [];
     const scArray = [];
     const decArray = [];
+    const intersectionRows = [];
+
+    intersections.forEach((intersection, index) => {
+        const shape = shapes.find((shape) => shape.id === intersection.shape1);
+        if (shape) {
+            if(intersection.pixelDistanceHeight > intersection.pixelDistanceWidth) {
+                const topRow = Math.floor(intersection.topToHighestPoint / (shape.height / rows))
+                const bottomRow = Math.floor(intersection.pixelDistanceHeight / rows);
+                intersectionRows.push({
+                    shapeId1: intersection.shape1,
+                    shapeId2: intersection.shape2,
+                    topRow,
+                    bottomRow,
+                });
+            } else if (intersection.pixelDistanceWidth > intersection.pixelDistanceHeight) {
+                const topRow = 0;
+                const bottomRow = Math.floor(intersection.pixelDistanceWidth / rows)
+                intersectionRows.push({
+                    shapeId1: intersection.shape1,
+                    shapeId2: intersection.shape2,
+                    topRow,
+                    bottomRow,
+                });
+            }
+        } else {
+            console.warn(`No shape found for intersection.shape1: ${intersection.shape1}`);
+        }
+    });
 
     for (let i = 1; i < rows + 1; i++) {
         rowArray.push(i);

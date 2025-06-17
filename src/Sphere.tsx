@@ -1,7 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react';
-import {useLoader, useThree} from '@react-three/fiber';
+import React, {useContext, useEffect, useRef, useState} from 'react';
+import {useLoader, useThree, useFrame} from '@react-three/fiber';
 import TransformControlsThree from "./TransformControlsThree.tsx";
 import * as THREE from 'three';
+import { RenderContext } from "./RenderProvider.tsx";
 
 export default function Sphere({
                                    id,
@@ -10,8 +11,8 @@ export default function Sphere({
                                    isSelected,
                                    onSelect,
                                    onUpdateShape,
-    transformMode,
-    setTransformMode
+                                   transformMode,
+                                   setTransformMode,
                                }: {
     id: string;
     data: { shape: any };
@@ -19,8 +20,8 @@ export default function Sphere({
     isSelected: boolean;
     onSelect: (id: string) => void;
     onUpdateShape: (shape: any) => void;
-    transformMode: any,
-    setTransformMode: any
+    transformMode: any;
+    setTransformMode: any;
 }) {
     const shape = data?.shape;
     const width = shape?.width ?? 50;
@@ -39,6 +40,23 @@ export default function Sphere({
     const [isDragging, setIsDragging] = useState(false);
 
     const texture = useLoader(THREE.TextureLoader, '/textures/stitch-texture.jpg');
+
+    // const meshRendered = useContext(RenderContext)
+    // const [hasRendered, setHasRendered] = useState(false);
+
+    // useFrame(() => {
+    //     if (meshRef.current && !hasRendered) {
+    //         meshRendered(id);
+    //         setHasRendered(true);
+    //     }
+    // });
+
+    useEffect(() => {
+        if (meshRef.current) {
+            meshRef.current.uuid = id; // Ensure mesh uuid matches shape.id
+            console.log('Sphere mesh UUID set to:', meshRef.current.uuid);
+        }
+    }, [id]);
 
     useEffect(() => {
         const canvasWidth = size.width;

@@ -2,6 +2,8 @@ import {useEffect, useState} from "react";
 import { db } from "../firebase-config.js";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import {Button} from "@mui/material";
+import {v4 as uuidv4} from "uuid";
+import {toast} from "react-toastify";
 
 export default function YarnSettings({onUpdateYarnInfo, yarnInfo} : {onUpdateYarnInfo: any,  yarnInfo: {id: number, name: string, weight: string, mPerSkein: number, hooksize: number, material: string, color: string}}) {
     const [name, setName] = useState<string | null>(null);
@@ -10,6 +12,7 @@ export default function YarnSettings({onUpdateYarnInfo, yarnInfo} : {onUpdateYar
     const [material, setMaterial] = useState<string | null>(null);
     const [hooksize, setHooksize] = useState<number | null>(null);
     const [color, setColor] = useState<string | null>(null);
+    const storedAmigurumi = localStorage.getItem("amigurumi");
 
     const yarnWeights = [
         { value: "Lace" },
@@ -35,9 +38,12 @@ export default function YarnSettings({onUpdateYarnInfo, yarnInfo} : {onUpdateYar
                 color: color ?? null,
             };
 
-            const docId = yarnInfo.id.toString();
+            const docId = yarnInfo.id ? yarnInfo.id.toString() : uuidv4();
             const yarnRef = doc(db, "yarn", docId);
             await setDoc(yarnRef, yarnData, { merge: true });
+
+            const amigurumiRef = doc(db, "amigurumi", storedAmigurumi);
+            await setDoc(amigurumiRef, { yarn_id: docId }, { merge: true });
 
             onUpdateYarnInfo({
                 id: yarnInfo.id,
@@ -49,10 +55,11 @@ export default function YarnSettings({onUpdateYarnInfo, yarnInfo} : {onUpdateYar
                 color: color ?? yarnInfo.color,
             });
 
+            toast.success("Yarn opgeslagen en gekoppeld aan amigurumi!");
             console.log("Yarn data saved successfully:", yarnData);
         } catch (error) {
             console.error("Fout bij opslaan yarn:", error);
-            alert("Fout bij opslaan: " + error);
+            toast.error("Fout bij opslaan: " + (error as Error).message);
         }
     };
 
@@ -116,8 +123,8 @@ export default function YarnSettings({onUpdateYarnInfo, yarnInfo} : {onUpdateYar
     // };
 
     return (
-        <div>
-            <form>
+        <div className="yarn-settings-group">
+            <form className="yarn-settings-group">
                 <h1>Yarn settings</h1>
                 <div className="input-text">
                     <label>Name: </label>

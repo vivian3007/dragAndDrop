@@ -6,8 +6,9 @@ import { db, auth } from '../firebase-config.js';
 import { useCollection } from 'react-firebase-hooks/firestore';
 import { query, collection, where } from 'firebase/firestore';
 import {useNavigate} from "react-router-dom";
+import calculateIntersections from "./calculateIntersections.tsx";
 
-const MyPatterns = ({setCurrentAmigurumi, yarnInfo} : {setCurrentAmigurumi: any, yarnInfo: Yarn}) => {
+const MyPatterns = ({yarnInfo, intersections, camera, scene, setIntersections, meshes, setMeshes, threeJsContainerRef} : {yarnInfo: Yarn, intersections: any}) => {
     const loggedInUser = auth.currentUser?.email;
 
     const navigate = useNavigate();
@@ -60,6 +61,16 @@ const MyPatterns = ({setCurrentAmigurumi, yarnInfo} : {setCurrentAmigurumi: any,
 
             console.log('Shapes voor amigurumi', amigurumi.id, ':', shapes);
 
+            calculateIntersections(
+                shapes,
+                scene,
+                threeJsContainerRef,
+                camera,
+                meshes,
+                setIntersections,
+                setMeshes
+            );
+
             navigate(`/${amigurumi.id}/editor`, { state: { amigurumi, shapes } });
         } catch (error) {
             console.error('Fout bij het ophalen van shapes:', error);
@@ -77,7 +88,7 @@ const MyPatterns = ({setCurrentAmigurumi, yarnInfo} : {setCurrentAmigurumi: any,
 
             console.log('Shapes voor amigurumi', amigurumi.id, ':', shapes);
 
-            navigate(`/${amigurumi.id}/pattern`, { state: { amigurumi, shapes, yarnInfo } });
+            navigate(`/${amigurumi.id}/pattern`, { state: { amigurumi, shapes, yarnInfo, intersections } });
         } catch (error) {
             console.error('Fout bij het ophalen van shapes:', error);
         }

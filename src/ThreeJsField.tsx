@@ -1,111 +1,56 @@
-import React, { Ref, useEffect, useRef, useState } from 'react';
-import { Canvas, useThree } from '@react-three/fiber';
+import React, {createContext, Ref, useEffect, useRef, useState} from 'react';
+import {Canvas, useThree} from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
+import { GridHelper } from 'three';
 import Sphere from './Sphere';
 import Arm from './Arm';
-import {GridHelper, Vector3} from 'three';
-import * as THREE from 'three';
+import SceneController from "./SceneController.tsx";
+import RenderProvider from "./RenderProvider.tsx";
+import calculateIntersections from "./calculateIntersections.tsx";
 
 const shapeComponents: { [key: string]: React.ComponentType<any> } = {
     Sphere,
     Arm,
 };
 
-const views = {
-    front: { position: [0, 0, 40], lookAt: [0, 0, 0] },
-    back: { position: [0, 0, -40], lookAt: [0, 0, 0] },
-    left: { position: [-40, 0, 0], lookAt: [0, 0, 0] },
-    right: { position: [40, 0, 0], lookAt: [0, 0, 0] },
-    top: { position: [0, 40, 0], lookAt: [0, 0, 0] },
-};
-
-function SceneController({
-                             orbitControlsRef,
-                             onSetView,
-                             activeId,
-                             droppedShapes,
-                         }: {
-    orbitControlsRef: React.RefObject<any>;
-    onSetView: (setView: (viewKey: string) => void) => void;
-    activeId: any;
-    droppedShapes: Shape[];
-}) {
-    const { camera } = useThree();
-
-    const setView = (viewKey: string) => {
-        console.log('setView called with:', viewKey);
-        const view = views[viewKey as keyof typeof views];
-        if (view) {
-            camera.position.set(...view.position);
-            camera.lookAt(...view.lookAt);
-            camera.updateProjectionMatrix();
-            if (orbitControlsRef.current) {
-                orbitControlsRef.current.update();
-            }
-            console.log('Camera position updated to:', camera.position.toArray());
-        } else {
-            console.warn('Invalid view key:', viewKey);
-        }
-    };
-
-    useEffect(() => {
-        console.log('Setting setView function in SceneController');
-        onSetView(setView);
-    }, [onSetView]);
-
-    useEffect(() => {
-        camera.position.set(0, 0, 40);
-        camera.lookAt(0, 0, 0);
-        camera.updateProjectionMatrix();
-        if (orbitControlsRef.current) {
-            orbitControlsRef.current.update();
-        }
-        console.log('Initial camera position set to:', camera.position.toArray());
-    }, [camera, orbitControlsRef]);
-
-    // useEffect(() => {
-    //     if (orbitControlsRef.current && droppedShapes) {
-    //         const selectedShape = droppedShapes.find((shape) => shape.id === activeId);
-    //         if (selectedShape && selectedShape.position) {
-    //             const { position } = selectedShape;
-    //             // Handle position as either { x, y, z } or [x, y, z]
-    //             const target = Array.isArray(position)
-    //                 ? new Vector3(...position)
-    //                 : new Vector3(position.x || 0, position.y || 0, position.z || 0);
-    //             orbitControlsRef.current.target.copy(target);
-    //             console.log('OrbitControls target set to:', target.toArray());
-    //         } else {
-    //             // Default to origin if no shape is selected or position is missing
-    //             orbitControlsRef.current.target.set(0, 0, 0);
-    //             console.log('OrbitControls target reset to origin: [0, 0, 0]');
-    //         }
-    //         orbitControlsRef.current.update();
-    //     }
-    // }, [activeId, droppedShapes, orbitControlsRef]);
-
-    return null;
-}
-
 export default function ThreeJsField({
                                          droppedShapes,
+                                        setDroppedShapes,
                                          threeJsContainerRef,
                                          activeId,
                                          setActiveId,
                                          onUpdateShape,
                                          onDeleteShape,
                                          onSetView,
-    transformMode,
-    setTransformMode
+                                         transformMode,
+                                         setTransformMode,
+                                        camera,
+                                         setCamera,
+                                         setIntersections,
+                                         intersections,
+                                        meshes,
+                                        setMeshes,
+                                        scene,
+                                        setScene,
                                      }: {
     droppedShapes: any[];
+    setDroppedShapes: any;
     threeJsContainerRef: Ref<HTMLCanvasElement>;
     activeId: any;
     setActiveId: any;
     onUpdateShape: any;
     onDeleteShape: any;
     onSetView: (setView: (viewKey: string) => void) => void;
-    transformMode: any,
-    setTransformMode: any,
+    transformMode: any;
+    setTransformMode: any;
+    camera: any;
+    setCamera: any;
+    setIntersections: any;
+    intersections: any;
+    meshes: any;
+    setMeshes: any;
+    scene: any;
+    setScene: any;
 }) {
     const orbitControlsRef = useRef<any>(null);
     const [showGrid, setShowGrid] = useState(false);
@@ -134,13 +79,48 @@ export default function ThreeJsField({
         setActiveId(activeId === id ? null : id);
     };
 
+    // const [allMeshesReady, setAllMeshesReady] = useState(false);
+    // const meshCount = droppedShapes.length // total number of meshes
+
+    // const handleAllRendered = () => {
+    //     setAllMeshesReady(true);
+    // };
+
+    // useEffect(() => {
+    //     if (allMeshesReady) {
+    //         calculateIntersections(
+    //             droppedShapes,
+    //             scene,
+    //             threeJsContainerRef,
+    //             camera,
+    //             meshes,
+    //             setIntersections,
+    //             setMeshes
+    //         );
+    //         setAllMeshesReady(false); // reset zodat het opnieuw kan bij volgende render
+    //     }
+    // // Voeg alle relevante dependencies toe!
+    // }, [allMeshesReady, droppedShapes]);
+
     return (
         <Canvas
-            camera={{ position: [40, 0, 0], fov: 75 }}
+            camera={{ position: [40, 0, 0], fov: 75, zoom: 3 }}
             ref={threeJsContainerRef}
             style={{ height: '92vh' }}
         >
-            <SceneController orbitControlsRef={orbitControlsRef} onSetView={onSetView} activeId={activeId} droppedShapes={droppedShapes} />
+            <SceneController
+                orbitControlsRef={orbitControlsRef}
+                onSetView={onSetView}
+                activeId={activeId}
+                droppedShapes={droppedShapes}
+                setCamera={setCamera}
+                setScene={setScene}
+                threeJsContainerRef={threeJsContainerRef}
+                setIntersections={setIntersections}
+                intersections={intersections}
+                meshes={meshes}
+                setMeshes={setMeshes}
+            />
             {showGrid && (
                 <primitive
                     object={new GridHelper(50, 30, '#6f6f6f', '#9d9d9d')}
@@ -157,23 +137,24 @@ export default function ThreeJsField({
                 enablePan={true}
                 enableZoom={true}
             />
-
-            {droppedShapes.map((shape: any) => {
-                const ShapeComponent = shapeComponents[shape.type] || Sphere;
-                return (
-                    <ShapeComponent
-                        key={shape.id}
-                        id={shape.id}
-                        data={{ shape }}
-                        orbitControlsRef={orbitControlsRef}
-                        isSelected={activeId === shape.id}
-                        onSelect={handleSelect}
-                        onUpdateShape={onUpdateShape}
-                        transformMode={transformMode}
-                        setTransformMode={setTransformMode}
-                    />
-                );
-            })}
+            {/* <RenderProvider meshCount={meshCount} onAllRendered={handleAllRendered}> */}
+                {droppedShapes.map((shape: any) => {
+                    const ShapeComponent = shapeComponents[shape.type] || Sphere;
+                    return (
+                            <ShapeComponent
+                                key={shape.id}
+                                id={shape.id}
+                                data={{ shape }}
+                                orbitControlsRef={orbitControlsRef}
+                                isSelected={activeId === shape.id}
+                                onSelect={handleSelect}
+                                onUpdateShape={onUpdateShape}
+                                transformMode={transformMode}
+                                setTransformMode={setTransformMode}
+                            />
+                    );
+                })}
+            {/* </RenderProvider> */}
         </Canvas>
     );
 }

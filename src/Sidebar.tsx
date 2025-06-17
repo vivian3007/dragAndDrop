@@ -14,7 +14,7 @@ export default function Sidebar({ setDroppedShapes, setActiveId, containerRef, t
 
     return (
         <nav className="Navbar" ref={navBarRef}>
-            <Shapebar setActiveId={setActiveId} containerRef={containerRef} threeJsContainerRef={threeJsContainerRef} dragging={dragging} setDragging={setDragging} camera={camera} setDroppedShapes={setDroppedShapes} />
+            <Shapebar setActiveId={setActiveId} containerRef={containerRef} threeJsContainerRef={threeJsContainerRef} dragging={dragging} setDragging={setDragging} camera={camera} setDroppedShapes={setDroppedShapes} navBarRef={navBarRef} />
             <Toolbar setView={setView} setTransformMode={setTransformMode} />
         </nav>
     );

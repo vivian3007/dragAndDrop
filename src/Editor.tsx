@@ -28,7 +28,13 @@ const Editor = ({
     onSetView,
     setView,
     transformMode,
-    setTransformMode
+    setTransformMode,
+    intersections,
+    setIntersections,
+    meshes,
+    setMeshes,
+    scene,
+    setScene,
                 }: {
     droppedShapes: Shape[];
     setDroppedShapes: React.Dispatch<React.SetStateAction<Shape[]>>;
@@ -51,20 +57,25 @@ const Editor = ({
     yarns: Yarn[];
     onSetView: (setView: (viewKey: string) => void) => void;
     setView: any;
-    transFormMode: any,
+    transFormMode: any;
     setTransformMode: any;
+    intersections: any;
+    setIntersections: any;
+    meshes: any;
+    setMeshes: any;
+    scene: any;
+    setScene: any;
 }) => {
     const location = useLocation();
 
     useEffect(() => {
         if (location.state?.shapes) {
             const incomingShapes: Shape[] = location.state.shapes;
-            console.log('Populating droppedShapes with:', incomingShapes);
+            console.log("UseEFFECT van Editor.")
             setDroppedShapes(incomingShapes);
         }
         if (location.state?.amigurumi) {
             const amigurumi: Shape[] = location.state.amigurumi;
-            console.log('Populating droppedShapes with:', amigurumi);
             localStorage.setItem("amigurumi", amigurumi.id);
             const currentYarn = yarns.find((yarn) => yarn.id === amigurumi.yarn_id);
             if(currentYarn){
@@ -91,6 +102,7 @@ const Editor = ({
             />
             <ThreeJsField
                 droppedShapes={droppedShapes}
+                setDroppedShapes={setDroppedShapes}
                 threeJsContainerRef={threeJsContainerRef}
                 activeId={activeId}
                 setActiveId={setActiveId}
@@ -101,6 +113,12 @@ const Editor = ({
                 onSetView={onSetView}
                 transformMode={transformMode}
                 setTransformMode={setTransformMode}
+                intersections={intersections}
+                setIntersections={setIntersections}
+                meshes={meshes}
+                setMeshes={setMeshes}
+                scene={scene}
+                setScene={setScene}
             />
             <Settingsbar
                 activeShape={activeShape}
@@ -112,6 +130,7 @@ const Editor = ({
                 dragging={dragging}
                 onUpdateYarnInfo={handleUpdateYarnInfo}
                 yarnInfo={yarnInfo}
+                intersections={intersections}
             />
         </div>
     );

@@ -14,6 +14,8 @@ import {db, auth} from "../firebase-config.js";
 import {AppBar, Box, Button, Container, Toolbar} from "@mui/material";
 import Login from "./Login.tsx";
 import { signOut } from 'firebase/auth';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function App() {
     const [droppedShapes, setDroppedShapes] = useState<Shape[]
@@ -25,6 +27,7 @@ export default function App() {
 
     const [dragging, setDragging] = useState(false);
     const [camera, setCamera] = useState(null);
+    const [scene, setScene] = useState(null);
 
     const [activeId, setActiveId] = useState(null);
     const [shapeColor, setShapeColor] = useState('#FFFFFF');
@@ -32,10 +35,12 @@ export default function App() {
     const [amigurumis, setAmigurumis] = useState<Amigurumi[]>([]);
     const [yarns, setYarns] = useState<Yarn[]>([]);
 
+    const [intersections, setIntersections] = useState([]);
+    const [meshes, setMeshes] = useState([]);
+
     const [setView, setSetView] = useState<(viewKey: string) => void>(() => () => {});
 
     const [transformMode, setTransformMode] = useState<'translate' | 'rotate' | 'scale'>('translate');
-
 
     const location = useLocation();
     const navigate = useNavigate();
@@ -266,7 +271,6 @@ export default function App() {
     }
 
     const onSetView = useCallback((setViewFn: (viewKey: string) => void) => {
-        console.log('onSetView called in App with:', setViewFn);
         setSetView(() => setViewFn);
     }, []);
 
@@ -325,18 +329,50 @@ export default function App() {
             <Box>
                 <Routes>
                     <Route path={"/"} element={<Login />} />
-                    <Route path="/home" element={<Homepage amigurumis={amigurumis} setAmigurumis={setAmigurumis} yarnInfo={yarnInfo} />} />
-                    <Route path="/myPatterns" element={<MyPatterns amigurumis={amigurumis} setAmigurumis={setAmigurumis} yarnInfo={yarnInfo} />} />
-                    <Route path="/favorites" element={<Favorites amigurumis={amigurumis} setAmigurumis={setAmigurumis} yarnInfo={yarnInfo} />} />
+                    <Route path="/home" element={<Homepage amigurumis={amigurumis} setAmigurumis={setAmigurumis} yarnInfo={yarnInfo} intersections={intersections} />} />
+                    <Route path="/myPatterns" element={<MyPatterns amigurumis={amigurumis} setAmigurumis={setAmigurumis} yarnInfo={yarnInfo} intersections={intersections} setIntersections={setIntersections} meshes={meshes} setMeshes={setMeshes} scene={scene} camera={camera} threeJsContainerRef={threeJsContainerRef} />} />
+                    <Route path="/favorites" element={<Favorites amigurumis={amigurumis} setAmigurumis={setAmigurumis} yarnInfo={yarnInfo} intersections={intersections} />} />
                     <Route path="/newPattern" element={<NewPattern amigurumis={amigurumis} setAmigurumis={setAmigurumis} setDroppedShapes={setDroppedShapes} droppedShapes={droppedShapes} />} />
                     <Route path="/:amigurumi_id/editor" element={
-                        <Editor droppedShapes={droppedShapes} setDroppedShapes={setDroppedShapes} activeId={activeId} setActiveId={setActiveId} activeShape={activeShape} containerRef={containerRef} threeJsContainerRef={threeJsContainerRef} dragging={dragging} setDragging={setDragging} camera={camera} handleUpdateShape={handleUpdateShape} setCamera={setCamera} camera={camera} handleDeleteShape={handleDeleteShape} shapeColor={shapeColor} setShapeColor={setShapeColor} handleUpdateYarnInfo={handleUpdateYarnInfo} yarnInfo={yarnInfo} setYarnInfo={setYarnInfo} yarns={yarns} onSetView={onSetView} setView={setView} transformMode={transformMode} setTransformMode={setTransformMode} />
+                        <Editor
+                            droppedShapes={droppedShapes}
+                            setDroppedShapes={setDroppedShapes}
+                            activeId={activeId}
+                            setActiveId={setActiveId}
+                            activeShape={activeShape}
+                            containerRef={containerRef}
+                            threeJsContainerRef={threeJsContainerRef}
+                            dragging={dragging}
+                            setDragging={setDragging}
+                            camera={camera}
+                            handleUpdateShape={handleUpdateShape}
+                            setCamera={setCamera}
+                            handleDeleteShape={handleDeleteShape}
+                            shapeColor={shapeColor}
+                            setShapeColor={setShapeColor}
+                            handleUpdateYarnInfo={handleUpdateYarnInfo}
+                            yarnInfo={yarnInfo}
+                            setYarnInfo={setYarnInfo}
+                            yarns={yarns}
+                            onSetView={onSetView}
+                            setView={setView}
+                            transformMode={transformMode}
+                            setTransformMode={setTransformMode}
+                            intersections={intersections}
+                            setIntersections={setIntersections}
+                            meshes={meshes}
+                            setMeshes={setMeshes}
+                            scene={scene}
+                            setScene={setScene}
+                            transFormMode={transformMode}
+                        />
                     }
                     />
-                    <Route path="/:amigurumi_id/pattern" element={<Pattern shapes={droppedShapes} yarnInfo={yarnInfo} />} />
+                    <Route path="/:amigurumi_id/pattern" element={<Pattern shapes={droppedShapes} yarnInfo={yarnInfo} intersections={intersections} meshes={meshes} />} />
                     <Route path="/account" element={<Account />} />
                 </Routes>
             </Box>
+            <ToastContainer position="top-right" autoClose={3000} />
         </div>
     );
 }

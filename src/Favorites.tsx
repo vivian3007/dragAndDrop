@@ -7,7 +7,7 @@ import { useCollection } from 'react-firebase-hooks/firestore';
 import { query, collection } from 'firebase/firestore';
 import {useNavigate} from "react-router-dom";
 
-const Favorites = ({yarnInfo} : {yarnInfo: Yarn}) => {
+const Favorites = ({yarnInfo, intersections} : {yarnInfo: Yarn, intersections: any}) => {
     const navigate = useNavigate();
 
     const [snapshot, loading, error] = useCollection(query(collection(db, 'amigurumi'), where('favorite', '==', true)));
@@ -53,7 +53,7 @@ const Favorites = ({yarnInfo} : {yarnInfo: Yarn}) => {
 
             console.log('Shapes voor amigurumi', amigurumi.id, ':', shapes);
 
-            navigate(`/${amigurumi.id}/pattern`, { state: { amigurumi, shapes, yarnInfo } });
+            navigate(`/${amigurumi.id}/pattern`, { state: { amigurumi, shapes, yarnInfo, intersections } });
         } catch (error) {
             console.error('Fout bij het ophalen van shapes:', error);
         }

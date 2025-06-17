@@ -15,6 +15,7 @@ export default function Settingsbar({
                                         droppedShapes,
                                         onUpdateYarnInfo,
                                         yarnInfo,
+    intersections,
                                     }: {
     activeShape: any,
     onUpdateShape: any,
@@ -24,6 +25,7 @@ export default function Settingsbar({
     droppedShapes: [],
     onUpdateYarnInfo: any,
     yarnInfo: {},
+    intersections: any;
 }) {
     const [showYarnSettings, setShowYarnSettings] = useState(false)
     const navigate = useNavigate();
@@ -31,7 +33,7 @@ export default function Settingsbar({
 
     const handlePatternNavigation = () => {
         navigate(`/${currentAmigurumiId}/pattern`, {
-            state: { shapes: droppedShapes, yarnInfo: yarnInfo },
+            state: { shapes: droppedShapes, yarnInfo: yarnInfo, intersections: intersections },
         });
     };
 
@@ -51,7 +53,7 @@ export default function Settingsbar({
                     sx={{width: 1, backgroundColor: "#F2F3AE", marginBottom: "10px"}}
                     onClick={handleSettingsChange}
                 >
-                    {showYarnSettings ? "Shape settings" : "Yarn settings"}
+                    {showYarnSettings ? "Go to Shape settings" : "Go to Yarn settings"}
                 </Button>
                 <Button
                     variant="contained"

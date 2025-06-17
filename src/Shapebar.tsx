@@ -6,7 +6,7 @@ import {Camera} from "three";
 import {setDoc, doc} from "firebase/firestore";
 import {db} from "../firebase-config.js";
 
-export default function Sidebar({ setDroppedShapes, setActiveId, containerRef, threeJsContainerRef, dragging, setDragging, camera }: { setDroppedShapes: any, setActiveId: any, containerRef: Ref<HTMLDivElement>, threeJsContainerRef: Ref<HTMLCanvasElement>, dragging: boolean, setDragging: any, camera: Camera }) {
+export default function Sidebar({ setDroppedShapes, setActiveId, threeJsContainerRef, dragging, setDragging, camera, navBarRef }: { setDroppedShapes: any, setActiveId: any, containerRef: Ref<HTMLDivElement>, threeJsContainerRef: Ref<HTMLCanvasElement>, dragging: boolean, setDragging: any, camera: Camera, navBarRef: Ref<HTMLDivElement> }) {
     const shapes = [
         { type: "Sphere", label: "Head" },
         { type: "Arm", label: "body" },
@@ -60,13 +60,17 @@ export default function Sidebar({ setDroppedShapes, setActiveId, containerRef, t
             const mouseY = -((e.clientY - containerRect.top) / containerRect.height) * 2 + 1;
 
             let worldPosition = { x: 0, y: 0, z: 0 };
+
+            console.log("camera neee")
             if (camera) {
+                console.log("camera jaaa")
                 const vector = new THREE.Vector3(mouseX, mouseY, 0.5);
                 vector.unproject(camera);
 
                 const dir = vector.sub(camera.position).normalize();
                 const distance = -camera.position.z / dir.z;
                 const pos = camera.position.clone().add(dir.multiplyScalar(distance));
+                console.log(pos);
                 worldPosition = { x: pos.x, y: pos.y, z: 0 };
             }
 
@@ -88,6 +92,8 @@ export default function Sidebar({ setDroppedShapes, setActiveId, containerRef, t
                     zIndex: 10,
                     zoom: 1,
                 };
+
+                console.log(newShape)
                 setDroppedShapes((prevShapes: any[]) => [...prevShapes, newShape]);
                 setActiveId(newShape.id)
 
