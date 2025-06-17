@@ -319,9 +319,9 @@ export default function App() {
                             >
                                 Account
                             </NavLink>
-                            <a onClick={handleLogout} className="navbar-button">
-                                Log out
-                            </a>
+                            {/*<a onClick={handleLogout} className="navbar-button">*/}
+                            {/*    Log out*/}
+                            {/*</a>*/}
                         </Toolbar>
                     </Container>
                 </AppBar>
