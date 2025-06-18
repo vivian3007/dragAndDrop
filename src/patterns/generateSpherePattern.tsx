@@ -6,6 +6,8 @@ const generateSpherePattern = (singleShape: Shape, yarnWeight: string, PIXELS_PE
     const shapeHeight = singleShape.width > singleShape.height ? singleShape.width : singleShape.height;
     const shapeWidth = singleShape.width > singleShape.height ? singleShape.height : singleShape.width;
 
+    console.log(singleShape.name, shapeHeight, shapeWidth)
+
     const rows = shapeHeight ? shapeHeight / rowHeight + 1 : 0;
     const extraScRows = shapeHeight && shapeWidth ? (shapeHeight - shapeWidth) / rowHeight : 0;
     const incRows = Math.floor((rows - extraScRows) / 3);
@@ -56,14 +58,18 @@ const generateSpherePattern = (singleShape: Shape, yarnWeight: string, PIXELS_PE
         rowArray.push(i);
     }
 
+    console.log(rowArray)
+
     for (let i = 1; i < incRows; i++) {
         incArray.push(`Row ${rowArray[i + 1]}: [1inc, ${i}sc] * 6 (${12 + i * 6})`);
     }
 
+    console.log(singleShape.name, incRows);
+
     const maxStitches = incRows * 6 + 6;
 
     if (scRows > 0) {
-        const startRow = incRows + 2;
+        const startRow = incRows > 1 ? incRows + 2 : incRows + 1;
         const endRow = incRows + scRows;
         const rowText = scRows === 1 ? `Row ${startRow}` : `Row ${startRow}-${endRow}`;
         scArray.push(`${rowText}: ${maxStitches}sc (${maxStitches})`);
@@ -74,7 +80,7 @@ const generateSpherePattern = (singleShape: Shape, yarnWeight: string, PIXELS_PE
     for (let i = 0; i < decRows - 1; i++) {
         currentStitches -= 6;
         const rowIndex = incRows + scRows + i;
-        decArray.push(`Row ${rowArray[rowIndex]}: [1dec, ${decRows - i}sc] * 6 (${currentStitches})`);
+        decArray.push(`Row ${rowArray[rowIndex]}: [1dec, ${decRows - i - 1}sc] * 6 (${currentStitches})`);
     }
 
     return {

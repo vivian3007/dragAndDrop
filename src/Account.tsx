@@ -15,7 +15,7 @@ const Account: React.FC = () => {
         setUser(currentUser);
       } else {
         setUser(null);
-        navigate('/login');
+        navigate('/');
       }
       setLoading(false);
     });
@@ -26,7 +26,7 @@ const Account: React.FC = () => {
   const handleLogout = () => {
     auth.signOut()
       .then(() => {
-        navigate('/login');
+        navigate('/');
       })
       .catch((error) => {
         console.error('Logout error:', error);

@@ -5,17 +5,18 @@ import NewPattern from "./NewPattern";
 import Account from "./Account";
 import Editor from "./Editor";
 import Favorites from "./Favorites";
-import {useState, useRef, useEffect, useCallback} from "react";
+import React, {useState, useRef, useEffect, useCallback} from "react";
 import {v4 as uuidv4} from "uuid";
 import Homepage from "./Homepage.tsx";
 import {Route, Routes, Link, useNavigate, NavLink, useLocation} from "react-router-dom";
 import {collection, getDocs, doc, updateDoc, getDoc, deleteDoc, where, query, documentId} from "firebase/firestore";
 import {db, auth} from "../firebase-config.js";
-import {AppBar, Box, Button, Container, Toolbar} from "@mui/material";
+import {AppBar, Avatar, Box, Button, Container, Toolbar} from "@mui/material";
 import Login from "./Login.tsx";
 import { signOut } from 'firebase/auth';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 
 export default function App() {
     const [droppedShapes, setDroppedShapes] = useState<Shape[]
@@ -286,9 +287,9 @@ export default function App() {
     return (
         <div className="App">
             {location.pathname !== '/' ? (
-                <AppBar position="static" style={{ backgroundColor: "#F2F3AE", height: "8vh" }}>
-                    <Container maxWidth="xl" sx={{ marginLeft: 0 }}>
-                        <Toolbar disableGutters>
+                <AppBar position="static" style={{ backgroundColor: "#F2F3AE", height: "8vh", width: "100vw" }}>
+                    <Container maxWidth="false" disableGutters sx={{ marginLeft: 0, marginRight: 0, width: 1 }}>
+                        <Toolbar disableGutters sx={{ minHeight: "8vh", alignItems: "center", width: 1 }}>
                             <NavLink
                                 to="/home"
                                 className={({ isActive }) => `navbar-button ${isActive ? 'active' : ''}`}
@@ -313,15 +314,20 @@ export default function App() {
                             >
                                 New pattern
                             </NavLink>
-                            <NavLink
-                                to={"/account"}
-                                className={({ isActive }) => `navbar-button ${isActive ? 'active' : ''}`}
-                            >
-                                Account
-                            </NavLink>
-                            {/*<a onClick={handleLogout} className="navbar-button">*/}
-                            {/*    Log out*/}
-                            {/*</a>*/}
+                            <Box sx={{ ml: "auto", display: "flex", alignItems: "center" }} className="navbar-button">
+                                <NavLink
+                                    to={"/account"}
+                                    className={({ isActive }) => `navbar-button ${isActive ? 'active' : ''}`}
+                                    style={{ display: "flex", alignItems: "center", height: "100%" }}
+                                >
+                                    <Avatar
+                                        src={"../img/avatar.jpg"}
+                                        alt={'User'}
+                                        sx={{ height: "6vh", width: "6vh", mx: 'auto' }}
+                                    />
+                                    <KeyboardArrowDownIcon sx={{ fontSize: "2rem", ml: 1 }} />
+                                </NavLink>
+                            </Box>
                         </Toolbar>
                     </Container>
                 </AppBar>
