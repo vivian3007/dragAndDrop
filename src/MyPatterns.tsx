@@ -165,7 +165,7 @@ const MyPatterns = ({yarnInfo, intersections, camera, scene, setIntersections, m
                         variant="contained"
                         color="inherit"
                         startIcon={<Add />}
-                        sx={{ backgroundColor: '#d4929a' }}
+                        sx={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-bg)' }}
                         onClick={() => setIsNewPatternOpen(true)}
                     >
                         Nieuw patroon

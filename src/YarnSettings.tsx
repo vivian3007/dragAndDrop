@@ -215,7 +215,7 @@ export default function YarnSettings({onUpdateYarnInfo, yarnInfo} : {onUpdateYar
                 </div>
             </form>
             <Button variant="contained" color="inherit"
-                    sx={{width: 1, backgroundColor: "#F2F3AE", marginBottom: "10px"}}
+                    sx={{width: 1, backgroundColor: "var(--color-primary)", color: "var(--color-bg)", marginBottom: "10px"}}
                     onClick={saveToFirestore}>Save</Button>
         </div>
     )

@@ -153,7 +153,7 @@ const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[],
                 <Button
                             variant="contained"
                             color="inherit"
-                            style={{ position: "sticky", marginLeft: 20, backgroundColor: "#F2F3AE", color: "black" }}
+                            style={{ position: "sticky", marginLeft: 20, backgroundColor: "var(--color-primary)", color: "var(--color-bg)" }}
                             onClick={() => navigate(-1, { state: { intersections: intersections, meshes: meshes } })}
                         >
                             Go back

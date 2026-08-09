@@ -155,7 +155,7 @@ const NewPattern = ({
                                 <Button
                                     onClick={handleAddTag}
                                     variant="contained"
-                                    sx={{ ml: 1, backgroundColor: "#d4929a" }}
+                                    sx={{ ml: 1, backgroundColor: "var(--color-primary)", color: "var(--color-bg)" }}
                                     disabled={!tagInput.trim()}
                                 >
                                     Add
@@ -167,7 +167,7 @@ const NewPattern = ({
                                         key={tag}
                                         label={tag}
                                         onDelete={() => handleDeleteTag(tag)}
-                                        color="inherit"
+                                        sx={{ backgroundColor: 'var(--color-accent-soft)', color: 'var(--color-text)' }}
                                     />
                                 ))}
                             </Box>
@@ -179,9 +179,8 @@ const NewPattern = ({
                             <Button
                                 type="submit"
                                 variant="contained"
-                                color="primary"
                                 fullWidth
-                                sx={{ marginBottom: "20px", width: 1, backgroundColor: "#d4929a" }}
+                                sx={{ marginBottom: "20px", width: 1, backgroundColor: "var(--color-primary)", color: "var(--color-bg)" }}
                                 disabled={loading}
                             >
                                 {loading ? <CircularProgress size={24} /> : 'Save'}

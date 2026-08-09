@@ -1,14 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Box, Button, Card, Chip, IconButton } from '@mui/material';
 import { Favorite, FavoriteBorder, Delete, Edit } from '@mui/icons-material';
 
 const ACTION_HEIGHT = 40;
 
 const actionIconButtonSx = {
-    backgroundColor: '#F2F3AE',
-    '&:hover': { backgroundColor: '#e6e888' },
+    backgroundColor: 'var(--color-accent-soft)',
+    '&:hover': { backgroundColor: 'var(--color-accent-soft-hover)' },
     width: ACTION_HEIGHT,
     height: ACTION_HEIGHT,
+};
+
+const tagChipSx = {
+    backgroundColor: 'var(--color-accent-soft)',
+    color: 'var(--color-text)',
 };
 
 const src = [
@@ -39,6 +44,8 @@ const AmigurumiCard = ({
     onDeleteClick?: (amigurumi: Amigurumi) => void;
     onCardClick?: (amigurumi: Amigurumi) => void;
 }) => {
+    const [isHeartBouncing, setIsHeartBouncing] = useState(false);
+
     return (
         <Card className="my-pattern-text-container" onClick={() => onCardClick?.(amigurumi)}>
             <img src={getImageForId(amigurumi.id)} alt={amigurumi.name} className="amigurumi-image"/>
@@ -48,8 +55,8 @@ const AmigurumiCard = ({
                     <Chip
                         key={tag}
                         label={tag}
-                        color="inherit"
                         size="small"
+                        sx={tagChipSx}
                     />
                 ))}
             </Box>
@@ -58,7 +65,7 @@ const AmigurumiCard = ({
                     type="button"
                     variant="contained"
                     color="inherit"
-                    sx={{flex: 1, backgroundColor: "#d4929a", height: ACTION_HEIGHT}}
+                    sx={{flex: 1, backgroundColor: "var(--color-primary)", color: "var(--color-bg)", height: ACTION_HEIGHT}}
                     onClick={(e) => { e.stopPropagation(); onPatternClick(amigurumi); }}
                 >
                     Pattern
@@ -70,18 +77,26 @@ const AmigurumiCard = ({
                         sx={actionIconButtonSx}
                         title="Bewerk patroon"
                     >
-                        <Edit sx={{color: 'grey', fontSize: '1.25rem'}} />
+                        <Edit sx={{color: 'var(--color-text)', fontSize: '1.25rem'}} />
                     </IconButton>
                 )}
                 <IconButton
                     size="small"
-                    onClick={(e) => { e.stopPropagation(); onFavoriteChange(amigurumi); }}
+                    onClick={(e) => { e.stopPropagation(); setIsHeartBouncing(true); onFavoriteChange(amigurumi); }}
                     sx={actionIconButtonSx}
                 >
                     {amigurumi.favorite ? (
-                        <Favorite sx={{color: 'red', fontSize: '1.25rem'}} />
+                        <Favorite
+                            className={isHeartBouncing ? 'heart-bounce' : ''}
+                            onAnimationEnd={() => setIsHeartBouncing(false)}
+                            sx={{color: 'var(--color-favorite)', fontSize: '1.25rem'}}
+                        />
                     ) : (
-                        <FavoriteBorder sx={{color: 'grey', fontSize: '1.25rem'}} />
+                        <FavoriteBorder
+                            className={isHeartBouncing ? 'heart-bounce' : ''}
+                            onAnimationEnd={() => setIsHeartBouncing(false)}
+                            sx={{color: 'var(--color-text)', fontSize: '1.25rem'}}
+                        />
                     )}
                 </IconButton>
                 {onDeleteClick && (
@@ -91,7 +106,7 @@ const AmigurumiCard = ({
                         sx={actionIconButtonSx}
                         title="Verwijder patroon"
                     >
-                        <Delete sx={{color: 'grey', fontSize: '1.25rem'}} />
+                        <Delete sx={{color: 'var(--color-text)', fontSize: '1.25rem'}} />
                     </IconButton>
                 )}
             </Box>

@@ -21,6 +21,7 @@ const PatternDetail = ({
     const [yarn, setYarn] = useState<Yarn | null>(null);
     const [yarnLoading, setYarnLoading] = useState(false);
     const [favorite, setFavorite] = useState(false);
+    const [isHeartBouncing, setIsHeartBouncing] = useState(false);
 
     useEffect(() => {
         setFavorite(amigurumi?.favorite ?? false);
@@ -89,20 +90,28 @@ const PatternDetail = ({
                         <h1 style={{ margin: 0 }}>{amigurumi.name}</h1>
                         {favorite ? (
                             <Favorite
-                                sx={{ color: 'red', fontSize: '2.5rem', cursor: 'pointer' }}
-                                onClick={handleFavoriteChange}
+                                className={isHeartBouncing ? 'heart-bounce' : ''}
+                                onAnimationEnd={() => setIsHeartBouncing(false)}
+                                sx={{ color: 'var(--color-favorite)', fontSize: '2.5rem', cursor: 'pointer' }}
+                                onClick={() => { setIsHeartBouncing(true); handleFavoriteChange(); }}
                             />
                         ) : (
                             <FavoriteBorder
-                                sx={{ color: 'grey', fontSize: '2.5rem', cursor: 'pointer' }}
-                                onClick={handleFavoriteChange}
+                                className={isHeartBouncing ? 'heart-bounce' : ''}
+                                onAnimationEnd={() => setIsHeartBouncing(false)}
+                                sx={{ color: 'var(--color-text)', fontSize: '2.5rem', cursor: 'pointer' }}
+                                onClick={() => { setIsHeartBouncing(true); handleFavoriteChange(); }}
                             />
                         )}
                     </Box>
 
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, my: 2 }}>
                         {amigurumi.tags?.map((tag) => (
-                            <Chip key={tag} label={tag} color="inherit" />
+                            <Chip
+                                key={tag}
+                                label={tag}
+                                sx={{ backgroundColor: 'var(--color-accent-soft)', color: 'var(--color-text)' }}
+                            />
                         ))}
                     </Box>
 
@@ -152,7 +161,7 @@ const PatternDetail = ({
                             type="button"
                             variant="contained"
                             color="inherit"
-                            sx={{ backgroundColor: '#d4929a' }}
+                            sx={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-bg)' }}
                             onClick={handlePatternClick}
                         >
                             Bekijk patroon

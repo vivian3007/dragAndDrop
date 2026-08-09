@@ -23,7 +23,13 @@ const PatternPagination = ({
                 page={page}
                 onChange={(_, value) => onPageChange(value)}
                 shape="rounded"
-                color="standard"
+                sx={{
+                    '& .MuiPaginationItem-root': { color: 'var(--color-text)' },
+                    '& .Mui-selected': {
+                        backgroundColor: 'var(--color-primary) !important',
+                        color: 'white',
+                    },
+                }}
             />
         </Box>
     );

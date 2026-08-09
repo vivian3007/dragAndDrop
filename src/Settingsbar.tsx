@@ -50,7 +50,7 @@ export default function Settingsbar({
                 <Button
                     variant="contained"
                     color="inherit"
-                    sx={{width: 1, backgroundColor: "#F2F3AE", marginBottom: "10px"}}
+                    sx={{width: 1, backgroundColor: "var(--color-primary)", color: "var(--color-bg)", marginBottom: "10px"}}
                     onClick={handleSettingsChange}
                 >
                     {showYarnSettings ? "Go to Shape settings" : "Go to Yarn settings"}
@@ -58,7 +58,7 @@ export default function Settingsbar({
                 <Button
                     variant="contained"
                     color="inherit"
-                    sx={{width: 1, backgroundColor: "#F2F3AE", marginBottom: "10px"}}
+                    sx={{width: 1, backgroundColor: "var(--color-primary)", color: "var(--color-bg)", marginBottom: "10px"}}
                     disabled={!droppedShapes || droppedShapes.length < 1}
                     onClick={handlePatternNavigation}
                 >

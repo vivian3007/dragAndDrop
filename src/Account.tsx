@@ -45,8 +45,8 @@ const Account: React.FC = () => {
           }}
           className="new-pattern-form"
         >
-          <Card sx={{ padding: 3 }}>
-            <CircularProgress />
+          <Card sx={{ padding: 3, backgroundColor: 'var(--color-bg-card)' }}>
+            <CircularProgress sx={{ color: 'var(--color-primary)' }} />
           </Card>
         </Box>
       </div>
@@ -68,8 +68,8 @@ const Account: React.FC = () => {
         }}
         className="new-pattern-form"
       >
-        <Card sx={{ padding: 3 }}>
-          <Typography component="h1" variant="h5" sx={{ textAlign: 'center' }}>
+        <Card sx={{ padding: 3, backgroundColor: 'var(--color-bg-card)' }}>
+          <Typography component="h1" variant="h5" sx={{ textAlign: 'center', color: 'var(--color-text)' }}>
             Account
           </Typography>
           <CardContent sx={{ textAlign: 'center' }}>
@@ -78,20 +78,19 @@ const Account: React.FC = () => {
               alt={user.displayName || 'User'}
               sx={{ width: 100, height: 100, mx: 'auto', mb: 2 }}
             />
-            <Typography variant="body1" color="text.secondary" gutterBottom>
+            <Typography variant="body1" sx={{ color: 'var(--color-text)' }} gutterBottom>
               Name: {user.displayName || 'Vivian Vlaanderen'}
             </Typography>
-            <Typography variant="body1" color="text.secondary" gutterBottom>
+            <Typography variant="body1" sx={{ color: 'var(--color-text)' }} gutterBottom>
               Email: {user.email || 'N/A'}
             </Typography>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
+            <Typography variant="body2" sx={{ color: 'var(--color-text)' }} gutterBottom>
               UID: {user.uid}
             </Typography>
             <Box sx={{ mt: 3 }}>
               <Button
                 variant="contained"
-                color="error"
-                sx={{ mt: 3, mb: 2, backgroundColor: "#d4929a" }}
+                sx={{ mt: 3, mb: 2, backgroundColor: "var(--color-primary)", color: "var(--color-bg)" }}
                 onClick={handleLogout}
               >
                 Log Out

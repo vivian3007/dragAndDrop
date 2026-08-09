@@ -286,7 +286,15 @@ export default function App() {
     return (
         <div className="App">
             {location.pathname !== '/' ? (
-                <AppBar position="static" style={{ backgroundColor: "#F2F3AE", height: "8vh", width: "100vw" }}>
+                <AppBar
+                    position="static"
+                    style={{
+                        background: "linear-gradient(135deg, var(--color-secondary) 0%, var(--color-secondary-hover) 100%)",
+                        height: "8vh",
+                        width: "100vw",
+                        boxShadow: "0 4px 14px rgba(var(--shadow-color), 0.3)",
+                    }}
+                >
                     <Container maxWidth="false" disableGutters sx={{ marginLeft: 0, marginRight: 0, width: 1 }}>
                         <Toolbar disableGutters sx={{ minHeight: "8vh", alignItems: "center", width: 1 }}>
                             <NavLink

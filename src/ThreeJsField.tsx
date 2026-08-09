@@ -115,7 +115,7 @@ export default function ThreeJsField({
         <Canvas
             camera={{ position: [40, 0, 0], fov: 75, zoom: 3 }}
             ref={threeJsContainerRef}
-            style={{ height: '92vh' }}
+            style={{ height: '92vh', backgroundColor: 'var(--color-accent-soft)' }}
         >
             <SceneController
                 orbitControlsRef={orbitControlsRef}

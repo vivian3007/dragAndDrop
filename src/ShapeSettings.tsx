@@ -304,7 +304,7 @@ export default function Settingsbar({
                                     onChange={() => setLockAspectRatio((v) => !v)}
                                     name="aspect-ratio"
                                     style={{
-                                        color: "#d4929a",
+                                        color: "var(--color-primary)",
                                         marginRight: 0,
                                         marginLeft: 0,
                                         padding: 0,
@@ -417,7 +417,7 @@ export default function Settingsbar({
                             type="button"
                             variant="contained"
                             color="inherit"
-                            sx={{marginBottom: "20px", width: 1, backgroundColor: "#8c2f3f", color: "white"}}
+                            sx={{marginBottom: "20px", width: 1, backgroundColor: "var(--color-primary)", color: "var(--color-bg)"}}
                             onClick={handleDeleteShape}
                         >
                             Delete shape

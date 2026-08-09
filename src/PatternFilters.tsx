@@ -28,15 +28,42 @@ const PatternFilters = ({
     onSortChange: (sort: SortOption) => void;
     actions?: React.ReactNode;
 }) => {
+    const fieldSx = {
+        minWidth: 220,
+        '& .MuiOutlinedInput-root': {
+            borderRadius: '12px',
+            backgroundColor: 'var(--color-bg)',
+            '& fieldset': { borderColor: 'var(--color-accent-soft-hover)' },
+            '&:hover fieldset': { borderColor: 'var(--color-secondary)' },
+            '&.Mui-focused fieldset': { borderColor: 'var(--color-primary)' },
+        },
+        '& .MuiInputLabel-root.Mui-focused': { color: 'var(--color-primary)' },
+    };
+
     return (
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center', justifyContent: 'space-between', mb: 3, px: '40px', boxSizing: 'border-box', width: '100%' }}>
+        <Box
+            sx={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 2,
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                mb: 3,
+                mx: '40px',
+                p: 2.5,
+                boxSizing: 'border-box',
+                backgroundColor: 'var(--color-bg-card)',
+                borderRadius: '18px',
+                boxShadow: '0 4px 14px rgba(var(--shadow-color), 0.12)',
+            }}
+        >
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'flex-start', flex: 1 }}>
                 <TextField
                     label="Zoek op naam"
                     value={searchTerm}
                     onChange={(e) => onSearchChange(e.target.value)}
                     size="small"
-                    sx={{ minWidth: 220, backgroundColor: 'white' }}
+                    sx={fieldSx}
                 />
                 <Autocomplete
                     multiple
@@ -44,10 +71,16 @@ const PatternFilters = ({
                     options={availableTags}
                     value={selectedTags}
                     onChange={(_, value) => onTagsChange(value)}
-                    sx={{ minWidth: 260, flex: 1, maxWidth: 420, backgroundColor: 'white' }}
+                    sx={{ ...fieldSx, minWidth: 260, flex: 1, maxWidth: 420 }}
                     renderTags={(value, getTagProps) =>
                         value.map((tag, index) => (
-                            <Chip label={tag} size="small" {...getTagProps({ index })} key={tag} />
+                            <Chip
+                                label={tag}
+                                size="small"
+                                sx={{ backgroundColor: 'var(--color-accent-soft)', color: 'var(--color-text)' }}
+                                {...getTagProps({ index })}
+                                key={tag}
+                            />
                         ))
                     }
                     renderInput={(params) => <TextField {...params} label="Filter op tags" />}
@@ -58,7 +91,7 @@ const PatternFilters = ({
                     value={sortBy}
                     onChange={(e) => onSortChange(e.target.value as SortOption)}
                     size="small"
-                    sx={{ minWidth: 200, backgroundColor: 'white' }}
+                    sx={{ ...fieldSx, minWidth: 200 }}
                 >
                     {Object.entries(sortLabels).map(([value, label]) => (
                         <MenuItem key={value} value={value}>{label}</MenuItem>

@@ -1,9 +1,29 @@
+:root {
+    --color-bg: #F1E3E0;
+    --color-bg-card: #FAF5F4;
+    --color-primary: #7D3A45;
+    --color-primary-hover: #642E37;
+    --color-secondary: #97616A;
+    --color-secondary-hover: #80525A;
+    --color-accent-soft: #E3D3CE;
+    --color-accent-soft-hover: #D2BBB6;
+    --color-text: #2A1E1B;
+    --color-favorite: #96323D;
+    --shadow-color: 42, 30, 27;
+    --light-overlay-color: 241, 227, 224;
+}
+
 body {
     margin: 0;
     /*overflow: hidden;*/
-    background-color: #EACBD2;
+    background-color: var(--color-bg);
+    color: var(--color-text);
     height: 100vh;
     overflow-x: hidden;
+}
+
+.MuiButton-root {
+    border-radius: 12px !important;
 }
 
 .App {
@@ -18,29 +38,35 @@ body {
 }
 
 .navbar-button {
-    height: 8vh;
+    height: 6vh;
+    margin: 1vh 0.3vw;
     padding: 0 2% 0 2%;
     text-align: center;
     align-content: center;
     text-decoration: none;
-    color: black;
+    color: var(--color-bg);
     font-weight: bold;
     font-size: 1.5em;
     cursor: pointer;
+    box-sizing: border-box;
+    border-radius: 14px;
+    transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .navbar-button:hover{
-    background-color: #c2c28b;
+    background-color: rgba(var(--light-overlay-color), 0.18);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(var(--shadow-color), 0.25);
 }
 
 .navbar-button.active{
-    background-color: #c2c28b;
+    background-color: rgba(var(--light-overlay-color), 0.26);
 }
 
 .Navbar {
     width: 15vw;
     height: 88vh;
-    background-color: #d4929a;
+    background-color: var(--color-accent-soft);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -85,8 +111,8 @@ body {
 }
 
 .toolbar-category button {
-    background-color: #F2F3AE;
-    color: black;
+    background-color: var(--color-primary);
+    color: var(--color-bg);
 }
 
 .shapes-text {
@@ -98,7 +124,7 @@ body {
     width: 20vw;
     height: 92vh;
     /*background-color: #DFAEB4;*/
-    background-color: #d4929a;
+    background-color: var(--color-accent-soft);
     padding-left: 20px;
     padding-right: 20px;
     display: flex;
@@ -120,7 +146,7 @@ body {
 }
 
 .steps-box {
-    background-color: #EACBD2;
+    background-color: var(--color-bg-card);
     padding: 5px 20px 10px 0;
     margin-top: 20px;
 }
@@ -135,7 +161,7 @@ body {
 
 .shape {
     z-index: 10;
-    border: 3px solid black;
+    border: 3px solid var(--color-text);
 }
 
 .Sphere {
@@ -220,7 +246,7 @@ body {
 
 .shape-container {
     display: flex;
-    background-color: #EACBD2;
+    background-color: var(--color-accent-soft);
     width: 500px;
     /*z-index: -10;*/
     position: fixed;
@@ -238,21 +264,23 @@ body {
     text-align: center;
     align-items: center;
     cursor: grab;
-    border: 5px solid black;
+    border: 5px solid var(--color-text);
 }
 
 .yarn-settings-group {
     padding: 0 10px 5px 10px;
     margin-bottom: 20px;
     margin-top: 20px;
-    background-color: #EACBD2;
+    background-color: var(--color-bg-card);
+    border-radius: 12px;
 }
 
 .shape-settings-group {
-    background-color: #EACBD2;
+    background-color: var(--color-bg-card);
     padding: 10px;
     margin-bottom: 10px;
     gap: 10px;
+    border-radius: 12px;
 }
 
 .shape-settings-title {
@@ -297,6 +325,9 @@ body {
     width: 33vw;
     height: auto;
     break-inside: avoid;
+    background-color: var(--color-bg-card) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 4px 14px rgba(var(--shadow-color), 0.14) !important;
 }
 
 .pattern-image{
@@ -316,10 +347,33 @@ body {
 }
 
 .my-pattern-text-container {
+    position: relative;
     margin: 0;
     padding: 20px;
     height: auto;
     cursor: pointer;
+    background-color: var(--color-bg-card);
+    border-radius: 16px !important;
+    box-shadow: 0 4px 14px rgba(var(--shadow-color), 0.14) !important;
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    transition: transform 0.45s ease-out;
+}
+
+.my-pattern-text-container:hover {
+    transform: translate3d(0, -6px, 0);
+}
+
+@keyframes heart-bounce {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.4); }
+    55% { transform: scale(0.88); }
+    75% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.heart-bounce {
+    animation: heart-bounce 0.5s ease;
 }
 
 .amigurumi-image{
@@ -363,7 +417,7 @@ body {
 }
 
 .detail-yarn-table {
-    background-color: #EACBD2;
+    background-color: var(--color-accent-soft);
     border-radius: 12px;
     overflow: hidden;
 }
@@ -428,7 +482,7 @@ body {
     .shapebar {
         width: 100%;
         height: 100%;
-        background-color: #EACBD2;
+        background-color: var(--color-accent-soft);
         display: flex;
         flex-direction: column;
         align-items: center;

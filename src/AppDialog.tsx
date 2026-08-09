@@ -23,7 +23,15 @@ const AppDialog = ({
         >
             <IconButton
                 onClick={onClose}
-                sx={{ position: 'absolute', top: 12, right: 12, zIndex: 1, backgroundColor: 'rgba(255,255,255,0.7)' }}
+                sx={{
+                    position: 'absolute',
+                    top: 12,
+                    right: 12,
+                    zIndex: 1,
+                    backgroundColor: 'rgba(250, 246, 239, 0.85)',
+                    color: 'var(--color-text)',
+                    '&:hover': { backgroundColor: 'var(--color-accent-soft-hover)' },
+                }}
             >
                 <Close />
             </IconButton>
