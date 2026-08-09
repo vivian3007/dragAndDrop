@@ -304,31 +304,81 @@ body {
 }
 
 .my-pattern{
-    width: 100vw;
     display: flex;
+    flex-direction: column;
     margin: 20px;
 }
 
 .my-pattern-container {
-    /*columns: 5;*/
-    /*column-gap: 30px;*/
-    /*gap: 25px;*/
-    width: 100vw;
-    padding-right: 40px;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(max(16vw, 200px), 1fr));
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0 40px;
 }
 
 .my-pattern-text-container {
-    margin: 0 20px 20px 0;
-    padding: 30px;
-    /*width: 16vw;*/
+    margin: 0;
+    padding: 20px;
     height: auto;
-    break-inside: avoid;
+    cursor: pointer;
 }
 
 .amigurumi-image{
     width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.detail-card {
+    display: flex;
+    gap: 40px;
+    padding: 40px;
+    width: 100%;
+    box-sizing: border-box;
+    container-type: inline-size;
+}
+
+.detail-image {
+    width: 380px;
+    max-width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: 16px;
+    flex-shrink: 0;
+}
+
+.detail-info {
+    flex: 1;
+    min-width: 0;
+}
+
+@container (max-width: 620px) {
+    .detail-card {
+        flex-direction: column;
+    }
+
+    .detail-image {
+        width: 100%;
+    }
+}
+
+.detail-yarn-table {
+    background-color: #EACBD2;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.detail-yarn-table td {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.detail-yarn-table tr:last-child td {
+    border-bottom: none;
+}
+
+.detail-yarn-table td:first-child {
+    font-weight: bold;
+    width: 40%;
 }
 
 .new-pattern-form {
@@ -495,21 +545,14 @@ body {
         flex-direction: column;
     }
 
-    .my-pattern-container {
-        /*columns: 5;*/
-        /*column-gap: 30px;*/
-        /*gap: 25px;*/
-        width: 100vw;
-        display: grid;
-        grid-template-columns: 1fr;
+    .my-pattern-text-container {
+        margin: 0;
+        padding: 30px;
+        height: auto;
     }
 
-    .my-pattern-text-container {
-        margin: 0 45px 10px 0;
-        padding: 30px;
-        /*width: 16vw;*/
-        height: auto;
-        break-inside: avoid;
+    .detail-card {
+        padding: 15px;
     }
 
     /*.my-pattern-container {*/

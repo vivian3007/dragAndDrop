@@ -1,7 +1,6 @@
 import "./styles.css";
 import Pattern from "./Pattern";
 import MyPatterns from "./MyPatterns";
-import NewPattern from "./NewPattern";
 import Account from "./Account";
 import Editor from "./Editor";
 import Favorites from "./Favorites";
@@ -308,12 +307,6 @@ export default function App() {
                             >
                                 Favorite patterns
                             </NavLink>
-                            <NavLink
-                                to="/newPattern"
-                                className={({ isActive }) => `navbar-button ${isActive ? 'active' : ''}`}
-                            >
-                                New pattern
-                            </NavLink>
                             <Box sx={{ ml: "auto", display: "flex", alignItems: "center" }} className="navbar-button">
                                 <NavLink
                                     to={"/account"}
@@ -336,9 +329,8 @@ export default function App() {
                 <Routes>
                     <Route path={"/"} element={<Login />} />
                     <Route path="/home" element={<Homepage amigurumis={amigurumis} setAmigurumis={setAmigurumis} yarnInfo={yarnInfo} intersections={intersections} />} />
-                    <Route path="/myPatterns" element={<MyPatterns amigurumis={amigurumis} setAmigurumis={setAmigurumis} yarnInfo={yarnInfo} intersections={intersections} setIntersections={setIntersections} meshes={meshes} setMeshes={setMeshes} scene={scene} camera={camera} threeJsContainerRef={threeJsContainerRef} />} />
+                    <Route path="/myPatterns" element={<MyPatterns amigurumis={amigurumis} setAmigurumis={setAmigurumis} yarnInfo={yarnInfo} intersections={intersections} setIntersections={setIntersections} meshes={meshes} setMeshes={setMeshes} scene={scene} camera={camera} threeJsContainerRef={threeJsContainerRef} setDroppedShapes={setDroppedShapes} />} />
                     <Route path="/favorites" element={<Favorites amigurumis={amigurumis} setAmigurumis={setAmigurumis} yarnInfo={yarnInfo} intersections={intersections} />} />
-                    <Route path="/newPattern" element={<NewPattern amigurumis={amigurumis} setAmigurumis={setAmigurumis} setDroppedShapes={setDroppedShapes} droppedShapes={droppedShapes} />} />
                     <Route path="/:amigurumi_id/editor" element={
                         <Editor
                             droppedShapes={droppedShapes}

@@ -1,11 +1,20 @@
 import { v4 as uuidv4 } from "uuid";
-import React, { useState } from 'react';
-import { Card, Typography, CircularProgress, TextField, Button, Chip, Box, FormControlLabel, Checkbox } from '@mui/material';
-import { setDoc, doc } from 'firebase/firestore';
+import React, { useEffect, useState } from 'react';
+import { Typography, CircularProgress, TextField, Button, Chip, Box, DialogContent } from '@mui/material';
+import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db, auth } from '../firebase-config.js';
 import { useNavigate } from 'react-router-dom';
+import AppDialog from './AppDialog.tsx';
 
-const NewPattern = ({ setDroppedShapes, droppedShapes }: { setDroppedShapes: React.Dispatch<React.SetStateAction<Shape[]>>, droppedShapes: Shape[] }) => {
+const NewPattern = ({
+    open,
+    onClose,
+    setDroppedShapes,
+}: {
+    open: boolean;
+    onClose: () => void;
+    setDroppedShapes: React.Dispatch<React.SetStateAction<Shape[]>>;
+}) => {
     const navigate = useNavigate();
     const loggedInUser = auth.currentUser?.email;
 
@@ -19,6 +28,14 @@ const NewPattern = ({ setDroppedShapes, droppedShapes }: { setDroppedShapes: Rea
     const [tagInput, setTagInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+
+    useEffect(() => {
+        if (open) {
+            setFormData({ name: '', height: '', tags: [], favorite: false, yarn_id: '' });
+            setTagInput('');
+            setError('');
+        }
+    }, [open]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -80,6 +97,7 @@ const NewPattern = ({ setDroppedShapes, droppedShapes }: { setDroppedShapes: Rea
                 favorite: formData.favorite,
                 yarn_id: formData.yarn_id.trim() || null,
                 user_id: loggedInUser,
+                createdAt: serverTimestamp(),
             };
 
             // Save to Firestore with the UUID as the document ID
@@ -88,6 +106,8 @@ const NewPattern = ({ setDroppedShapes, droppedShapes }: { setDroppedShapes: Rea
 
             // Clear droppedShapes
             setDroppedShapes([]);
+
+            onClose();
 
             // Navigate to Editor with amigurumi and empty shapes
             navigate(`/${amigurumiId}/editor`, {
@@ -104,84 +124,73 @@ const NewPattern = ({ setDroppedShapes, droppedShapes }: { setDroppedShapes: Rea
         }
     };
 
-    if (!loggedInUser) {
-        return <Typography>Log in om een nieuw patroon aan te maken.</Typography>;
-    }
-
     return (
-        <div className="pattern">
-            <Box className="new-pattern-form">
-                <Card sx={{ padding: 3 }}>
-                    <Typography variant="h4" gutterBottom>
-                        New amigurumi pattern
-                    </Typography>
-                    <form onSubmit={handleSubmit}>
-                        <TextField
-                            label="Name"
-                            name="name"
-                            value={formData.name}
-                            onChange={handleInputChange}
-                            fullWidth
-                            margin="normal"
-                            required
-                        />
-                        <Box sx={{ display: 'flex', alignItems: 'center', margin: '16px 0' }}>
+        <AppDialog open={open} onClose={onClose} maxWidth="sm">
+            <DialogContent sx={{ padding: 4 }}>
+                {!loggedInUser ? (
+                    <Typography>Log in om een nieuw patroon aan te maken.</Typography>
+                ) : (
+                    <>
+                        <Typography variant="h4" gutterBottom sx={{ pr: 4 }}>
+                            New amigurumi pattern
+                        </Typography>
+                        <form onSubmit={handleSubmit}>
                             <TextField
-                                label="Tag"
-                                value={tagInput}
-                                onChange={handleTagInputChange}
-                                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
+                                label="Name"
+                                name="name"
+                                value={formData.name}
+                                onChange={handleInputChange}
                                 fullWidth
+                                margin="normal"
+                                required
                             />
-                            <Button
-                                onClick={handleAddTag}
-                                variant="contained"
-                                sx={{ ml: 1, backgroundColor: "#d4929a" }}
-                                disabled={!tagInput.trim()}
-                            >
-                                Add
-                            </Button>
-                        </Box>
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                            {formData.tags.map((tag) => (
-                                <Chip
-                                    key={tag}
-                                    label={tag}
-                                    onDelete={() => handleDeleteTag(tag)}
-                                    color="inherit"
+                            <Box sx={{ display: 'flex', alignItems: 'center', margin: '16px 0' }}>
+                                <TextField
+                                    label="Tag"
+                                    value={tagInput}
+                                    onChange={handleTagInputChange}
+                                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
+                                    fullWidth
                                 />
-                            ))}
-                        </Box>
-                        {/*<FormControlLabel*/}
-                        {/*    control={*/}
-                        {/*        <Checkbox*/}
-                        {/*            checked={formData.favorite}*/}
-                        {/*            onChange={handleFavoriteChange}*/}
-                        {/*            name="favorite"*/}
-                        {/*            style={{color: "#d4929a", fill: "#d4929a"}}*/}
-                        {/*        />*/}
-                        {/*    }*/}
-                        {/*    label="Mark as favorite"*/}
-                        {/*/>*/}
-                        {error && (
-                            <Typography color="error" sx={{ mt: 2 }}>
-                                {error}
-                            </Typography>
-                        )}
-                        <Button
-                            type="submit"
-                            variant="contained"
-                            color="primary"
-                            fullWidth
-                            sx={{ marginBottom: "20px", width: 1, backgroundColor: "#d4929a" }}
-                            disabled={loading}
-                        >
-                            {loading ? <CircularProgress size={24} /> : 'Save'}
-                        </Button>
-                    </form>
-                </Card>
-            </Box>
-        </div>
+                                <Button
+                                    onClick={handleAddTag}
+                                    variant="contained"
+                                    sx={{ ml: 1, backgroundColor: "#d4929a" }}
+                                    disabled={!tagInput.trim()}
+                                >
+                                    Add
+                                </Button>
+                            </Box>
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                                {formData.tags.map((tag) => (
+                                    <Chip
+                                        key={tag}
+                                        label={tag}
+                                        onDelete={() => handleDeleteTag(tag)}
+                                        color="inherit"
+                                    />
+                                ))}
+                            </Box>
+                            {error && (
+                                <Typography color="error" sx={{ mt: 2 }}>
+                                    {error}
+                                </Typography>
+                            )}
+                            <Button
+                                type="submit"
+                                variant="contained"
+                                color="primary"
+                                fullWidth
+                                sx={{ marginBottom: "20px", width: 1, backgroundColor: "#d4929a" }}
+                                disabled={loading}
+                            >
+                                {loading ? <CircularProgress size={24} /> : 'Save'}
+                            </Button>
+                        </form>
+                    </>
+                )}
+            </DialogContent>
+        </AppDialog>
     );
 };
 

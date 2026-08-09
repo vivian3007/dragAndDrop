@@ -1,6 +1,15 @@
 import React from 'react';
-import { Box, Button, Card, Chip } from '@mui/material';
-import { Favorite, FavoriteBorder, Delete } from '@mui/icons-material';
+import { Box, Button, Card, Chip, IconButton } from '@mui/material';
+import { Favorite, FavoriteBorder, Delete, Edit } from '@mui/icons-material';
+
+const ACTION_HEIGHT = 40;
+
+const actionIconButtonSx = {
+    backgroundColor: '#F2F3AE',
+    '&:hover': { backgroundColor: '#e6e888' },
+    width: ACTION_HEIGHT,
+    height: ACTION_HEIGHT,
+};
 
 const src = [
     "duck",
@@ -21,27 +30,17 @@ const AmigurumiCard = ({
     onPatternClick,
     onEditClick,
     onDeleteClick,
+    onCardClick,
 }: {
     amigurumi: Amigurumi;
     onFavoriteChange: (amigurumi: Amigurumi) => void;
     onPatternClick: (amigurumi: Amigurumi) => void;
     onEditClick?: (amigurumi: Amigurumi) => void;
     onDeleteClick?: (amigurumi: Amigurumi) => void;
+    onCardClick?: (amigurumi: Amigurumi) => void;
 }) => {
-    const favoriteIcon = amigurumi.favorite ? (
-        <Favorite
-            sx={{color: 'red', fontSize: '2.5rem', cursor: 'pointer', height: "2.5rem"}}
-            onClick={() => onFavoriteChange(amigurumi)}
-        />
-    ) : (
-        <FavoriteBorder
-            sx={{color: 'grey', fontSize: '2.5rem', cursor: 'pointer'}}
-            onClick={() => onFavoriteChange(amigurumi)}
-        />
-    );
-
     return (
-        <Card className="my-pattern-text-container">
+        <Card className="my-pattern-text-container" onClick={() => onCardClick?.(amigurumi)}>
             <img src={getImageForId(amigurumi.id)} alt={amigurumi.name} className="amigurumi-image"/>
             <h1 style={{marginTop: 20, marginBottom: 20}}>{amigurumi.name}</h1>
             <Box sx={{display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2}}>
@@ -50,75 +49,59 @@ const AmigurumiCard = ({
                         key={tag}
                         label={tag}
                         color="inherit"
+                        size="small"
                     />
                 ))}
             </Box>
-            {onEditClick ? (
-                <div style={{
-                    display: 'flex',
-                    gap: '5px',
-                    marginTop: 20,
-                    flexWrap: "wrap",
-                    width: "100%",
-                    justifyContent: "space-between"
-                }}>
-                    <div style={{display: "flex", gap: "5px", width: "65%"}}>
-                        <Button
-                            type="button"
-                            variant="contained"
-                            color="inherit"
-                            sx={{ width: 1, backgroundColor: "#d4929a"}}
-                            onClick={() => onEditClick(amigurumi)}
-                        >
-                            Edit
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="contained"
-                            color="inherit"
-                            sx={{ width: 1, backgroundColor: "#d4929a"}}
-                            onClick={() => onPatternClick(amigurumi)}
-                        >
-                            Pattern
-                        </Button>
-                    </div>
-                    <div style={{display: 'flex', gap: '10px', alignItems: 'center'}}>
-                        {favoriteIcon}
-                        <Delete
-                            sx={{color: 'grey', fontSize: '2.5rem', cursor: 'pointer'}}
-                            onClick={() => onDeleteClick?.(amigurumi)}
-                            titleAccess="Verwijder patroon"
-                        />
-                    </div>
-                </div>
-            ) : (
-                <div style={{
-                    display: 'flex',
-                    gap: '15px',
-                    marginTop: 20,
-                    flexWrap: "wrap",
-                    width: "100%",
-                    justifyContent: "space-between"
-                }}>
-                    <Button
-                        type="button"
-                        variant="contained"
-                        color="inherit"
-                        sx={{marginBottom: "20px", width: 0.8, backgroundColor: "#d4929a"}}
-                        onClick={() => onPatternClick(amigurumi)}
+            <Box sx={{display: 'flex', alignItems: 'center', gap: 1, marginTop: '20px'}}>
+                <Button
+                    type="button"
+                    variant="contained"
+                    color="inherit"
+                    sx={{flex: 1, backgroundColor: "#d4929a", height: ACTION_HEIGHT}}
+                    onClick={(e) => { e.stopPropagation(); onPatternClick(amigurumi); }}
+                >
+                    Pattern
+                </Button>
+                {onEditClick && (
+                    <IconButton
+                        size="small"
+                        onClick={(e) => { e.stopPropagation(); onEditClick(amigurumi); }}
+                        sx={actionIconButtonSx}
+                        title="Bewerk patroon"
                     >
-                        Pattern
-                    </Button>
-                    {favoriteIcon}
-                </div>
-            )}
+                        <Edit sx={{color: 'grey', fontSize: '1.25rem'}} />
+                    </IconButton>
+                )}
+                <IconButton
+                    size="small"
+                    onClick={(e) => { e.stopPropagation(); onFavoriteChange(amigurumi); }}
+                    sx={actionIconButtonSx}
+                >
+                    {amigurumi.favorite ? (
+                        <Favorite sx={{color: 'red', fontSize: '1.25rem'}} />
+                    ) : (
+                        <FavoriteBorder sx={{color: 'grey', fontSize: '1.25rem'}} />
+                    )}
+                </IconButton>
+                {onDeleteClick && (
+                    <IconButton
+                        size="small"
+                        onClick={(e) => { e.stopPropagation(); onDeleteClick(amigurumi); }}
+                        sx={actionIconButtonSx}
+                        title="Verwijder patroon"
+                    >
+                        <Delete sx={{color: 'grey', fontSize: '1.25rem'}} />
+                    </IconButton>
+                )}
+            </Box>
         </Card>
     );
 };
 
 const arePropsEqual = (
-    prev: { amigurumi: Amigurumi; onFavoriteChange: unknown; onPatternClick: unknown; onEditClick: unknown; onDeleteClick: unknown },
-    next: { amigurumi: Amigurumi; onFavoriteChange: unknown; onPatternClick: unknown; onEditClick: unknown; onDeleteClick: unknown }
+    prev: { amigurumi: Amigurumi; onFavoriteChange: unknown; onPatternClick: unknown; onEditClick: unknown; onDeleteClick: unknown; onCardClick: unknown },
+    next: { amigurumi: Amigurumi; onFavoriteChange: unknown; onPatternClick: unknown; onEditClick: unknown; onDeleteClick: unknown; onCardClick: unknown }
 ) =>
     prev.amigurumi.id === next.amigurumi.id &&
     prev.amigurumi.name === next.amigurumi.name &&
@@ -128,6 +111,7 @@ const arePropsEqual = (
     prev.onFavoriteChange === next.onFavoriteChange &&
     prev.onPatternClick === next.onPatternClick &&
     prev.onEditClick === next.onEditClick &&
-    prev.onDeleteClick === next.onDeleteClick;
+    prev.onDeleteClick === next.onDeleteClick &&
+    prev.onCardClick === next.onCardClick;
 
 export default React.memo(AmigurumiCard, arePropsEqual);
