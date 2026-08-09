@@ -1,11 +1,11 @@
-import React from 'react';
-import {Box, Button, Card, Chip, CircularProgress, Typography} from '@mui/material';
-import { Favorite, FavoriteBorder } from '@mui/icons-material';
+import React, {useCallback} from 'react';
+import {CircularProgress, Typography} from '@mui/material';
 import {doc, getDocs, updateDoc, where} from 'firebase/firestore';
 import { db } from '../firebase-config.js';
 import { useCollection } from 'react-firebase-hooks/firestore';
 import { query, collection } from 'firebase/firestore';
 import {useNavigate} from "react-router-dom";
+import AmigurumiCard from "./AmigurumiCard.tsx";
 
 const Favorites = ({yarnInfo, intersections} : {yarnInfo: Yarn, intersections: any}) => {
     const navigate = useNavigate();
@@ -18,20 +18,7 @@ const Favorites = ({yarnInfo, intersections} : {yarnInfo: Yarn, intersections: a
         })) as Amigurumi[]
         : [];
 
-    const src = [
-        "duck",
-        "cow",
-        "cat",
-        "dog",
-        "bunny"
-    ]
-
-    const getRandomImage = () => {
-        const randomIndex = Math.floor(Math.random() * src.length);
-        return `../public/img/${src[randomIndex]}.jpg`;
-    };
-
-    const handleFavoriteChange = async (amigurumi: Amigurumi) => {
+    const handleFavoriteChange = useCallback(async (amigurumi: Amigurumi) => {
         try {
             console.log(`Updating favorite for ${amigurumi.id}: ${!amigurumi.favorite}`);
             const newFavoriteStatus = !amigurumi.favorite;
@@ -42,9 +29,9 @@ const Favorites = ({yarnInfo, intersections} : {yarnInfo: Yarn, intersections: a
         } catch (error) {
             console.error('Error updating favorite:', error);
         }
-    };
+    }, []);
 
-    const handlePatternClick = async (amigurumi: Amigurumi) => {
+    const handlePatternClick = useCallback(async (amigurumi: Amigurumi) => {
         try {
             const shapesQuery = query(collection(db, 'shapes'), where('amigurumi_id', '==', amigurumi.id));
             const shapesSnapshot = await getDocs(shapesQuery);
@@ -59,7 +46,7 @@ const Favorites = ({yarnInfo, intersections} : {yarnInfo: Yarn, intersections: a
         } catch (error) {
             console.error('Fout bij het ophalen van shapes:', error);
         }
-    };
+    }, [navigate, yarnInfo, intersections]);
 
     if (loading) {
         return <CircularProgress />;
@@ -73,49 +60,12 @@ const Favorites = ({yarnInfo, intersections} : {yarnInfo: Yarn, intersections: a
         <div className="my-pattern">
             <div className="my-pattern-container">
                 {amigurumis.map((amigurumi) => (
-                    <Card key={amigurumi.id} className="my-pattern-text-container">
-                        <img src={getRandomImage()} alt={amigurumi.name} className="amigurumi-image"/>
-                        <h1 style={{marginTop: 20, marginBottom: 20}}>{amigurumi.name}</h1>
-                        {/*<h3>Tags</h3>*/}
-                        <Box sx={{display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2}}>
-                            {amigurumi.tags.map((tag) => (
-                                <Chip
-                                    key={tag}
-                                    label={tag}
-                                    color="inherit"
-                                />
-                            ))}
-                        </Box>
-                        <div style={{
-                            display: 'flex',
-                            gap: '15px',
-                            marginTop: 20,
-                            flexWrap: "wrap",
-                            width: "100%",
-                            justifyContent: "space-between"
-                        }}>
-                            <Button
-                                type="button"
-                                variant="contained"
-                                color="inherit"
-                                sx={{marginBottom: "20px", width: 0.8, backgroundColor: "#d4929a"}}
-                                onClick={() => handlePatternClick(amigurumi)}
-                            >
-                                Pattern
-                            </Button>
-                            {amigurumi.favorite ? (
-                                <Favorite
-                                    sx={{color: 'red', fontSize: '2.5rem', cursor: 'pointer', height: "2.5rem"}}
-                                    onClick={() => handleFavoriteChange(amigurumi)}
-                                />
-                            ) : (
-                                <FavoriteBorder
-                                    sx={{color: 'grey', fontSize: '2.5rem', cursor: 'pointer'}}
-                                    onClick={() => handleFavoriteChange(amigurumi)}
-                                />
-                            )}
-                        </div>
-                    </Card>
+                    <AmigurumiCard
+                        key={amigurumi.id}
+                        amigurumi={amigurumi}
+                        onFavoriteChange={handleFavoriteChange}
+                        onPatternClick={handlePatternClick}
+                    />
                 ))}
             </div>
         </div>

@@ -1,12 +1,12 @@
-import React from 'react';
-import {Card, Typography, CircularProgress, Button, Box, Chip} from '@mui/material';
-import { Favorite, FavoriteBorder, Delete } from '@mui/icons-material';
+import React, {useCallback} from 'react';
+import {Typography, CircularProgress} from '@mui/material';
 import { doc, updateDoc, getDocs, deleteDoc } from 'firebase/firestore';
 import { db, auth } from '../firebase-config.js';
 import { useCollection } from 'react-firebase-hooks/firestore';
 import { query, collection, where } from 'firebase/firestore';
 import {useNavigate} from "react-router-dom";
 import calculateIntersections from "./calculateIntersections.tsx";
+import AmigurumiCard from "./AmigurumiCard.tsx";
 
 const MyPatterns = ({yarnInfo, intersections, camera, scene, setIntersections, meshes, setMeshes, threeJsContainerRef} : {yarnInfo: Yarn, intersections: any}) => {
     const loggedInUser = auth.currentUser?.email;
@@ -26,20 +26,7 @@ const MyPatterns = ({yarnInfo, intersections, camera, scene, setIntersections, m
         })) as Amigurumi[]
         : [];
 
-    const src = [
-        "duck",
-        "cow",
-        "cat",
-        "dog",
-        "bunny"
-    ]
-
-    const getRandomImage = () => {
-        const randomIndex = Math.floor(Math.random() * src.length);
-        return `../public/img/${src[randomIndex]}.jpg`;
-    };
-
-    const handleFavoriteChange = async (amigurumi: Amigurumi) => {
+    const handleFavoriteChange = useCallback(async (amigurumi: Amigurumi) => {
         try {
             console.log(`Updating favorite for ${amigurumi.id}: ${!amigurumi.favorite}`);
             const newFavoriteStatus = !amigurumi.favorite;
@@ -50,9 +37,9 @@ const MyPatterns = ({yarnInfo, intersections, camera, scene, setIntersections, m
         } catch (error) {
             console.error('Error updating favorite:', error);
         }
-    };
+    }, []);
 
-    const handleEditClick = async (amigurumi: Amigurumi) => {
+    const handleEditClick = useCallback(async (amigurumi: Amigurumi) => {
         try {
             const shapesQuery = query(collection(db, 'shapes'), where('amigurumi_id', '==', amigurumi.id));
             const shapesSnapshot = await getDocs(shapesQuery);
@@ -77,9 +64,9 @@ const MyPatterns = ({yarnInfo, intersections, camera, scene, setIntersections, m
         } catch (error) {
             console.error('Fout bij het ophalen van shapes:', error);
         }
-    };
+    }, [scene, threeJsContainerRef, camera, meshes, setIntersections, setMeshes, navigate]);
 
-    const handlePatternClick = async (amigurumi: Amigurumi) => {
+    const handlePatternClick = useCallback(async (amigurumi: Amigurumi) => {
         try {
             const shapesQuery = query(collection(db, 'shapes'), where('amigurumi_id', '==', amigurumi.id));
             const shapesSnapshot = await getDocs(shapesQuery);
@@ -94,9 +81,9 @@ const MyPatterns = ({yarnInfo, intersections, camera, scene, setIntersections, m
         } catch (error) {
             console.error('Fout bij het ophalen van shapes:', error);
         }
-    };
+    }, [navigate, yarnInfo, intersections]);
 
-    const handleDeleteAmigurumi = async (amigurumi: Amigurumi) => {
+    const handleDeleteAmigurumi = useCallback(async (amigurumi: Amigurumi) => {
         if (window.confirm(`Weet je zeker dat je "${amigurumi.name}" wilt verwijderen?`)) {
             try {
                 await deleteDoc(doc(db, 'amigurumi', amigurumi.id));
@@ -106,7 +93,7 @@ const MyPatterns = ({yarnInfo, intersections, camera, scene, setIntersections, m
                 alert('Fout bij verwijderen van amigurumi');
             }
         }
-    };
+    }, []);
 
     if (loading) {
         return <CircularProgress />;
@@ -127,60 +114,14 @@ const MyPatterns = ({yarnInfo, intersections, camera, scene, setIntersections, m
                     <Typography>Geen patronen gevonden.</Typography>
                 ) : (
                     amigurumis.map((amigurumi) => (
-                        <Card key={amigurumi.id} className="my-pattern-text-container">
-                            <img src={getRandomImage()} alt={amigurumi.name} className="amigurumi-image"/>
-                            <h1 style={{marginTop: 20, marginBottom: 20}}>{amigurumi.name}</h1>
-                            {/*<h3>Tags</h3>*/}
-                            <Box sx={{display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2}}>
-                                {amigurumi.tags.map((tag) => (
-                                    <Chip
-                                        key={tag}
-                                        label={tag}
-                                        color="inherit"
-                                    />
-                                ))}
-                            </Box>
-                            <div style={{display: 'flex', gap: '5px', marginTop: 20, flexWrap: "wrap", width: "100%", justifyContent: "space-between"}}>
-                                <div style={{display: "flex", gap: "5px", width: "65%"}}>
-                                    <Button
-                                        type="button"
-                                        variant="contained"
-                                        color="inherit"
-                                        sx={{ width: 1, backgroundColor: "#d4929a"}}
-                                        onClick={() => handleEditClick(amigurumi)}
-                                    >
-                                        Edit
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        variant="contained"
-                                        color="inherit"
-                                        sx={{ width: 1, backgroundColor: "#d4929a"}}
-                                        onClick={() => handlePatternClick(amigurumi)}
-                                    >
-                                        Pattern
-                                    </Button>
-                                </div>
-                                <div style={{display: 'flex', gap: '10px', alignItems: 'center'}}>
-                                    {amigurumi.favorite ? (
-                                        <Favorite
-                                            sx={{color: 'red', fontSize: '2.5rem', cursor: 'pointer', height: "2.5rem"}}
-                                            onClick={() => handleFavoriteChange(amigurumi)}
-                                        />
-                                    ) : (
-                                        <FavoriteBorder
-                                            sx={{color: 'grey', fontSize: '2.5rem', cursor: 'pointer'}}
-                                            onClick={() => handleFavoriteChange(amigurumi)}
-                                        />
-                                    )}
-                                    <Delete
-                                        sx={{color: 'grey', fontSize: '2.5rem', cursor: 'pointer'}}
-                                        onClick={() => handleDeleteAmigurumi(amigurumi)}
-                                        titleAccess="Verwijder patroon"
-                                    />
-                                </div>
-                            </div>
-                        </Card>
+                        <AmigurumiCard
+                            key={amigurumi.id}
+                            amigurumi={amigurumi}
+                            onFavoriteChange={handleFavoriteChange}
+                            onPatternClick={handlePatternClick}
+                            onEditClick={handleEditClick}
+                            onDeleteClick={handleDeleteAmigurumi}
+                        />
                     ))
                 )}
             </div>
