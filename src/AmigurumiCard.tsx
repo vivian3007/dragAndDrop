@@ -80,6 +80,16 @@ const AmigurumiCard = ({
                         <Edit sx={{color: 'var(--color-text)', fontSize: '1.25rem'}} />
                     </IconButton>
                 )}
+                {onDeleteClick && (
+                    <IconButton
+                        size="small"
+                        onClick={(e) => { e.stopPropagation(); onDeleteClick(amigurumi); }}
+                        sx={actionIconButtonSx}
+                        title="Verwijder patroon"
+                    >
+                        <Delete sx={{color: 'var(--color-text)', fontSize: '1.25rem'}} />
+                    </IconButton>
+                )}
                 <IconButton
                     size="small"
                     onClick={(e) => { e.stopPropagation(); setIsHeartBouncing(true); onFavoriteChange(amigurumi); }}
@@ -99,16 +109,6 @@ const AmigurumiCard = ({
                         />
                     )}
                 </IconButton>
-                {onDeleteClick && (
-                    <IconButton
-                        size="small"
-                        onClick={(e) => { e.stopPropagation(); onDeleteClick(amigurumi); }}
-                        sx={actionIconButtonSx}
-                        title="Verwijder patroon"
-                    >
-                        <Delete sx={{color: 'var(--color-text)', fontSize: '1.25rem'}} />
-                    </IconButton>
-                )}
             </Box>
         </Card>
     );

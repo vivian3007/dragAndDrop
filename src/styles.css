@@ -28,11 +28,21 @@ body {
 
 .MuiOutlinedInput-root {
     border-radius: 12px !important;
-    border: 2px solid var(--color-secondary) !important;
 }
 
-.MuiOutlinedInput-root.Mui-focused fieldset {
+.MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline {
+    border-radius: 12px !important;
+    border: 2px solid var(--color-secondary) !important;
+    transition: border-color 0.2s ease;
+}
+
+.MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+    border-color: var(--color-secondary-hover) !important;
+}
+
+.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
     border-color: var(--color-primary) !important;
+    border-width: 2px !important;
 }
 
 .MuiInputLabel-root.Mui-focused {
@@ -53,7 +63,7 @@ body {
 .navbar-button {
     height: 6vh;
     margin: 1vh 0.3vw;
-    padding: 0 2% 0 2%;
+    padding: 0 1.5vw;
     text-align: center;
     align-content: center;
     text-decoration: none;
@@ -312,6 +322,22 @@ body {
 .input-text input, .input-text select {
     height: 25px;
     width: 40%;
+    border-radius: 12px;
+    border: 2px solid var(--color-secondary);
+    background-color: var(--color-bg-card);
+    color: var(--color-text);
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-text input:hover, .input-text select:hover {
+    border-color: var(--color-secondary-hover);
+}
+
+.input-text input:focus, .input-text select:focus,
+.input-text input:active, .input-text select:active {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px rgba(var(--shadow-color), 0.12);
 }
 
 .yarn-settings-group .input-text {

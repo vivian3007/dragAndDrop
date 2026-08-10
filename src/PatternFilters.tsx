@@ -33,9 +33,9 @@ const PatternFilters = ({
         '& .MuiOutlinedInput-root': {
             borderRadius: '12px',
             backgroundColor: 'var(--color-bg)',
-            '& fieldset': { borderColor: 'var(--color-accent-soft-hover)' },
-            '&:hover fieldset': { borderColor: 'var(--color-secondary)' },
-            '&.Mui-focused fieldset': { borderColor: 'var(--color-primary)' },
+            '& fieldset': { borderColor: 'var(--color-secondary)', borderWidth: '2px' },
+            '&:hover fieldset': { borderColor: 'var(--color-secondary-hover)' },
+            '&.Mui-focused fieldset': { borderColor: 'var(--color-primary)', borderWidth: '2px' },
         },
         '& .MuiInputLabel-root.Mui-focused': { color: 'var(--color-primary)' },
     };
