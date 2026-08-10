@@ -1,4 +1,4 @@
-import React, {createContext, Ref, useEffect, useRef, useState} from 'react';
+import React, {createContext, Ref, useCallback, useEffect, useRef, useState} from 'react';
 import {Canvas, useThree} from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { GridHelper } from 'three';
@@ -55,6 +55,7 @@ export default function ThreeJsField({
     const orbitControlsRef = useRef<any>(null);
     const [showGrid, setShowGrid] = useState(false);
     const [currentView, setCurrentView] = useState<'front' | 'back' | 'left' | 'right' | 'top'>('front');
+    const [isDragging, setIsDragging] = useState(false);
 
     const gridRotations: Record<string, [number, number, number]> = {
         front: [Math.PI / 2, 0, 0],
@@ -84,9 +85,9 @@ export default function ThreeJsField({
         };
     }, [activeId, onDeleteShape]);
 
-    const handleSelect = (id: any) => {
-        setActiveId(activeId === id ? null : id);
-    };
+    const handleSelect = useCallback((id: any) => {
+        setActiveId((prevActiveId: any) => (prevActiveId === id ? null : id));
+    }, [setActiveId]);
 
     // const [allMeshesReady, setAllMeshesReady] = useState(false);
     // const meshCount = droppedShapes.length // total number of meshes
@@ -130,6 +131,7 @@ export default function ThreeJsField({
                 meshes={meshes}
                 setMeshes={setMeshes}
                 setCurrentView={setCurrentView}
+                isDragging={isDragging}
             />
             {showGrid && (
                 <primitive
@@ -154,13 +156,14 @@ export default function ThreeJsField({
                             <ShapeComponent
                                 key={shape.id}
                                 id={shape.id}
-                                data={{ shape }}
+                                shape={shape}
                                 orbitControlsRef={orbitControlsRef}
                                 isSelected={activeId === shape.id}
                                 onSelect={handleSelect}
                                 onUpdateShape={onUpdateShape}
                                 transformMode={transformMode}
                                 setTransformMode={setTransformMode}
+                                onDraggingChange={setIsDragging}
                             />
                     );
                 })}

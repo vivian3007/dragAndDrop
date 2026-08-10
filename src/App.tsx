@@ -24,6 +24,7 @@ export default function App() {
     const [yarnInfo, setYarnInfo] = useState<Yarn>({name: null, weight: null, hooksize: null, mPerSkein: null, material: null, color: null});
     const containerRef = useRef<HTMLDivElement>(null);
     const threeJsContainerRef = useRef<HTMLDivElement>(null);
+    const shapeUpdateDebounceRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
     const [dragging, setDragging] = useState(false);
     const [camera, setCamera] = useState(null);
@@ -189,15 +190,7 @@ export default function App() {
     //         }
     // };
 
-    const handleUpdateShape = async (updatedShape: Shape) => {
-        setDroppedShapes((prevShapes) =>
-            prevShapes.map((shape) =>
-                shape.id === updatedShape.id
-                    ? { ...shape, ...updatedShape }
-                    : shape
-            )
-        );
-
+    const persistShapeUpdate = async (updatedShape: Shape) => {
         try {
             if (!updatedShape.id) {
                 throw new Error("Shape ID is required to update the document");
@@ -229,6 +222,36 @@ export default function App() {
             alert("Error updating shape: " + error);
         }
     };
+
+    const handleUpdateShape = useCallback((updatedShape: Shape) => {
+        setDroppedShapes((prevShapes) =>
+            prevShapes.map((shape) =>
+                shape.id === updatedShape.id
+                    ? { ...shape, ...updatedShape }
+                    : shape
+            )
+        );
+
+        if (!updatedShape.id) {
+            return;
+        }
+
+        const pendingTimers = shapeUpdateDebounceRef.current;
+        if (pendingTimers[updatedShape.id]) {
+            clearTimeout(pendingTimers[updatedShape.id]);
+        }
+        pendingTimers[updatedShape.id] = setTimeout(() => {
+            delete pendingTimers[updatedShape.id];
+            persistShapeUpdate(updatedShape);
+        }, 400);
+    }, []);
+
+    useEffect(() => {
+        const pendingTimers = shapeUpdateDebounceRef.current;
+        return () => {
+            Object.values(pendingTimers).forEach(clearTimeout);
+        };
+    }, []);
 
     const handleUpdateYarnInfo = (updatedYarnInfo: { id: string; name: string; weight: number; mPerSkein: number, hooksize: number, material: string, color: string }) => {
         setYarnInfo(
@@ -314,12 +337,6 @@ export default function App() {
                                 className={({ isActive }) => `navbar-button ${isActive ? 'active' : ''}`}
                             >
                                 Favorite patterns
-                            </NavLink>
-                            <NavLink
-                                to="/newPattern"
-                                className={({ isActive }) => `navbar-button ${isActive ? 'active' : ''}`}
-                            >
-                                New pattern
                             </NavLink>
                             <Box sx={{ ml: "auto", mr: "1.5vw", display: "flex", alignItems: "center" }}>
                                 <NavLink

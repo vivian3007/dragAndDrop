@@ -4,23 +4,24 @@ import * as THREE from 'three';
 import { TransformControls } from '@react-three/drei';
 import TransformControlsThree from "./TransformControlsThree.tsx";
 
-export default function Arm({
+function Arm({
                                          id,
-                                         data,
+                                         shape,
                                          orbitControlsRef,
                                          isSelected,
                                          onSelect,
                                          onUpdateShape,
+                                         onDraggingChange,
                                      }: {
     id: string;
-    data: { shape: any };
+    shape: any;
     orbitControlsRef: React.MutableRefObject<any>;
     isSelected: boolean;
     onSelect: (id: string) => void;
     onUpdateShape: (shape: any) => void;
+    onDraggingChange?: (isDragging: boolean) => void;
 }) {
 
-    const shape = data?.shape;
     const width = shape?.width ?? 50;
     const height = shape?.height ?? 50;
     const length = shape?.length ?? 50;
@@ -37,6 +38,11 @@ export default function Arm({
     const transformControlsRef = useRef<any>(null);
     const [transformMode, setTransformMode] = useState<'translate' | 'rotate' | 'scale'>('translate');
     const [isDragging, setIsDragging] = useState(false);
+
+    const handleDraggingChange = (value: boolean) => {
+        setIsDragging(value);
+        onDraggingChange?.(value);
+    };
 
     const texture = useLoader(THREE.TextureLoader, '/textures/stitch-texture.jpg');
 
@@ -84,8 +90,14 @@ export default function Arm({
                 </mesh>
             </mesh>
             {isSelected && (
-                <TransformControlsThree transformRef={transformControlsRef} object={meshRef.current} transformMode={transformMode} setTransformMode={setTransformMode} isSelected={isSelected} setIsDragging={setIsDragging} orbitControlsRef={orbitControlsRef} meshRef={meshRef} size={size} onUpdateShape={onUpdateShape} shape={shape} width={width} />
+                <TransformControlsThree transformRef={transformControlsRef} object={meshRef.current} transformMode={transformMode} setTransformMode={setTransformMode} isSelected={isSelected} setIsDragging={handleDraggingChange} orbitControlsRef={orbitControlsRef} meshRef={meshRef} size={size} onUpdateShape={onUpdateShape} shape={shape} width={width} />
             )}
         </group>
     );
 }
+
+export default React.memo(Arm, (prev, next) =>
+    prev.shape === next.shape &&
+    prev.isSelected === next.isSelected &&
+    prev.id === next.id
+);

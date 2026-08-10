@@ -4,26 +4,27 @@ import TransformControlsThree from "./TransformControlsThree.tsx";
 import * as THREE from 'three';
 import { RenderContext } from "./RenderProvider.tsx";
 
-export default function Sphere({
+function Sphere({
                                    id,
-                                   data,
+                                   shape,
                                    orbitControlsRef,
                                    isSelected,
                                    onSelect,
                                    onUpdateShape,
                                    transformMode,
                                    setTransformMode,
+                                   onDraggingChange,
                                }: {
     id: string;
-    data: { shape: any };
+    shape: any;
     orbitControlsRef: React.MutableRefObject<any>;
     isSelected: boolean;
     onSelect: (id: string) => void;
     onUpdateShape: (shape: any) => void;
     transformMode: any;
     setTransformMode: any;
+    onDraggingChange?: (isDragging: boolean) => void;
 }) {
-    const shape = data?.shape;
     const width = shape?.width ?? 50;
     const height = shape?.height ?? 50;
     const length = shape?.length ?? 50;
@@ -38,6 +39,11 @@ export default function Sphere({
     const meshRef = useRef<THREE.Mesh>(null);
     const transformControlsRef = useRef<any>(null);
     const [isDragging, setIsDragging] = useState(false);
+
+    const handleDraggingChange = (value: boolean) => {
+        setIsDragging(value);
+        onDraggingChange?.(value);
+    };
 
     const texture = useLoader(THREE.TextureLoader, '/textures/stitch-texture.jpg');
 
@@ -54,7 +60,6 @@ export default function Sphere({
     useEffect(() => {
         if (meshRef.current) {
             meshRef.current.uuid = id; // Ensure mesh uuid matches shape.id
-            console.log('Sphere mesh UUID set to:', meshRef.current.uuid);
         }
     }, [id]);
 
@@ -100,8 +105,15 @@ export default function Sphere({
                 />
             </mesh>
             {isSelected && (
-                <TransformControlsThree transformRef={transformControlsRef} object={meshRef.current} transformMode={transformMode} setTransformMode={setTransformMode} isSelected={isSelected} setIsDragging={setIsDragging} orbitControlsRef={orbitControlsRef} meshRef={meshRef} size={size} onUpdateShape={onUpdateShape} shape={shape} width={width} />
+                <TransformControlsThree transformRef={transformControlsRef} object={meshRef.current} transformMode={transformMode} setTransformMode={setTransformMode} isSelected={isSelected} setIsDragging={handleDraggingChange} orbitControlsRef={orbitControlsRef} meshRef={meshRef} size={size} onUpdateShape={onUpdateShape} shape={shape} width={width} />
             )}
         </group>
     );
 }
+
+export default React.memo(Sphere, (prev, next) =>
+    prev.shape === next.shape &&
+    prev.isSelected === next.isSelected &&
+    prev.transformMode === next.transformMode &&
+    prev.id === next.id
+);

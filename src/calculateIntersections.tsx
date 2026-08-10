@@ -26,12 +26,6 @@ export default function calculateIntersections(
     const meshesArray: { id: string; mesh: THREE.Mesh }[] = [];
 
     droppedShapes.forEach((shape) => {
-        scene.children.forEach(o => {
-            if(o.children.length > 0) {
-                o.children.forEach(c => console.log(c.uuid))
-            }
-            }
-        )
         const mesh = scene.getObjectByProperty('uuid', shape.id);
         if (mesh instanceof THREE.Mesh) {
             if (!meshesArray.find((m) => m.id === shape.id)) {
@@ -180,9 +174,6 @@ export default function calculateIntersections(
 
                             const currentDroppedShape = droppedShapes.find((shape) => shape.id === meshesArray[i].id);
 
-                            console.log("meshypixels", meshYPixels);
-                            console.log("highpixely", highPixelY);
-
                             const mesh = meshesArray[i].mesh;
                             const sphereTopWorld = new THREE.Vector3(
                                 mesh.position.x,
@@ -197,9 +188,6 @@ export default function calculateIntersections(
 
                             const topToHighestPoint = meshYPixels - (currentDroppedShape?.height / 2) - highPixelY;
                             // const topToRightmostPoint = meshYPixels - rightPixelY;
-
-                            console.log("toptohighestpoint", topToHighestPoint)
-                            console.log("toptorightmostpoint", topToRightmostPoint)
 
                             const pixelDistanceWidth = Math.sqrt(
                                 Math.pow(rightPixelX - leftPixelX, 2) +
@@ -225,8 +213,6 @@ export default function calculateIntersections(
                                 topToHighestPoint,
                                 topToRightmostPoint,
                             });
-
-                            console.log(intersectionArray)
 
                         } else {
                             console.warn(`Not enough points to determine leftmost and rightmost for shapes ${meshesArray[i].id} and ${meshesArray[j].id}`);

@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { CSG } from "three-csg-ts";
@@ -24,6 +24,7 @@ export default function SceneController({
                                             meshes,
                                             setMeshes,
                                             setCurrentView,
+                                            isDragging,
                                         }: {
     orbitControlsRef: React.RefObject<any>;
     onSetView: (setView: (viewKey: string) => void) => void;
@@ -37,6 +38,7 @@ export default function SceneController({
     meshes: any;
     setMeshes: any;
     setCurrentView: (view: 'front' | 'back' | 'left' | 'right' | 'top') => void;
+    isDragging: boolean;
 }) {
     const { camera, scene } = useThree();
 
@@ -72,10 +74,19 @@ export default function SceneController({
         setCamera(camera);
     }, [camera, orbitControlsRef]);
 
-    console.log(meshes);
+    const intersectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
-        setTimeout(() => calculateIntersections(
+        if (intersectionTimeoutRef.current) {
+            clearTimeout(intersectionTimeoutRef.current);
+            intersectionTimeoutRef.current = null;
+        }
+
+        if (isDragging) {
+            return;
+        }
+
+        intersectionTimeoutRef.current = setTimeout(() => calculateIntersections(
             droppedShapes,
             scene,
             threeJsContainerRef,
@@ -83,9 +94,15 @@ export default function SceneController({
             meshes,
             setIntersections,
             setMeshes
-        ), 1000)
+        ), 200);
+
+        return () => {
+            if (intersectionTimeoutRef.current) {
+                clearTimeout(intersectionTimeoutRef.current);
+            }
+        };
     // }, [droppedShapes, scene, threeJsContainerRef, camera, amigurumi]);
-    }, [droppedShapes]);
+    }, [droppedShapes, isDragging]);
 
     return null;
 }

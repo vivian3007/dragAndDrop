@@ -92,8 +92,6 @@ export default function TransformControlsThree ({transformRef, object, transform
                         updatedShape.zoom = newZoom;
                     }
 
-                    console.log("updatedShape", updatedShape)
-
                     onUpdateShape(updatedShape);
                 }
             }}
