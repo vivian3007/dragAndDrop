@@ -1,6 +1,55 @@
 import * as THREE from "three";
 import {CSG} from "three-csg-ts";
 
+// CSG boolean intersecties zijn duur en schalen met het aantal driehoeken van
+// de operanden. De zichtbare vormen (Sphere/Arm) zijn vrij hoog-poly voor een
+// mooie ronding, maar voor de overlap-berekening is die precisie niet nodig —
+// hier bouwen we een laag-poly variant van dezelfde geometrie (zelfde radius/
+// hoogte/etc., minder segmenten) zodat de CSG-operatie een stuk sneller gaat
+// zonder dat de gerenderde vorm zelf minder gedetailleerd wordt.
+const MAX_CSG_SEGMENTS = 12;
+
+function getCsgProxyGeometry(geometry: THREE.BufferGeometry): THREE.BufferGeometry {
+    const params: any = (geometry as any).parameters;
+    if (!params) {
+        return geometry;
+    }
+
+    if (geometry.type === 'SphereGeometry') {
+        return new THREE.SphereGeometry(
+            params.radius,
+            Math.min(params.widthSegments ?? MAX_CSG_SEGMENTS, MAX_CSG_SEGMENTS),
+            Math.min(params.heightSegments ?? MAX_CSG_SEGMENTS, MAX_CSG_SEGMENTS),
+            params.phiStart,
+            params.phiLength,
+            params.thetaStart,
+            params.thetaLength
+        );
+    }
+
+    if (geometry.type === 'CylinderGeometry') {
+        return new THREE.CylinderGeometry(
+            params.radiusTop,
+            params.radiusBottom,
+            params.height,
+            Math.min(params.radialSegments ?? MAX_CSG_SEGMENTS, MAX_CSG_SEGMENTS),
+            params.heightSegments,
+            params.openEnded,
+            params.thetaStart,
+            params.thetaLength
+        );
+    }
+
+    return geometry;
+}
+
+function createCsgProxyMesh(mesh: THREE.Mesh): THREE.Mesh {
+    const proxyGeometry = getCsgProxyGeometry(mesh.geometry as THREE.BufferGeometry);
+    const proxyMesh = new THREE.Mesh(proxyGeometry);
+    proxyMesh.matrix.copy(mesh.matrix);
+    return proxyMesh;
+}
+
 export default function calculateIntersections(
     droppedShapes: Shape[],
     scene: THREE.Scene,
@@ -56,20 +105,14 @@ export default function calculateIntersections(
             if (boxA.intersectsBox(boxB)) {
                 // console.log(`Overlap detected between shapes ${meshesArray[i].id} and ${meshesArray[j].id}`);
                 try {
-                    const csgA = CSG.fromMesh(meshA);
-                    const csgB = CSG.fromMesh(meshB);
+                    const csgA = CSG.fromMesh(createCsgProxyMesh(meshA));
+                    const csgB = CSG.fromMesh(createCsgProxyMesh(meshB));
                     const intersectionCSG = csgA.intersect(csgB);
                     const intersectionMesh = CSG.toMesh(intersectionCSG, meshA.matrix);
 
                     const geometry = intersectionMesh.geometry;
                     const positionAttribute = geometry.attributes.position;
                     if (positionAttribute && positionAttribute.count > 0) {
-                        const pointGeometry = new THREE.SphereGeometry(0.1, 8, 8);
-                        // const pointMaterial = new THREE.MeshBasicMaterial();
-                        const leftmostPointMaterial = new THREE.MeshBasicMaterial();
-                        const rightmostPointMaterial = new THREE.MeshBasicMaterial();
-                        const highestPointMaterial = new THREE.MeshBasicMaterial();
-                        const lowestPointMaterial = new THREE.MeshBasicMaterial();
                         const uniqueVertices = new Set<string>();
                         const intersectionPoints: { x: number; y: number; z: number }[] = [];
 
@@ -78,10 +121,19 @@ export default function calculateIntersections(
                         let highestPoint: { x: number, y: number, z: number } | null = null;
                         let lowestPoint: { x: number, y: number, z: number } | null = null;
 
+                        // De CSG-geometrie ligt in de lokale ruimte van meshA (zie three-csg-ts'
+                        // CSG.toGeometry, die de inverse van meshA.matrix toepast) — meshA.matrix
+                        // terug toepassen geeft de echte wereld-coördinaten.
+                        const worldVertex = new THREE.Vector3();
                         for (let k = 0; k < positionAttribute.count; k++) {
-                            const x = positionAttribute.getX(k);
-                            const y = positionAttribute.getY(k);
-                            const z = positionAttribute.getZ(k);
+                            worldVertex.set(
+                                positionAttribute.getX(k),
+                                positionAttribute.getY(k),
+                                positionAttribute.getZ(k)
+                            ).applyMatrix4(meshA.matrix);
+                            const x = worldVertex.x;
+                            const y = worldVertex.y;
+                            const z = worldVertex.z;
                             const vertexKey = `${x.toFixed(6)},${y.toFixed(6)},${z.toFixed(6)}`;
 
                             if (!uniqueVertices.has(vertexKey)) {
@@ -102,37 +154,7 @@ export default function calculateIntersections(
                                 if (!lowestPoint || y < lowestPoint.y) {
                                     lowestPoint = point;
                                 }
-
-                                // const pointMesh = new THREE.Mesh(pointGeometry, pointMaterial);
-                                // pointMesh.position.set(x, y, z);
-                                // pointMesh.userData.isIntersectionPoint = true;
-                                // scene.add(pointMesh);
                             }
-                        }
-
-                        if (leftmostPoint) {
-                            const leftMesh = new THREE.Mesh(pointGeometry, leftmostPointMaterial);
-                            leftMesh.position.set(leftmostPoint.x, leftmostPoint.y, leftmostPoint.z);
-                            leftMesh.userData.isIntersectionPoint = true;
-                            scene.add(leftMesh);
-                        }
-                        if (rightmostPoint) {
-                            const rightMesh = new THREE.Mesh(pointGeometry, rightmostPointMaterial);
-                            rightMesh.position.set(rightmostPoint.x, rightmostPoint.y, rightmostPoint.z);
-                            rightMesh.userData.isIntersectionPoint = true;
-                            scene.add(rightMesh);
-                        }
-                        if (highestPoint) {
-                            const highMesh = new THREE.Mesh(pointGeometry, highestPointMaterial);
-                            highMesh.position.set(highestPoint.x, highestPoint.y, highestPoint.z);
-                            highMesh.userData.isIntersectionPoint = true;
-                            scene.add(highMesh);
-                        }
-                        if (lowestPoint) {
-                            const lowMesh = new THREE.Mesh(pointGeometry, lowestPointMaterial);
-                            lowMesh.position.set(lowestPoint.x, lowestPoint.y, lowestPoint.z);
-                            lowMesh.userData.isIntersectionPoint = true;
-                            scene.add(lowMesh);
                         }
 
                         if (leftmostPoint && rightmostPoint && highestPoint && lowestPoint) {

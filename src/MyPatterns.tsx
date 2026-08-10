@@ -6,7 +6,6 @@ import { db, auth } from '../firebase-config.js';
 import { useCollection } from 'react-firebase-hooks/firestore';
 import { query, collection, where } from 'firebase/firestore';
 import {useNavigate} from "react-router-dom";
-import calculateIntersections from "./calculateIntersections.tsx";
 import AmigurumiCard from "./AmigurumiCard.tsx";
 import MasonryGrid from "./MasonryGrid.tsx";
 import NewPattern from "./NewPattern.tsx";
@@ -17,7 +16,7 @@ import { filterAndSortAmigurumis, SortOption } from "./filterAmigurumis.ts";
 import { useDebouncedValue } from "./useDebouncedValue.ts";
 import { useStableArray } from "./useStableArray.ts";
 
-const MyPatterns = ({yarnInfo, intersections, camera, scene, setIntersections, meshes, setMeshes, threeJsContainerRef, setDroppedShapes} : {yarnInfo: Yarn, intersections: any, setDroppedShapes: React.Dispatch<React.SetStateAction<Shape[]>>}) => {
+const MyPatterns = ({yarnInfo, intersections, setDroppedShapes} : {yarnInfo: Yarn, intersections: any, setDroppedShapes: React.Dispatch<React.SetStateAction<Shape[]>>}) => {
     const loggedInUser = auth.currentUser?.email;
 
     const navigate = useNavigate();
@@ -86,23 +85,11 @@ const MyPatterns = ({yarnInfo, intersections, camera, scene, setIntersections, m
                 ...doc.data(),
             })) as Shape[];
 
-            console.log('Shapes voor amigurumi', amigurumi.id, ':', shapes);
-
-            calculateIntersections(
-                shapes,
-                scene,
-                threeJsContainerRef,
-                camera,
-                meshes,
-                setIntersections,
-                setMeshes
-            );
-
             navigate(`/${amigurumi.id}/editor`, { state: { amigurumi, shapes } });
         } catch (error) {
             console.error('Fout bij het ophalen van shapes:', error);
         }
-    }, [scene, threeJsContainerRef, camera, meshes, setIntersections, setMeshes, navigate]);
+    }, [navigate]);
 
     const handlePatternClick = useCallback(async (amigurumi: Amigurumi) => {
         try {

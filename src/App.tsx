@@ -2,20 +2,23 @@ import "./styles.css";
 import Pattern from "./Pattern";
 import MyPatterns from "./MyPatterns";
 import Account from "./Account";
-import Editor from "./Editor";
 import Favorites from "./Favorites";
 import TopNavBar from "./TopNavBar.tsx";
-import React, {useState, useRef, useEffect, useCallback} from "react";
+import React, {useState, useRef, useEffect, useCallback, lazy, Suspense} from "react";
 import {v4 as uuidv4} from "uuid";
 import Homepage from "./Homepage.tsx";
 import {Route, Routes, Link, useNavigate} from "react-router-dom";
-import {collection, getDocs, doc, updateDoc, getDoc, deleteDoc, where, query, documentId} from "firebase/firestore";
+import {collection, getDocs, doc, updateDoc, getDoc, deleteDoc, where, query} from "firebase/firestore";
 import {db, auth} from "../firebase-config.js";
-import {Box, Button} from "@mui/material";
+import {Box, Button, CircularProgress} from "@mui/material";
 import Login from "./Login.tsx";
 import { signOut } from 'firebase/auth';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+
+// Editor pulls in Three.js/drei/three-csg-ts (het grootste deel van de bundel) —
+// pas laden zodra de editor daadwerkelijk bezocht wordt.
+const Editor = lazy(() => import("./Editor"));
 
 export default function App() {
     const [droppedShapes, setDroppedShapes] = useState<Shape[]
@@ -47,58 +50,56 @@ export default function App() {
 
     const fetchData = async () => {
         try {
-            const querySnapshotAmigurumi = await getDocs(collection(db, "amigurumi"));
+            const storedAmigurumi = localStorage.getItem("amigurumi");
+
+            // Alle drie de queries zijn onafhankelijk van elkaar (de shapes-query heeft
+            // alleen storedAmigurumi nodig, niet het resultaat van de andere twee), dus
+            // parallel afvuren i.p.v. na elkaar afwachten scheelt meerdere round trips.
+            const [querySnapshotAmigurumi, querySnapshotYarn, querySnapshotShapes] = await Promise.all([
+                getDocs(collection(db, "amigurumi")),
+                getDocs(collection(db, "yarn")),
+                storedAmigurumi
+                    ? getDocs(query(collection(db, "shapes"), where("amigurumi_id", "==", storedAmigurumi)))
+                    : Promise.resolve(null),
+            ]);
+
             const amigurumiData: Amigurumi[] = querySnapshotAmigurumi.docs.map((doc) => ({
                 id: doc.id,
                 ...doc.data(),
             } as Amigurumi));
             setAmigurumis(amigurumiData);
-            const querySnapshotYarn = await getDocs(collection(db, "yarn"));
+
             const yarnData: Yarn[] = querySnapshotYarn.docs.map((doc) => ({
                 id: doc.id,
                 ...doc.data(),
             } as Yarn));
             setYarns(yarnData);
-            const storedAmigurumi = localStorage.getItem("amigurumi");
-            if (storedAmigurumi) {
-                try {
-                    const amigurumiId: string = storedAmigurumi;
-                    const selectedAmigurumi = amigurumiData.find((amigurumi) => amigurumi.id === amigurumiId);
-                    if (amigurumiId) {
-                        if (selectedAmigurumi.yarn_id) {
-                            const yarnQuery = query(
-                                collection(db, "yarn"),
-                                where(documentId(), "==", selectedAmigurumi.yarn_id)
-                            );
-                            const querySnapshotYarn = await getDocs(yarnQuery);
-                            const yarnInfo = querySnapshotYarn.docs.map((doc) => ({
-                                id: doc.id,
-                                ...doc.data(),
-                            } as Yarn));
-                            setYarnInfo(yarnInfo[0]);
-                        } else {
-                            setYarnInfo({name: null, weight: null, mPerSkein: null, hooksize: null, color: null, material: null})
-                            console.warn("Amigurumi has no yarn_id");
-                        }
-                        const shapesQuery = query(
-                            collection(db, "shapes"),
-                            where("amigurumi_id", "==", amigurumiId)
-                        );
-                        const querySnapshotShapes = await getDocs(shapesQuery);
-                        const shapeData: Shape[] = querySnapshotShapes.docs.map((doc) => ({
-                            id: doc.id,
-                            ...doc.data(),
-                        } as Shape));
-                        setDroppedShapes(shapeData);
-                    } else {
-                        setDroppedShapes([]);
-                    }
-                } catch (parseError) {
-                    localStorage.removeItem("amigurumi");
-                    setDroppedShapes([]);
-                }
-            } else {
+
+            if (!storedAmigurumi) {
                 console.warn("No amigurumi found in localStorage");
+                setDroppedShapes([]);
+                return;
+            }
+
+            try {
+                const selectedAmigurumi = amigurumiData.find((amigurumi) => amigurumi.id === storedAmigurumi);
+                if (selectedAmigurumi?.yarn_id) {
+                    // Yarn zit al in de net opgehaalde yarn-collectie, dus geen aparte
+                    // Firestore-call meer nodig om 'm op te zoeken.
+                    const matchedYarn = yarnData.find((yarn) => yarn.id === selectedAmigurumi.yarn_id);
+                    setYarnInfo(matchedYarn ?? {name: null, weight: null, mPerSkein: null, hooksize: null, color: null, material: null});
+                } else {
+                    setYarnInfo({name: null, weight: null, mPerSkein: null, hooksize: null, color: null, material: null});
+                    console.warn("Amigurumi has no yarn_id");
+                }
+
+                const shapeData: Shape[] = (querySnapshotShapes?.docs ?? []).map((doc) => ({
+                    id: doc.id,
+                    ...doc.data(),
+                } as Shape));
+                setDroppedShapes(shapeData);
+            } catch (parseError) {
+                localStorage.removeItem("amigurumi");
                 setDroppedShapes([]);
             }
         } catch (error) {
@@ -311,41 +312,47 @@ export default function App() {
                 <Routes>
                     <Route path={"/"} element={<Login />} />
                     <Route path="/home" element={<Homepage amigurumis={amigurumis} setAmigurumis={setAmigurumis} yarnInfo={yarnInfo} intersections={intersections} />} />
-                    <Route path="/myPatterns" element={<MyPatterns amigurumis={amigurumis} setAmigurumis={setAmigurumis} yarnInfo={yarnInfo} intersections={intersections} setIntersections={setIntersections} meshes={meshes} setMeshes={setMeshes} scene={scene} camera={camera} threeJsContainerRef={threeJsContainerRef} setDroppedShapes={setDroppedShapes} />} />
+                    <Route path="/myPatterns" element={<MyPatterns amigurumis={amigurumis} setAmigurumis={setAmigurumis} yarnInfo={yarnInfo} intersections={intersections} setDroppedShapes={setDroppedShapes} />} />
                     <Route path="/favorites" element={<Favorites amigurumis={amigurumis} setAmigurumis={setAmigurumis} yarnInfo={yarnInfo} intersections={intersections} />} />
                     <Route path="/:amigurumi_id/editor" element={
-                        <Editor
-                            droppedShapes={droppedShapes}
-                            setDroppedShapes={setDroppedShapes}
-                            activeId={activeId}
-                            setActiveId={setActiveId}
-                            activeShape={activeShape}
-                            containerRef={containerRef}
-                            threeJsContainerRef={threeJsContainerRef}
-                            dragging={dragging}
-                            setDragging={setDragging}
-                            camera={camera}
-                            handleUpdateShape={handleUpdateShape}
-                            setCamera={setCamera}
-                            handleDeleteShape={handleDeleteShape}
-                            shapeColor={shapeColor}
-                            setShapeColor={setShapeColor}
-                            handleUpdateYarnInfo={handleUpdateYarnInfo}
-                            yarnInfo={yarnInfo}
-                            setYarnInfo={setYarnInfo}
-                            yarns={yarns}
-                            onSetView={onSetView}
-                            setView={setView}
-                            transformMode={transformMode}
-                            setTransformMode={setTransformMode}
-                            intersections={intersections}
-                            setIntersections={setIntersections}
-                            meshes={meshes}
-                            setMeshes={setMeshes}
-                            scene={scene}
-                            setScene={setScene}
-                            transFormMode={transformMode}
-                        />
+                        <Suspense fallback={
+                            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "92vh" }}>
+                                <CircularProgress sx={{ color: 'var(--color-primary)' }} />
+                            </Box>
+                        }>
+                            <Editor
+                                droppedShapes={droppedShapes}
+                                setDroppedShapes={setDroppedShapes}
+                                activeId={activeId}
+                                setActiveId={setActiveId}
+                                activeShape={activeShape}
+                                containerRef={containerRef}
+                                threeJsContainerRef={threeJsContainerRef}
+                                dragging={dragging}
+                                setDragging={setDragging}
+                                camera={camera}
+                                handleUpdateShape={handleUpdateShape}
+                                setCamera={setCamera}
+                                handleDeleteShape={handleDeleteShape}
+                                shapeColor={shapeColor}
+                                setShapeColor={setShapeColor}
+                                handleUpdateYarnInfo={handleUpdateYarnInfo}
+                                yarnInfo={yarnInfo}
+                                setYarnInfo={setYarnInfo}
+                                yarns={yarns}
+                                onSetView={onSetView}
+                                setView={setView}
+                                transformMode={transformMode}
+                                setTransformMode={setTransformMode}
+                                intersections={intersections}
+                                setIntersections={setIntersections}
+                                meshes={meshes}
+                                setMeshes={setMeshes}
+                                scene={scene}
+                                setScene={setScene}
+                                transFormMode={transformMode}
+                            />
+                        </Suspense>
                     }
                     />
                     <Route path="/:amigurumi_id/pattern" element={<Pattern shapes={droppedShapes} yarnInfo={yarnInfo} intersections={intersections} meshes={meshes} />} />
