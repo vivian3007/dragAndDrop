@@ -23,11 +23,11 @@ const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[],
         Jumbo: 1.0,
     };
 
-    shapes = location.state.shapes;
-    yarnInfo = location.state.yarnInfo;
-    intersections = location.state.intersections;
+    shapes = location.state?.shapes ?? [];
+    yarnInfo = location.state?.yarnInfo ?? null;
+    intersections = location.state?.intersections;
 
-    const isValidYarnWeight = yarnInfo.weight in rowHeights;
+    const isValidYarnWeight = !!yarnInfo && yarnInfo.weight in rowHeights;
 
     const yarnWeight = isValidYarnWeight ? yarnInfo.weight : "Medium";
 
