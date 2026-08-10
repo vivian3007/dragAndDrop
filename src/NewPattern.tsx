@@ -180,7 +180,7 @@ const NewPattern = ({
                                 type="submit"
                                 variant="contained"
                                 fullWidth
-                                sx={{ marginBottom: "20px", width: 1, backgroundColor: "var(--color-primary)", color: "var(--color-bg)" }}
+                                sx={{ width: 1, backgroundColor: "var(--color-primary)", color: "var(--color-bg)", paddingY: 2 }}
                                 disabled={loading}
                             >
                                 {loading ? <CircularProgress size={24} /> : 'Save'}
