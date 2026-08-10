@@ -64,9 +64,9 @@ export const filterAndSortAmigurumis = (
             case 'oldest':
                 return getTime(a) - getTime(b);
             case 'favorite':
-                return Number(b.favorite) - Number(a.favorite) || getTime(b) - getTime(a);
+                return Number(!!b.favorite) - Number(!!a.favorite) || getTime(b) - getTime(a);
             case 'name':
-                return a.name.localeCompare(b.name);
+                return (a.name ?? '').localeCompare(b.name ?? '');
             case 'newest':
             default:
                 return getTime(b) - getTime(a);

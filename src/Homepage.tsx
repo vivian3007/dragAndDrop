@@ -12,6 +12,7 @@ import PatternFilters from "./PatternFilters.tsx";
 import PatternPagination, { PAGE_SIZE } from "./PatternPagination.tsx";
 import { filterAndSortAmigurumis, SortOption } from "./filterAmigurumis.ts";
 import { useDebouncedValue } from "./useDebouncedValue.ts";
+import { useStableArray } from "./useStableArray.ts";
 
 const Homepage = ({yarnInfo, intersections} : {yarnInfo: Yarn, intersections: any}) => {
     const navigate = useNavigate();
@@ -28,9 +29,8 @@ const Homepage = ({yarnInfo, intersections} : {yarnInfo: Yarn, intersections: an
         })) as Amigurumi[]
         : [];
 
-    const availableTags = useMemo(
-        () => Array.from(new Set(amigurumis.flatMap((a) => a.tags ?? []))).sort(),
-        [amigurumis]
+    const availableTags = useStableArray(
+        Array.from(new Set(amigurumis.flatMap((a) => a.tags ?? []))).sort()
     );
 
     const debouncedSearchTerm = useDebouncedValue(searchTerm, 250);

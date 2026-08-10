@@ -107,4 +107,4 @@ const PatternFilters = ({
     );
 };
 
-export default PatternFilters;
+export default React.memo(PatternFilters);

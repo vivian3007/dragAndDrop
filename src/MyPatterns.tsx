@@ -15,6 +15,7 @@ import PatternFilters from "./PatternFilters.tsx";
 import PatternPagination, { PAGE_SIZE } from "./PatternPagination.tsx";
 import { filterAndSortAmigurumis, SortOption } from "./filterAmigurumis.ts";
 import { useDebouncedValue } from "./useDebouncedValue.ts";
+import { useStableArray } from "./useStableArray.ts";
 
 const MyPatterns = ({yarnInfo, intersections, camera, scene, setIntersections, meshes, setMeshes, threeJsContainerRef, setDroppedShapes} : {yarnInfo: Yarn, intersections: any, setDroppedShapes: React.Dispatch<React.SetStateAction<Shape[]>>}) => {
     const loggedInUser = auth.currentUser?.email;
@@ -39,9 +40,8 @@ const MyPatterns = ({yarnInfo, intersections, camera, scene, setIntersections, m
         })) as Amigurumi[]
         : [];
 
-    const availableTags = useMemo(
-        () => Array.from(new Set(amigurumis.flatMap((a) => a.tags ?? []))).sort(),
-        [amigurumis]
+    const availableTags = useStableArray(
+        Array.from(new Set(amigurumis.flatMap((a) => a.tags ?? []))).sort()
     );
 
     const debouncedSearchTerm = useDebouncedValue(searchTerm, 250);
@@ -137,6 +137,19 @@ const MyPatterns = ({yarnInfo, intersections, camera, scene, setIntersections, m
         }
     }, []);
 
+    const filterActions = useMemo(() => (
+        <Button
+            type="button"
+            variant="contained"
+            color="inherit"
+            startIcon={<Add />}
+            sx={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-bg)', paddingY: 1 }}
+            onClick={() => setIsNewPatternOpen(true)}
+        >
+            Nieuw patroon
+        </Button>
+    ), []);
+
     if (loading) {
         return <CircularProgress />;
     }
@@ -159,18 +172,7 @@ const MyPatterns = ({yarnInfo, intersections, camera, scene, setIntersections, m
                 onTagsChange={setSelectedTags}
                 sortBy={sortBy}
                 onSortChange={setSortBy}
-                actions={
-                    <Button
-                        type="button"
-                        variant="contained"
-                        color="inherit"
-                        startIcon={<Add />}
-                        sx={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-bg)', paddingY: 1 }}
-                        onClick={() => setIsNewPatternOpen(true)}
-                    >
-                        Nieuw patroon
-                    </Button>
-                }
+                actions={filterActions}
             />
             {amigurumis.length === 0 ? (
                 <Typography sx={{ px: '40px' }}>Geen patronen gevonden.</Typography>
