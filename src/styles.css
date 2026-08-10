@@ -26,6 +26,10 @@ body {
     border-radius: 12px !important;
 }
 
+.MuiOutlinedInput-root {
+    border-radius: 12px !important;
+}
+
 .App {
     font-family: sans-serif;
     display: flex;
