@@ -26,6 +26,19 @@ body {
     border-radius: 12px !important;
 }
 
+.MuiOutlinedInput-root {
+    border-radius: 12px !important;
+    border: 2px solid var(--color-secondary) !important;
+}
+
+.MuiOutlinedInput-root.Mui-focused fieldset {
+    border-color: var(--color-primary) !important;
+}
+
+.MuiInputLabel-root.Mui-focused {
+    color: var(--color-primary) !important;
+}
+
 .App {
     font-family: sans-serif;
     display: flex;

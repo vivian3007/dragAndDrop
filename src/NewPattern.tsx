@@ -144,7 +144,7 @@ const NewPattern = ({
                                 margin="normal"
                                 required
                             />
-                            <Box sx={{ display: 'flex', alignItems: 'center', margin: '16px 0' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'stretch', margin: '16px 0' }}>
                                 <TextField
                                     label="Tag"
                                     value={tagInput}

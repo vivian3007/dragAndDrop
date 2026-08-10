@@ -315,7 +315,13 @@ export default function App() {
                             >
                                 Favorite patterns
                             </NavLink>
-                            <Box sx={{ ml: "auto", display: "flex", alignItems: "center" }} className="navbar-button">
+                            <NavLink
+                                to="/newPattern"
+                                className={({ isActive }) => `navbar-button ${isActive ? 'active' : ''}`}
+                            >
+                                New pattern
+                            </NavLink>
+                            <Box sx={{ ml: "auto", display: "flex", alignItems: "center" }}>
                                 <NavLink
                                     to={"/account"}
                                     className={({ isActive }) => `navbar-button ${isActive ? 'active' : ''}`}
