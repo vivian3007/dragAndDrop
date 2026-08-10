@@ -4,18 +4,18 @@ import MyPatterns from "./MyPatterns";
 import Account from "./Account";
 import Editor from "./Editor";
 import Favorites from "./Favorites";
+import TopNavBar from "./TopNavBar.tsx";
 import React, {useState, useRef, useEffect, useCallback} from "react";
 import {v4 as uuidv4} from "uuid";
 import Homepage from "./Homepage.tsx";
-import {Route, Routes, Link, useNavigate, NavLink, useLocation} from "react-router-dom";
+import {Route, Routes, Link, useNavigate} from "react-router-dom";
 import {collection, getDocs, doc, updateDoc, getDoc, deleteDoc, where, query, documentId} from "firebase/firestore";
 import {db, auth} from "../firebase-config.js";
-import {AppBar, Avatar, Box, Button, Container, Toolbar} from "@mui/material";
+import {Box, Button} from "@mui/material";
 import Login from "./Login.tsx";
 import { signOut } from 'firebase/auth';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 
 export default function App() {
     const [droppedShapes, setDroppedShapes] = useState<Shape[]
@@ -43,7 +43,6 @@ export default function App() {
 
     const [transformMode, setTransformMode] = useState<'translate' | 'rotate' | 'scale'>('translate');
 
-    const location = useLocation();
     const navigate = useNavigate();
 
     const fetchData = async () => {
@@ -253,24 +252,26 @@ export default function App() {
         };
     }, []);
 
-    const handleUpdateYarnInfo = (updatedYarnInfo: { id: string; name: string; weight: number; mPerSkein: number, hooksize: number, material: string, color: string }) => {
-        setYarnInfo(
-        yarnInfo.id === updatedYarnInfo.id
-            ? { id: yarnInfo.id, name: updatedYarnInfo.name, weight: updatedYarnInfo.weight, mPerSkein: updatedYarnInfo.mPerSkein, hooksize: updatedYarnInfo.hooksize, material: updatedYarnInfo.material, color: updatedYarnInfo.color }
-            : yarnInfo
+    const handleUpdateYarnInfo = useCallback((updatedYarnInfo: { id: string; name: string; weight: number; mPerSkein: number, hooksize: number, material: string, color: string }) => {
+        setYarnInfo((prevYarnInfo: Yarn) =>
+            prevYarnInfo.id === updatedYarnInfo.id
+                ? { id: prevYarnInfo.id, name: updatedYarnInfo.name, weight: updatedYarnInfo.weight, mPerSkein: updatedYarnInfo.mPerSkein, hooksize: updatedYarnInfo.hooksize, material: updatedYarnInfo.material, color: updatedYarnInfo.color }
+                : prevYarnInfo
         );
-    };
+    }, []);
 
-    const handleDeleteShape = async (id: string) => {
+    const handleDeleteShape = useCallback(async (id: string) => {
+        let previousShapes: Shape[] = [];
         try {
             if (!id || typeof id !== "string") {
                 return;
             }
 
-            setDroppedShapes((prev) => prev.filter((shape) => shape.id !== id));
-            if (activeShape?.id === id) {
-                setActiveId(null);
-            }
+            setDroppedShapes((prev) => {
+                previousShapes = prev;
+                return prev.filter((shape) => shape.id !== id);
+            });
+            setActiveId((prevActiveId: any) => (prevActiveId === id ? null : prevActiveId));
 
             const shapeRef = doc(db, "shapes", id);
             const shapeSnap = await getDoc(shapeRef);
@@ -286,12 +287,9 @@ export default function App() {
                 message: error.message,
             });
 
-            setDroppedShapes(droppedShapes);
-            if (activeShape?.id === id && !droppedShapes.some((shape) => shape.id === id)) {
-                setActiveId(activeShape.id);
-            }
+            setDroppedShapes(previousShapes);
         }
-    }
+    }, []);
 
     const onSetView = useCallback((setViewFn: (viewKey: string) => void) => {
         setSetView(() => setViewFn);
@@ -308,54 +306,7 @@ export default function App() {
 
     return (
         <div className="App">
-            {location.pathname !== '/' ? (
-                <AppBar
-                    position="static"
-                    style={{
-                        background: "linear-gradient(135deg, var(--color-secondary) 0%, var(--color-secondary-hover) 100%)",
-                        height: "8vh",
-                        width: "100vw",
-                        boxShadow: "0 4px 14px rgba(var(--shadow-color), 0.3)",
-                    }}
-                >
-                    <Container maxWidth="false" disableGutters sx={{ marginLeft: 0, marginRight: 0, width: 1 }}>
-                        <Toolbar disableGutters sx={{ minHeight: "8vh", alignItems: "center", width: 1 }}>
-                            <NavLink
-                                to="/home"
-                                className={({ isActive }) => `navbar-button ${isActive ? 'active' : ''}`}
-                            >
-                                Home
-                            </NavLink>
-                            <NavLink
-                                to="/myPatterns"
-                                className={({ isActive }) => `navbar-button ${isActive ? 'active' : ''}`}
-                            >
-                                My patterns
-                            </NavLink>
-                            <NavLink
-                                to="/favorites"
-                                className={({ isActive }) => `navbar-button ${isActive ? 'active' : ''}`}
-                            >
-                                Favorite patterns
-                            </NavLink>
-                            <Box sx={{ ml: "auto", mr: "1.5vw", display: "flex", alignItems: "center" }}>
-                                <NavLink
-                                    to={"/account"}
-                                    className={({ isActive }) => `navbar-button ${isActive ? 'active' : ''}`}
-                                    style={{ display: "flex", alignItems: "center", height: "100%" }}
-                                >
-                                    <Avatar
-                                        src={"../img/avatar.jpg"}
-                                        alt={'User'}
-                                        sx={{ height: "6vh", width: "6vh", mx: 'auto' }}
-                                    />
-                                    <KeyboardArrowDownIcon sx={{ fontSize: "2rem", ml: 1 }} />
-                                </NavLink>
-                            </Box>
-                        </Toolbar>
-                    </Container>
-                </AppBar>
-            ) : null}
+            <TopNavBar />
             <Box>
                 <Routes>
                     <Route path={"/"} element={<Login />} />

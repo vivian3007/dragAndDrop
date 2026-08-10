@@ -1,11 +1,11 @@
-import {useEffect, useState} from "react";
+import {memo, useEffect, useState} from "react";
 import { db } from "../firebase-config.js";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import {Button} from "@mui/material";
 import {v4 as uuidv4} from "uuid";
 import {toast} from "react-toastify";
 
-export default function YarnSettings({onUpdateYarnInfo, yarnInfo} : {onUpdateYarnInfo: any,  yarnInfo: {id: number, name: string, weight: string, mPerSkein: number, hooksize: number, material: string, color: string}}) {
+function YarnSettings({onUpdateYarnInfo, yarnInfo} : {onUpdateYarnInfo: any,  yarnInfo: {id: number, name: string, weight: string, mPerSkein: number, hooksize: number, material: string, color: string}}) {
     const [name, setName] = useState<string | null>(null);
     const [weight, setWeight] = useState<string | null>(null);
     const [mPerSkein, setMPerSkein] = useState<number | null>(null);
@@ -220,3 +220,5 @@ export default function YarnSettings({onUpdateYarnInfo, yarnInfo} : {onUpdateYar
         </div>
     )
 }
+
+export default memo(YarnSettings);

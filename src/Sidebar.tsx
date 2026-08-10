@@ -8,7 +8,7 @@ import {db} from "../firebase-config.js";
 import Shapebar from "./Shapebar";
 import Toolbar from "./Toolbar";
 
-export default function Sidebar({ setDroppedShapes, setActiveId, containerRef, threeJsContainerRef, dragging, setDragging, camera, setView, setTransformMode }: { setDroppedShapes: any, setActiveId: any, containerRef: Ref<HTMLDivElement>, threeJsContainerRef: Ref<HTMLCanvasElement>, dragging: boolean, setDragging: any, camera: Camera, setView: any, setTransformMode: any }) {
+function Sidebar({ setDroppedShapes, setActiveId, containerRef, threeJsContainerRef, dragging, setDragging, camera, setView, setTransformMode }: { setDroppedShapes: any, setActiveId: any, containerRef: Ref<HTMLDivElement>, threeJsContainerRef: Ref<HTMLCanvasElement>, dragging: boolean, setDragging: any, camera: Camera, setView: any, setTransformMode: any }) {
 
     const navBarRef = useRef<HTMLDivElement>(null);
 
@@ -19,3 +19,5 @@ export default function Sidebar({ setDroppedShapes, setActiveId, containerRef, t
         </nav>
     );
 }
+
+export default React.memo(Sidebar);

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { Button } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import Trashcan from "./Trashcan.tsx";
@@ -6,7 +6,7 @@ import Sketch from "@uiw/react-color-sketch";
 import { ColorResult } from '@uiw/color-convert';
 import YarnSettings from "./YarnSettings.tsx";
 import ShapeSettings from "./ShapeSettings.tsx"
-export default function Settingsbar({
+function Settingsbar({
                                         activeShape,
                                         onUpdateShape,
                                         onDeleteShape,
@@ -68,3 +68,5 @@ export default function Settingsbar({
         </nav>
     );
 }
+
+export default memo(Settingsbar);

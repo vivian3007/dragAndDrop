@@ -1,11 +1,21 @@
-import { useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import {Box, Button, FormControlLabel, Checkbox} from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import Trashcan from "./Trashcan.tsx";
 import Sketch from "@uiw/react-color-sketch";
 import { ColorResult } from '@uiw/color-convert';
 
-export default function Settingsbar({
+const ColorPicker = memo(function ColorPicker({ color, onColorChange }: { color: string; onColorChange: (newShade: ColorResult) => void }) {
+    return (
+        <Sketch
+            style={{marginTop: "20px", marginBottom: "20px"}}
+            color={color}
+            onChange={onColorChange}
+        />
+    );
+});
+
+function ShapeSettings({
                                         activeShape,
                                         onUpdateShape,
                                         onDeleteShape,
@@ -36,6 +46,9 @@ export default function Settingsbar({
     const [lockAspectRatio, setLockAspectRatio] = useState(false);
 
     const [aspectRatio, setAspectRatio] = useState<{w: number, h: number, l: number}>({w: 1, h: 1, l: 1});
+
+    const activeShapeRef = useRef(activeShape);
+    activeShapeRef.current = activeShape;
 
     const handleUpdate = (updates: Partial<any>) => {
         if (activeShape) {
@@ -176,10 +189,17 @@ export default function Settingsbar({
         handleUpdate({ rotation_z: newRotateZ });
     };
 
-    const handleColorChange = (newShade: ColorResult) => {
+    const handleColorChange = useCallback((newShade: ColorResult) => {
         setShapeColor(newShade.hex);
-        handleUpdate({ color: newShade.hex });
-    };
+        const current = activeShapeRef.current;
+        if (current) {
+            onUpdateShape({
+                id: current.id,
+                ...current,
+                color: newShade.hex
+            });
+        }
+    }, [onUpdateShape, setShapeColor]);
 
     const handleZoomChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newZoom = Number(e.target.value);
@@ -407,11 +427,7 @@ export default function Settingsbar({
                         </div>
                         <div className="shape-settings-group">
                             <h3 className="shape-settings-title">Color</h3>
-                            <Sketch
-                                style={{marginTop: "20px", marginBottom: "20px"}}
-                                color={shapeColor}
-                                onChange={handleColorChange}
-                            />
+                            <ColorPicker color={shapeColor} onColorChange={handleColorChange} />
                         </div>
                         <Button
                             type="button"
@@ -442,3 +458,5 @@ export default function Settingsbar({
             </div>
     );
 }
+
+export default memo(ShapeSettings);

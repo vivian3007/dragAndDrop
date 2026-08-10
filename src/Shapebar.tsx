@@ -6,7 +6,7 @@ import {Camera} from "three";
 import {setDoc, doc} from "firebase/firestore";
 import {db} from "../firebase-config.js";
 
-export default function Sidebar({ setDroppedShapes, setActiveId, threeJsContainerRef, dragging, setDragging, camera, navBarRef }: { setDroppedShapes: any, setActiveId: any, containerRef: Ref<HTMLDivElement>, threeJsContainerRef: Ref<HTMLCanvasElement>, dragging: boolean, setDragging: any, camera: Camera, navBarRef: Ref<HTMLDivElement> }) {
+function Shapebar({ setDroppedShapes, setActiveId, threeJsContainerRef, dragging, setDragging, camera, navBarRef }: { setDroppedShapes: any, setActiveId: any, containerRef: Ref<HTMLDivElement>, threeJsContainerRef: Ref<HTMLCanvasElement>, dragging: boolean, setDragging: any, camera: Camera, navBarRef: Ref<HTMLDivElement> }) {
     const shapes = [
         { type: "Sphere", label: "Head" },
         { type: "Arm", label: "body" },
@@ -190,3 +190,5 @@ export default function Sidebar({ setDroppedShapes, setActiveId, threeJsContaine
         </div>
     );
 }
+
+export default React.memo(Shapebar);

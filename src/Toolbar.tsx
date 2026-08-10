@@ -1,7 +1,7 @@
 import React from "react";
 import {Button} from "@mui/material";
 
-export default function Toolbar({ setView, setTransformMode }: { setView: (viewKey: string) => void, setTransformMode: any }) {
+function Toolbar({ setView, setTransformMode }: { setView: (viewKey: string) => void, setTransformMode: any }) {
 
     return (
         <div className="toolbar">
@@ -22,3 +22,5 @@ export default function Toolbar({ setView, setTransformMode }: { setView: (viewK
         </div>
     );
 }
+
+export default React.memo(Toolbar);
