@@ -14,31 +14,34 @@ const generateArmPattern = (singleShape: Shape, yarnWeight: string, PIXELS_PER_C
     const decArray = [];
     const intersectionRows = [];
 
-    intersections.forEach((intersection, index) => {
-        const shape = shapes.find((shape) => shape.id === intersection.shape1);
-        if (shape) {
-            if(intersection.pixelDistanceHeight > intersection.pixelDistanceWidth) {
-                const topRow = Math.floor(intersection.topToHighestPoint / (shape.height / rows))
-                const bottomRow = Math.floor(intersection.pixelDistanceHeight / rows);
-                intersectionRows.push({
-                    shapeId1: intersection.shape1,
-                    shapeId2: intersection.shape2,
-                    topRow,
-                    bottomRow,
-                });
-            } else if (intersection.pixelDistanceWidth > intersection.pixelDistanceHeight) {
-                const topRow = 0;
-                const bottomRow = Math.floor(intersection.pixelDistanceWidth / rows)
-                intersectionRows.push({
-                    shapeId1: intersection.shape1,
-                    shapeId2: intersection.shape2,
-                    topRow,
-                    bottomRow,
-                });
-            }
-        } else {
-            console.warn(`No shape found for intersection.shape1: ${intersection.shape1}`);
-        }
+    // Een cilinder heeft geen polen-compressie zoals een bol — rijen liggen al gelijkmatig
+    // verdeeld over de lengte, dus lineaire mapping i.p.v. de acos-formule van Sphere.
+    // Conventie: rij 1 is het bolvormige kapje (volgt uit de opbouw hieronder: incArray
+    // eerst, geen sluit-rij — dus haken begint bij de ronding), de rijen tellen naar de
+    // open onderkant toe.
+    const toArmRow = (fractionOfLength) => {
+        const clamped = Math.min(1, Math.max(0, fractionOfLength)); // 0=open onderkant, 1=kapje
+        const rowFractionFromCap = 1 - clamped;
+        return Math.min(Math.floor(rows) || 1, Math.max(1, Math.round(rowFractionFromCap * (rows - 1)) + 1));
+    };
+
+    intersections.forEach((intersection) => {
+        if (intersection.source !== "csg-world-axis") return; // "sphere-analytic" gaat altijd over twee Sphere-vormen, niet relevant hier
+
+        // Alleen koppelingen waarbij deze Arm zelf shape1 is — anders zou elke Arm in de
+        // scene dezelfde koppeling opnieuw pushen zodra intersectionRows wordt teruggegeven,
+        // wat dubbele regels in de Assembly-lijst zou opleveren (zie generateSpherePattern.tsx
+        // voor dezelfde fix).
+        if (intersection.shape1 !== singleShape.id) return;
+
+        const topRow = toArmRow(intersection.axisHighFraction);
+        const bottomRow = toArmRow(intersection.axisLowFraction);
+        intersectionRows.push({
+            shapeId1: intersection.shape1,
+            shapeId2: intersection.shape2,
+            topRow,
+            bottomRow,
+        });
     });
 
     for (let i = 1; i < rows + 1; i++) {
@@ -72,6 +75,7 @@ const generateArmPattern = (singleShape: Shape, yarnWeight: string, PIXELS_PER_C
         scArray,
         decArray,
         rowArray,
+        intersectionRows,
     };
 };
 

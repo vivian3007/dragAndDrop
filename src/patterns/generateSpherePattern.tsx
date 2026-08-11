@@ -20,6 +20,27 @@ const generateSpherePattern = (singleShape: Shape, yarnWeight: string, PIXELS_PE
     const decArray = [];
     const intersectionRows = [];
 
+    // Camera-onafhankelijk: de meegegeven fractie ligt op de schaal [-1 (onderpool) ..
+    // +1 (bovenpool)] van de vorm z'n eigen radius en is exact cos(θ) t.o.v. de bovenpool
+    // (zie calculateIntersections.tsx). Conventie: rij 1 is de bovenkant van de vorm, de
+    // rijen tellen naar onderen. Gedeeld tussen de analytische Sphere-Sphere route en de
+    // CSG-afgeleide route (Sphere-Arm) — voor beide is de vorm zelf hier gewoon een bol.
+    const toRow = (fractionOfRadius) => {
+        // Clamp naar het domein van acos: de fractie kan door drijvendekomma-afronding, of
+        // door bewust buiten scope gelaten vereenvoudigingen (tilt bij Sphere-Sphere, de
+        // CSG-overlapvorm bij Sphere-Arm), licht buiten [-1,1] vallen — zonder deze clamp
+        // geeft Math.acos dan NaN.
+        const clamped = Math.min(1, Math.max(-1, fractionOfRadius));
+        // Poolhoek θ vanaf de bovenpool (θ=0 bovenpool, θ=π onderpool). Rijen liggen met
+        // gelijke stappen in θ (gelijke fysieke rij-hoogte langs het gehaakte oppervlak),
+        // niet met gelijke stappen in de cartesiaanse y-fractie — vandaar acos in plaats
+        // van een lineaire mapping. Dit maakt de rijverdeling dichter bij de polen en
+        // ruimer bij de evenaar, zoals bij een echte bol.
+        const theta = Math.acos(clamped);
+        const rowFractionFromTop = theta / Math.PI; // 0 = boven, 1 = onder
+        return Math.min(Math.floor(rows) || 1, Math.max(1, Math.round(rowFractionFromTop * (rows - 1)) + 1));
+    };
+
     intersections.forEach((intersection) => {
         if (intersection.source === "sphere-analytic") {
             // shape1 = het vastgemaakte (kleinere) object, shape2 = het basis-object. De
@@ -27,26 +48,6 @@ const generateSpherePattern = (singleShape: Shape, yarnWeight: string, PIXELS_PE
             // door de generatie-call van shape2 (singleShape is dan de basis-vorm zelf, en
             // `rows` hierboven is dus al de eigen rij-telling van die basis-vorm).
             if (intersection.shape2 !== singleShape.id) return;
-
-            // Camera-onafhankelijk: axisOffsetFraction/axisRadiusFraction liggen op de
-            // schaal [-1 (onderpool) .. +1 (bovenpool)] van de basis-vorm z'n eigen radius
-            // (zie calculateIntersections.tsx) en zijn exact cos(θ) t.o.v. de bovenpool.
-            // Conventie: rij 1 is de bovenkant van de vorm, de rijen tellen naar onderen.
-            const toRow = (fractionOfRadius) => {
-                // Clamp naar het domein van acos: axisOffsetFraction ± axisRadiusFraction kan
-                // door drijvendekomma-afronding, of door de (elders, bewust buiten scope
-                // gelaten) tilt-simplificatie in calculateIntersections.tsx, licht buiten
-                // [-1,1] vallen — zonder deze clamp geeft Math.acos dan NaN.
-                const clamped = Math.min(1, Math.max(-1, fractionOfRadius));
-                // Poolhoek θ vanaf de bovenpool (θ=0 bovenpool, θ=π onderpool). Rijen liggen
-                // met gelijke stappen in θ (gelijke fysieke rij-hoogte langs het gehaakte
-                // oppervlak), niet met gelijke stappen in de cartesiaanse y-fractie — vandaar
-                // acos in plaats van een lineaire mapping. Dit maakt de rijverdeling dichter
-                // bij de polen en ruimer bij de evenaar, zoals bij een echte bol.
-                const theta = Math.acos(clamped);
-                const rowFractionFromTop = theta / Math.PI; // 0 = boven, 1 = onder
-                return Math.min(Math.floor(rows) || 1, Math.max(1, Math.round(rowFractionFromTop * (rows - 1)) + 1));
-            };
             const bottomRow = toRow(intersection.axisOffsetFraction - intersection.axisRadiusFraction);
             const topRow = toRow(intersection.axisOffsetFraction + intersection.axisRadiusFraction);
             intersectionRows.push({
@@ -58,27 +59,20 @@ const generateSpherePattern = (singleShape: Shape, yarnWeight: string, PIXELS_PE
             return;
         }
 
-        if (intersection.shape1 !== singleShape.id) return;
-
-        // Legacy pixel-space pad — nog nodig voor Sphere-Arm (CSG-afgeleide) paren.
-        if (intersection.pixelDistanceHeight > intersection.pixelDistanceWidth) {
-            const topRow = Math.floor(intersection.topToHighestPoint / (singleShape.height / rows))
-            const bottomRow = Math.floor(intersection.pixelDistanceHeight / rows);
+        if (intersection.source === "csg-world-axis") {
+            // shape1 is hier altijd de vorm waar axisHighFraction/axisLowFraction relatief
+            // aan berekend zijn (zie calculateIntersections.tsx) — alleen die vorm se eigen
+            // generatie-call mag deze entry consumeren.
+            if (intersection.shape1 !== singleShape.id) return;
+            const topRow = toRow(intersection.axisHighFraction);
+            const bottomRow = toRow(intersection.axisLowFraction);
             intersectionRows.push({
                 shapeId1: intersection.shape1,
                 shapeId2: intersection.shape2,
                 topRow,
                 bottomRow,
             });
-        } else if (intersection.pixelDistanceWidth > intersection.pixelDistanceHeight) {
-            const topRow = 0;
-            const bottomRow = Math.floor(intersection.pixelDistanceWidth / rows)
-            intersectionRows.push({
-                shapeId1: intersection.shape1,
-                shapeId2: intersection.shape2,
-                topRow,
-                bottomRow,
-            });
+            return;
         }
     });
 

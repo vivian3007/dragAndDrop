@@ -89,8 +89,6 @@ export default function SceneController({
         intersectionTimeoutRef.current = setTimeout(() => calculateIntersections(
             droppedShapes,
             scene,
-            threeJsContainerRef,
-            camera,
             meshes,
             setIntersections,
             setMeshes

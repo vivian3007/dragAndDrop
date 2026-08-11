@@ -44,7 +44,27 @@ function getCsgProxyGeometry(geometry: THREE.BufferGeometry): THREE.BufferGeomet
     return geometry;
 }
 
-function createCsgProxyMesh(mesh: THREE.Mesh): THREE.Mesh {
+function createCsgProxyMesh(mesh: THREE.Mesh, worldBounds: THREE.Box3): THREE.Mesh {
+    // Een react-three-fiber <mesh> zonder eigen <xxxGeometry>-kind krijgt van THREE.Mesh's
+    // constructor standaard een lege (maar wél truthy) BufferGeometry — "attributes.position
+    // ontbreekt" is dus de betrouwbare check, niet "!mesh.geometry" (dat is altijd truthy).
+    if (!mesh.geometry.attributes.position) {
+        // Samengestelde vorm zonder eigen geometry (bv. Arm: cilinder-lichaam + bolvormig
+        // kapje als losse kind-meshes) — gebruik de al-berekende wereld-bounding-box als
+        // eenvoudige doosvormige CSG-proxy i.p.v. de exacte samengestelde vorm te
+        // reconstrueren (dat zou lokale-vs-wereld matrix-gedoe van geneste kind-meshes
+        // vereisen). CSG.fromMesh bakt vertices met déze proxy z'n eigen matrix naar
+        // wereldruimte, dus een pure translatie naar het midden van de (as-uitgelijnde)
+        // wereld-bounding-box volstaat.
+        const size = new THREE.Vector3();
+        const center = new THREE.Vector3();
+        worldBounds.getSize(size);
+        worldBounds.getCenter(center);
+        const proxyMesh = new THREE.Mesh(new THREE.BoxGeometry(size.x, size.y, size.z));
+        proxyMesh.matrix.identity().setPosition(center);
+        return proxyMesh;
+    }
+
     const proxyGeometry = getCsgProxyGeometry(mesh.geometry as THREE.BufferGeometry);
     const proxyMesh = new THREE.Mesh(proxyGeometry);
     proxyMesh.matrix.copy(mesh.matrix);
@@ -61,8 +81,6 @@ function getSphereWorldRadius(mesh: THREE.Mesh): number {
 export default function calculateIntersections(
     droppedShapes: Shape[],
     scene: THREE.Scene,
-    threeJsContainerRef: any,
-    camera: THREE.Camera,
     meshes: { id: string; mesh: THREE.Mesh }[],
     setIntersections: any,
     setMeshes: any
@@ -169,8 +187,8 @@ export default function calculateIntersections(
                     }
                 } else {
                     try {
-                        const csgA = CSG.fromMesh(createCsgProxyMesh(meshA));
-                        const csgB = CSG.fromMesh(createCsgProxyMesh(meshB));
+                        const csgA = CSG.fromMesh(createCsgProxyMesh(meshA, boxA));
+                        const csgB = CSG.fromMesh(createCsgProxyMesh(meshB, boxB));
                         const intersectionCSG = csgA.intersect(csgB);
                         const intersectionMesh = CSG.toMesh(intersectionCSG, meshA.matrix);
 
@@ -234,70 +252,36 @@ export default function calculateIntersections(
                                     Math.pow(highestPoint.z - lowestPoint.z, 2)
                                 );
 
-                                const leftVector = new THREE.Vector3(leftmostPoint.x, leftmostPoint.y, leftmostPoint.z);
-                                const rightVector = new THREE.Vector3(rightmostPoint.x, rightmostPoint.y, rightmostPoint.z);
-                                const highVector = new THREE.Vector3(highestPoint.x, highestPoint.y, highestPoint.z);
-                                const lowVector = new THREE.Vector3(lowestPoint.x, lowestPoint.y, lowestPoint.z);
-                                const yVector = new THREE.Vector3(meshesArray[i].mesh.position.x, meshesArray[i].mesh.position.y, meshesArray[i].mesh.position.z);
+                                // Camera-onafhankelijk: projecteer highestPoint/lowestPoint op shape1
+                                // (meshA) z'n eigen wereld-omhoog-as, als fractie van shape1 z'n eigen
+                                // referentiegrootte — dezelfde aanpak als bij de analytische
+                                // Sphere-Sphere berekening hierboven, nu toegepast op de al berekende
+                                // CSG-overlappunten i.p.v. een analytische cirkel.
+                                const upAxisWorld = new THREE.Vector3(0, 1, 0).applyQuaternion(meshA.quaternion).normalize();
 
-                                leftVector.project(camera);
-                                rightVector.project(camera);
-                                highVector.project(camera);
-                                lowVector.project(camera);
-                                yVector.project(camera);
+                                // Sphere: mesh.position is het middelpunt, radius als referentie
+                                // (fractie -1..+1). Arm: mesh.position is de open onderkant, de
+                                // lengte (scale.y) als referentie (fractie 0..1, basis naar kapje) —
+                                // zie Arm.tsx voor de T·R·S-opbouw.
+                                const referenceSize = shapeA?.type === "Arm" ? meshA.scale.y : getSphereWorldRadius(meshA);
 
-                                const canvasWidth = threeJsContainerRef.current.width;
-                                const canvasHeight = threeJsContainerRef.current.height;
-                                const leftPixelX = ((leftVector.x + 1) / 2) * canvasWidth;
-                                const leftPixelY = ((-leftVector.y + 1) / 2) * canvasHeight;
-                                const rightPixelX = ((rightVector.x + 1) / 2) * canvasWidth;
-                                const rightPixelY = ((-rightVector.y + 1) / 2) * canvasHeight;
-                                const highPixelX = ((highVector.x + 1) / 2) * canvasWidth;
-                                const highPixelY = ((-highVector.y + 1) / 2) * canvasHeight;
-                                const lowPixelX = ((lowVector.x + 1) / 2) * canvasWidth;
-                                const lowPixelY = ((-lowVector.y + 1) / 2) * canvasHeight;
-                                const meshYPixels = ((yVector.y + 1) / 2) * canvasHeight;
-
-                                const currentDroppedShape = droppedShapes.find((shape) => shape.id === meshesArray[i].id);
-
-                                const mesh = meshesArray[i].mesh;
-                                const sphereTopWorld = new THREE.Vector3(
-                                    mesh.position.x,
-                                    mesh.position.y + 1 * mesh.scale.y, // 1 is de geometry-radius
-                                    mesh.position.z
-                                );
-                                sphereTopWorld.project(camera);
-                                const sphereTopPixelY = ((-sphereTopWorld.y + 1) / 2) * canvasHeight;
-
-                                // const topToHighestPoint = sphereTopPixelY - highPixelY;
-                                const topToRightmostPoint = sphereTopPixelY - rightPixelY;
-
-                                const topToHighestPoint = meshYPixels - (currentDroppedShape?.height / 2) - highPixelY;
-                                // const topToRightmostPoint = meshYPixels - rightPixelY;
-
-                                const pixelDistanceWidth = Math.sqrt(
-                                    Math.pow(rightPixelX - leftPixelX, 2) +
-                                    Math.pow(rightPixelY - leftPixelY, 2)
-                                );
-
-                                const pixelDistanceHeight = Math.sqrt(
-                                    Math.pow(highPixelX - lowPixelX, 2) +
-                                    Math.pow(highPixelY - lowPixelY, 2)
-                                );
+                                const axisHighFraction = new THREE.Vector3(highestPoint.x, highestPoint.y, highestPoint.z)
+                                    .sub(meshA.position).dot(upAxisWorld) / referenceSize;
+                                const axisLowFraction = new THREE.Vector3(lowestPoint.x, lowestPoint.y, lowestPoint.z)
+                                    .sub(meshA.position).dot(upAxisWorld) / referenceSize;
 
                                 intersectionArray.push({
                                     shape1: meshesArray[i].id,
                                     shape2: meshesArray[j].id,
+                                    source: "csg-world-axis",
                                     leftmostPoint,
                                     rightmostPoint,
                                     highestPoint,
                                     lowestPoint,
                                     distanceWidth,
                                     distanceHeight,
-                                    pixelDistanceWidth,
-                                    pixelDistanceHeight,
-                                    topToHighestPoint,
-                                    topToRightmostPoint,
+                                    axisHighFraction,
+                                    axisLowFraction,
                                 });
 
                             } else {

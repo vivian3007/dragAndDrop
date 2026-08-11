@@ -47,6 +47,12 @@ function Arm({
     const texture = useLoader(THREE.TextureLoader, '/textures/stitch-texture.jpg');
 
     useEffect(() => {
+        if (meshRef.current) {
+            meshRef.current.uuid = id; // Ensure mesh uuid matches shape.id
+        }
+    }, [id]);
+
+    useEffect(() => {
         const canvasWidth = size.width;
         const canvasHeight = size.height;
 
@@ -80,11 +86,11 @@ function Arm({
             }}
         >
             <mesh position={[0, 0.5, 0]} ref={meshRef}>
-                <mesh position={[0, 0.5, 0]} ref={meshRef}>
+                <mesh position={[0, 0.5, 0]}>
                     <cylinderGeometry args={[0.5, 0.5, 1, 32, 1, true]} />
                     <meshBasicMaterial map={texture} color={color} metalness={0} roughness={0.8} side={THREE.DoubleSide} />
                 </mesh>
-                <mesh position={[0, 1, 0]} ref={meshRef}>
+                <mesh position={[0, 1, 0]}>
                     <sphereGeometry args={[0.5, 32, 16]} />
                     <meshBasicMaterial map={texture} color={color} metalness={0} roughness={0.8} side={THREE.DoubleSide} />
                 </mesh>
