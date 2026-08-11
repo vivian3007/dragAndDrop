@@ -20,30 +20,55 @@ const generateSpherePattern = (singleShape: Shape, yarnWeight: string, PIXELS_PE
     const decArray = [];
     const intersectionRows = [];
 
-    intersections.forEach((intersection, index) => {
-        const shape = shapes.find((shape) => shape.id === intersection.shape1);
-        if (shape) {
-            if(intersection.pixelDistanceHeight > intersection.pixelDistanceWidth) {
-                const topRow = Math.floor(intersection.topToHighestPoint / (shape.height / rows))
-                const bottomRow = Math.floor(intersection.pixelDistanceHeight / rows);
-                intersectionRows.push({
-                    shapeId1: intersection.shape1,
-                    shapeId2: intersection.shape2,
-                    topRow,
-                    bottomRow,
-                });
-            } else if (intersection.pixelDistanceWidth > intersection.pixelDistanceHeight) {
-                const topRow = 0;
-                const bottomRow = Math.floor(intersection.pixelDistanceWidth / rows)
-                intersectionRows.push({
-                    shapeId1: intersection.shape1,
-                    shapeId2: intersection.shape2,
-                    topRow,
-                    bottomRow,
-                });
-            }
-        } else {
-            console.warn(`No shape found for intersection.shape1: ${intersection.shape1}`);
+    intersections.forEach((intersection) => {
+        if (intersection.source === "sphere-analytic") {
+            // shape1 = het vastgemaakte (kleinere) object, shape2 = het basis-object. De
+            // assembly noemt de rijen van de basis-vorm, dus deze entry wordt geproduceerd
+            // door de generatie-call van shape2 (singleShape is dan de basis-vorm zelf, en
+            // `rows` hierboven is dus al de eigen rij-telling van die basis-vorm).
+            if (intersection.shape2 !== singleShape.id) return;
+
+            // Camera-onafhankelijk: axisOffsetFraction/axisRadiusFraction liggen op de
+            // schaal [-1 (onderpool) .. +1 (bovenpool)] van de basis-vorm z'n eigen radius
+            // (zie calculateIntersections.tsx). Rechtstreeks omgezet naar een rijindex.
+            // Conventie: rij 1 is de bovenkant van de vorm, de rijen tellen naar onderen.
+            const toRow = (fractionOfRadius) => {
+                const heightFraction = (fractionOfRadius + 1) / 2; // [-1,1] -> [0,1], 0=onder, 1=boven
+                const clamped = Math.min(1, Math.max(0, heightFraction));
+                return Math.min(Math.floor(rows) || 1, Math.max(1, Math.round((1 - clamped) * (rows - 1)) + 1));
+            };
+            const bottomRow = toRow(intersection.axisOffsetFraction - intersection.axisRadiusFraction);
+            const topRow = toRow(intersection.axisOffsetFraction + intersection.axisRadiusFraction);
+            intersectionRows.push({
+                shapeId1: intersection.shape1,
+                shapeId2: intersection.shape2,
+                topRow,
+                bottomRow,
+            });
+            return;
+        }
+
+        if (intersection.shape1 !== singleShape.id) return;
+
+        // Legacy pixel-space pad — nog nodig voor Sphere-Arm (CSG-afgeleide) paren.
+        if (intersection.pixelDistanceHeight > intersection.pixelDistanceWidth) {
+            const topRow = Math.floor(intersection.topToHighestPoint / (singleShape.height / rows))
+            const bottomRow = Math.floor(intersection.pixelDistanceHeight / rows);
+            intersectionRows.push({
+                shapeId1: intersection.shape1,
+                shapeId2: intersection.shape2,
+                topRow,
+                bottomRow,
+            });
+        } else if (intersection.pixelDistanceWidth > intersection.pixelDistanceHeight) {
+            const topRow = 0;
+            const bottomRow = Math.floor(intersection.pixelDistanceWidth / rows)
+            intersectionRows.push({
+                shapeId1: intersection.shape1,
+                shapeId2: intersection.shape2,
+                topRow,
+                bottomRow,
+            });
         }
     });
 

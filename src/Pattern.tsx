@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from "react";
-import {Link, useLocation, useNavigate} from "react-router-dom";
+import {Link, useLocation, useNavigate, useParams} from "react-router-dom";
 import {AppBar, Button, Card, Container, Toolbar} from "@mui/material";
 import {collection, getDocs} from "firebase/firestore";
 import {db} from "../firebase-config.js";
@@ -11,6 +11,7 @@ const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[],
     const [patterns, setPatterns] = useState<any[]>([]);
     const location = useLocation();
     const navigate = useNavigate();
+    const { amigurumi_id } = useParams();
 
     const rowHeights: Record<string, number> = {
         Lace: 0.25,
@@ -132,19 +133,22 @@ const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[],
                         <h1 style={{ marginTop: 0 }}>Assembly</h1>
                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                             <ul style={{ lineHeight: 2 }}>
-                                {patterns.length > 0 && patterns[0].intersectionRows && patterns[0].intersectionRows.length > 0 ? (
-                                    patterns[0].intersectionRows.map((intersection, idx) => (
-                                        <li key={idx}>
-                                            Connect{' '}
-                                            {shapes.find((shape) => shape.id === intersection.shapeId1)?.name ?? `Shape ${intersection.shapeId1}`}{' '}
-                                            to{' '}
-                                            {shapes.find((shape) => shape.id === intersection.shapeId2)?.name ?? `Shape ${intersection.shapeId2}`}{' '}
-                                            between row {intersection.topRow} and {intersection.bottomRow}
-                                        </li>
-                                    ))
-                                ) : (
-                                    <li>No intersections to assemble</li>
-                                )}
+                                {(() => {
+                                    const allIntersectionRows = patterns.flatMap((p) => p.intersectionRows ?? []);
+                                    return allIntersectionRows.length > 0 ? (
+                                        allIntersectionRows.map((intersection, idx) => (
+                                            <li key={idx}>
+                                                Connect{' '}
+                                                {shapes.find((shape) => shape.id === intersection.shapeId1)?.name ?? `Shape ${intersection.shapeId1}`}{' '}
+                                                to{' '}
+                                                {shapes.find((shape) => shape.id === intersection.shapeId2)?.name ?? `Shape ${intersection.shapeId2}`}{' '}
+                                                between row {intersection.topRow} and {intersection.bottomRow}
+                                            </li>
+                                        ))
+                                    ) : (
+                                        <li>No intersections to assemble</li>
+                                    );
+                                })()}
                             </ul>
                         </div>
                     </Card>
@@ -154,7 +158,20 @@ const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[],
                             variant="contained"
                             color="inherit"
                             style={{ position: "sticky", marginLeft: 20, backgroundColor: "var(--color-primary)", color: "var(--color-bg)" }}
-                            onClick={() => navigate(-1, { state: { intersections: intersections, meshes: meshes } })}
+                            onClick={() => {
+                                // navigate(-1, {state}) roept enkel history.go(-1) aan — react-router
+                                // negeert de meegegeven state dan volledig en herstelt de *oorspronkelijke*
+                                // editor-locatie-state van vóór deze sessie, met eventueel inmiddels
+                                // verwijderde shapes erin. Expliciet terugnavigeren met de actuele shapes
+                                // voorkomt dat verwijderde shapes na het teruggaan weer verschijnen.
+                                // Let op: `meshes` bevat rauwe THREE.Mesh-objecten en kan niet via
+                                // history-state geserialiseerd worden (Editor.tsx leest dit ook niet
+                                // uit location.state, dus het hoort hier niet bij).
+                                navigate(`/${amigurumi_id}/editor`, {
+                                    replace: true,
+                                    state: { shapes, intersections },
+                                });
+                            }}
                         >
                             Go back
                         </Button>
