@@ -30,12 +30,22 @@ const generateSpherePattern = (singleShape: Shape, yarnWeight: string, PIXELS_PE
 
             // Camera-onafhankelijk: axisOffsetFraction/axisRadiusFraction liggen op de
             // schaal [-1 (onderpool) .. +1 (bovenpool)] van de basis-vorm z'n eigen radius
-            // (zie calculateIntersections.tsx). Rechtstreeks omgezet naar een rijindex.
+            // (zie calculateIntersections.tsx) en zijn exact cos(θ) t.o.v. de bovenpool.
             // Conventie: rij 1 is de bovenkant van de vorm, de rijen tellen naar onderen.
             const toRow = (fractionOfRadius) => {
-                const heightFraction = (fractionOfRadius + 1) / 2; // [-1,1] -> [0,1], 0=onder, 1=boven
-                const clamped = Math.min(1, Math.max(0, heightFraction));
-                return Math.min(Math.floor(rows) || 1, Math.max(1, Math.round((1 - clamped) * (rows - 1)) + 1));
+                // Clamp naar het domein van acos: axisOffsetFraction ± axisRadiusFraction kan
+                // door drijvendekomma-afronding, of door de (elders, bewust buiten scope
+                // gelaten) tilt-simplificatie in calculateIntersections.tsx, licht buiten
+                // [-1,1] vallen — zonder deze clamp geeft Math.acos dan NaN.
+                const clamped = Math.min(1, Math.max(-1, fractionOfRadius));
+                // Poolhoek θ vanaf de bovenpool (θ=0 bovenpool, θ=π onderpool). Rijen liggen
+                // met gelijke stappen in θ (gelijke fysieke rij-hoogte langs het gehaakte
+                // oppervlak), niet met gelijke stappen in de cartesiaanse y-fractie — vandaar
+                // acos in plaats van een lineaire mapping. Dit maakt de rijverdeling dichter
+                // bij de polen en ruimer bij de evenaar, zoals bij een echte bol.
+                const theta = Math.acos(clamped);
+                const rowFractionFromTop = theta / Math.PI; // 0 = boven, 1 = onder
+                return Math.min(Math.floor(rows) || 1, Math.max(1, Math.round(rowFractionFromTop * (rows - 1)) + 1));
             };
             const bottomRow = toRow(intersection.axisOffsetFraction - intersection.axisRadiusFraction);
             const topRow = toRow(intersection.axisOffsetFraction + intersection.axisRadiusFraction);
