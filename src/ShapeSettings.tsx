@@ -2,13 +2,12 @@ import { memo, useCallback, useEffect, useRef, useState } from "react";
 import {Box, Button, FormControlLabel, Checkbox} from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import Trashcan from "./Trashcan.tsx";
-import Sketch from "@uiw/react-color-sketch";
-import { ColorResult } from '@uiw/color-convert';
+import { HexColorPicker } from "react-colorful";
 
-const ColorPicker = memo(function ColorPicker({ color, onColorChange }: { color: string; onColorChange: (newShade: ColorResult) => void }) {
+const ColorPicker = memo(function ColorPicker({ color, onColorChange }: { color: string; onColorChange: (newColor: string) => void }) {
     return (
-        <Sketch
-            style={{marginTop: "20px", marginBottom: "20px"}}
+        <HexColorPicker
+            style={{marginTop: "20px", marginBottom: "20px", marginLeft: "auto", marginRight: "auto", width: "180px", height: "140px"}}
             color={color}
             onChange={onColorChange}
         />
@@ -189,14 +188,14 @@ function ShapeSettings({
         handleUpdate({ rotation_z: newRotateZ });
     };
 
-    const handleColorChange = useCallback((newShade: ColorResult) => {
-        setShapeColor(newShade.hex);
+    const handleColorChange = useCallback((newColor: string) => {
+        setShapeColor(newColor);
         const current = activeShapeRef.current;
         if (current) {
             onUpdateShape({
                 id: current.id,
                 ...current,
-                color: newShade.hex
+                color: newColor
             });
         }
     }, [onUpdateShape, setShapeColor]);
