@@ -78,27 +78,28 @@ function Arm({
 
 
     return (
-        <group
-
-            onClick={(e) => {
-                e.stopPropagation();
-                onSelect(id);
-            }}
-        >
-            <mesh position={[0, 0.5, 0]} ref={meshRef}>
-                <mesh position={[0, 0.5, 0]}>
-                    <cylinderGeometry args={[0.5, 0.5, 1, 32, 1, true]} />
-                    <meshBasicMaterial map={texture} color={color} metalness={0} roughness={0.8} side={THREE.DoubleSide} />
+        <>
+            <group
+                onPointerDown={(e) => {
+                    e.stopPropagation();
+                    onSelect(id);
+                }}
+            >
+                <mesh position={[0, 0.5, 0]} ref={meshRef}>
+                    <mesh position={[0, 0.5, 0]}>
+                        <cylinderGeometry args={[0.5, 0.5, 1, 32, 1, true]} />
+                        <meshBasicMaterial map={texture} color={color} metalness={0} roughness={0.8} side={THREE.DoubleSide} />
+                    </mesh>
+                    <mesh position={[0, 1, 0]}>
+                        <sphereGeometry args={[0.5, 32, 16]} />
+                        <meshBasicMaterial map={texture} color={color} metalness={0} roughness={0.8} side={THREE.DoubleSide} />
+                    </mesh>
                 </mesh>
-                <mesh position={[0, 1, 0]}>
-                    <sphereGeometry args={[0.5, 32, 16]} />
-                    <meshBasicMaterial map={texture} color={color} metalness={0} roughness={0.8} side={THREE.DoubleSide} />
-                </mesh>
-            </mesh>
+            </group>
             {isSelected && (
                 <TransformControlsThree transformRef={transformControlsRef} object={meshRef.current} transformMode={transformMode} setTransformMode={setTransformMode} isSelected={isSelected} setIsDragging={handleDraggingChange} orbitControlsRef={orbitControlsRef} meshRef={meshRef} size={size} onUpdateShape={onUpdateShape} shape={shape} width={width} />
             )}
-        </group>
+        </>
     );
 }
 

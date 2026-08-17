@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
-import {Box, Button, FormControlLabel, Checkbox} from "@mui/material";
+import {FormControlLabel, Checkbox} from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import Trashcan from "./Trashcan.tsx";
 import { HexColorPicker } from "react-colorful";
@@ -17,14 +17,12 @@ const ColorPicker = memo(function ColorPicker({ color, onColorChange }: { color:
 function ShapeSettings({
                                         activeShape,
                                         onUpdateShape,
-                                        onDeleteShape,
                                         shapeColor,
                                         setShapeColor,
                                         droppedShapes,
                                     }: {
     activeShape: any,
     onUpdateShape: any,
-    onDeleteShape: any,
     shapeColor: string,
     setShapeColor: any,
     droppedShapes: [],
@@ -43,6 +41,7 @@ function ShapeSettings({
     const [y, setY] = useState<number | null>(null);
     const [z, setZ] = useState<number | null>(null);
     const [lockAspectRatio, setLockAspectRatio] = useState(false);
+    const [checkboxBounce, setCheckboxBounce] = useState(false);
 
     const [aspectRatio, setAspectRatio] = useState<{w: number, h: number, l: number}>({w: 1, h: 1, l: 1});
 
@@ -209,12 +208,6 @@ function ShapeSettings({
         setLength(activeShape ? Math.round(activeShape.length * newZoom) : 50);
     };
 
-    const handleDeleteShape = () => {
-        if (activeShape) {
-            onDeleteShape(activeShape.id);
-        }
-    };
-
     const displayName = name !== null ? name : activeShape?.name ?? "";
 
     console.log(lockAspectRatio)
@@ -242,8 +235,6 @@ function ShapeSettings({
             <div>
                 {activeShape ? (
                     <form>
-                        <h1>Settings: {activeShape?.name}</h1>
-                        {/*<p>{activeShape.id}</p>*/}
                         <div className="shape-settings-group">
                             <h3 className="shape-settings-title">General info</h3>
                             <div className="input-text">
@@ -254,7 +245,7 @@ function ShapeSettings({
                                     value={displayName ?? ""}
                                     onChange={handleNameChange}
                                     required={true}
-                                    placeholder="Give this part a name"
+                                    placeholder="Head"
                                 />
                             </div>
                         </div>
@@ -320,8 +311,13 @@ function ShapeSettings({
                                 <Checkbox
                                     id="aspect-ratio"
                                     checked={lockAspectRatio}
-                                    onChange={() => setLockAspectRatio((v) => !v)}
+                                    onChange={() => {
+                                        setLockAspectRatio((v) => !v);
+                                        setCheckboxBounce(true);
+                                    }}
+                                    onAnimationEnd={() => setCheckboxBounce(false)}
                                     name="aspect-ratio"
+                                    className={checkboxBounce ? "checkbox-jump" : ""}
                                     style={{
                                         color: "var(--color-primary)",
                                         marginRight: 0,
@@ -428,30 +424,11 @@ function ShapeSettings({
                             <h3 className="shape-settings-title">Color</h3>
                             <ColorPicker color={shapeColor} onColorChange={handleColorChange} />
                         </div>
-                        <Button
-                            type="button"
-                            variant="contained"
-                            color="inherit"
-                            sx={{marginBottom: "20px", width: 1, backgroundColor: "var(--color-primary)", color: "var(--color-bg)"}}
-                            onClick={handleDeleteShape}
-                        >
-                            Delete shape
-                        </Button>
                     </form>
                     ) : (
-                    <div>
-                        <Box className="steps-box">
-                            <h1 style={{marginLeft: "20px"}}>Follow these steps:</h1>
-                            <ol className="steps">
-                                <li>Go to <b>yarn settings</b> and fill in the details about your yarn</li>
-                                <li><b>Drag a shape</b> from the sidebar on the left and drop it on the canvas</li>
-                                <li>Modify the shape with the <b>settings</b> in the bar on the right, or with the <b>transform
-                                    functions</b></li>
-                                <li>When happy with your amigurumi, click on the <b>'pattern' button</b> in the sidebar
-                                    on the right
-                                </li>
-                            </ol>
-                        </Box>
+                    <div className="empty-shape-state">
+                        <h2>Select a shape!</h2>
+                        <p>Drag one in from the left, or click an existing shape on the canvas.</p>
                     </div>
                 )}
             </div>

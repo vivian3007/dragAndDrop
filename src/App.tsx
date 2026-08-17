@@ -45,6 +45,7 @@ export default function App() {
     const [setView, setSetView] = useState<(viewKey: string) => void>(() => () => {});
 
     const [transformMode, setTransformMode] = useState<'translate' | 'rotate' | 'scale'>('translate');
+    const [showGrid, setShowGrid] = useState(false);
 
     const navigate = useNavigate();
 
@@ -344,6 +345,8 @@ export default function App() {
                                 setView={setView}
                                 transformMode={transformMode}
                                 setTransformMode={setTransformMode}
+                                showGrid={showGrid}
+                                setShowGrid={setShowGrid}
                                 intersections={intersections}
                                 setIntersections={setIntersections}
                                 meshes={meshes}

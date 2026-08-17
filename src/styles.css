@@ -152,17 +152,130 @@ body {
     width: 20vw;
     height: 92vh;
     /*background-color: #DFAEB4;*/
-    background-color: var(--color-accent-soft);
+    background-color: var(--color-bg-card);
     padding-left: 20px;
     padding-right: 20px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     position: relative;
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow: hidden;
     /*left: 70vw;*/
     /* overflow: scroll; */
+}
+
+.settings-bar-topbar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 12px;
+    margin-bottom: 12px;
+}
+
+.settings-bar-tabs {
+    flex: 1 1 auto;
+    min-height: 42px;
+}
+
+.settings-bar-help-btn {
+    color: var(--color-primary) !important;
+    flex: 0 0 auto;
+}
+
+.help-divider {
+    border: none;
+    border-top: 2px solid var(--color-accent-soft-hover);
+    margin: 24px 0;
+}
+
+.shortcut-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 20px;
+}
+
+.shortcut-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.shortcut-row kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 30px;
+    height: 28px;
+    padding: 0 8px;
+    border-radius: 8px;
+    background-color: var(--color-accent-soft);
+    border: 2px solid var(--color-secondary);
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--color-primary);
+    flex: 0 0 auto;
+}
+
+.settings-bar-tabs .MuiTabs-indicator {
+    background-color: var(--color-primary);
+    height: 3px;
+    border-radius: 3px;
+}
+
+.settings-bar-tabs .MuiTab-root {
+    min-height: 38px;
+    margin: 0 3px;
+    border-radius: 9px;
+    font-family: inherit;
+    font-weight: 600;
+    text-transform: none;
+    color: var(--color-secondary);
+    transition: color 0.2s ease;
+}
+
+.settings-bar-tabs .MuiTab-root.Mui-selected {
+    color: var(--color-primary);
+    opacity: 1;
+    font-weight: 700;
+}
+
+.settings-bar-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.settings-bar-footer {
+    flex: 0 0 auto;
+    padding-top: 16px;
+}
+
+@keyframes save-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(var(--shadow-color), 0.35); }
+    70% { box-shadow: 0 0 0 8px rgba(var(--shadow-color), 0); }
+    100% { box-shadow: 0 0 0 0 rgba(var(--shadow-color), 0); }
+}
+
+.save-btn-dirty {
+    animation: save-pulse 1.8s ease-out infinite;
+}
+
+.unsaved-badge {
+    position: absolute;
+    top: -10px;
+    right: 8px;
+    background-color: var(--color-favorite);
+    color: var(--color-bg);
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+    white-space: nowrap;
+    box-shadow: 0 2px 4px rgba(var(--shadow-color), 0.25);
+    pointer-events: none;
 }
 
 .steps {
@@ -173,11 +286,15 @@ body {
     margin-bottom: 20px;
 }
 
-.steps-box {
-    background-color: var(--color-bg-card);
-    padding: 5px 20px 10px 0;
-    margin-top: 20px;
-    border-radius: 12px;
+.empty-shape-state {
+    text-align: center;
+    padding: 48px 16px;
+    color: var(--color-secondary);
+}
+
+.empty-shape-state h2 {
+    color: var(--color-primary);
+    margin-bottom: 8px;
 }
 
 
@@ -326,24 +443,48 @@ body {
 }
 
 .input-text input, .input-text select {
-    height: 25px;
-    width: 40%;
+    box-sizing: border-box;
+    height: 36px;
+    width: 45%;
+    padding: 0 14px;
     border-radius: 12px;
     border: 2px solid var(--color-secondary);
-    background-color: var(--color-bg-card);
+    background-color: var(--color-bg);
     color: var(--color-text);
+    font-size: 0.95rem;
+    font-family: inherit;
     outline: none;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    cursor: text;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.input-text input::placeholder {
+    color: var(--color-secondary);
+    opacity: 0.75;
 }
 
 .input-text input:hover, .input-text select:hover {
     border-color: var(--color-secondary-hover);
+    background-color: var(--color-bg-card);
 }
 
 .input-text input:focus, .input-text select:focus,
 .input-text input:active, .input-text select:active {
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 2px rgba(var(--shadow-color), 0.12);
+    background-color: var(--color-bg-card);
+    box-shadow: 0 0 0 3px rgba(var(--shadow-color), 0.15);
+}
+
+@keyframes checkbox-jump {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.35); }
+    65% { transform: scale(0.92); }
+    100% { transform: scale(1); }
+}
+
+.checkbox-jump .MuiSvgIcon-root {
+    animation: checkbox-jump 0.35s cubic-bezier(.36, 1.4, .5, 1);
+    transform-origin: center;
 }
 
 .yarn-settings-group .input-text {

@@ -1,11 +1,13 @@
-import { memo, useEffect, useState } from "react";
-import { Button } from "@mui/material";
+import { memo, useRef, useState } from "react";
+import { Button, IconButton, Tab, Tabs } from "@mui/material";
+import { HelpOutline } from "@mui/icons-material";
 import { Link, useNavigate } from "react-router-dom";
 import Trashcan from "./Trashcan.tsx";
 import Sketch from "@uiw/react-color-sketch";
 import { ColorResult } from '@uiw/color-convert';
-import YarnSettings from "./YarnSettings.tsx";
+import YarnSettings, { YarnSettingsHandle } from "./YarnSettings.tsx";
 import ShapeSettings from "./ShapeSettings.tsx"
+import AppDialog from "./AppDialog.tsx";
 function Settingsbar({
                                         activeShape,
                                         onUpdateShape,
@@ -28,33 +30,104 @@ function Settingsbar({
     intersections: any;
 }) {
     const [showYarnSettings, setShowYarnSettings] = useState(false)
+    const [showHelp, setShowHelp] = useState(false)
+    const [yarnDirty, setYarnDirty] = useState(false)
+    const [pendingLeaveAction, setPendingLeaveAction] = useState<(() => void) | null>(null)
+    const yarnSettingsRef = useRef<YarnSettingsHandle>(null);
     const navigate = useNavigate();
     const currentAmigurumiId = localStorage.getItem("amigurumi")
 
-    const handlePatternNavigation = () => {
+    const goToPattern = () => {
         navigate(`/${currentAmigurumiId}/pattern`, {
             state: { shapes: droppedShapes, yarnInfo: yarnInfo, intersections: intersections },
         });
     };
 
-    const handleSettingsChange = () => {
-        setShowYarnSettings(!showYarnSettings)
+    const handlePatternNavigation = () => {
+        if (showYarnSettings && yarnDirty) {
+            setPendingLeaveAction(() => goToPattern);
+        } else {
+            goToPattern();
+        }
+    };
+
+    const handleTabChange = (_event: any, newValue: number) => {
+        const wantsYarn = newValue === 1;
+        if (wantsYarn === showYarnSettings) return;
+        if (showYarnSettings && yarnDirty) {
+            setPendingLeaveAction(() => () => setShowYarnSettings(wantsYarn));
+        } else {
+            setShowYarnSettings(wantsYarn);
+        }
     }
+
+    const handleDiscardAndLeave = () => {
+        pendingLeaveAction?.();
+        setYarnDirty(false);
+        setPendingLeaveAction(null);
+    };
+
+    const handleSaveAndLeave = () => {
+        yarnSettingsRef.current?.save();
+        pendingLeaveAction?.();
+        setPendingLeaveAction(null);
+    };
 
     return (
         <nav className="settings-bar">
-            {showYarnSettings ? (
-                <YarnSettings onUpdateYarnInfo={onUpdateYarnInfo} yarnInfo={yarnInfo}/>
-            ) : <ShapeSettings shapeColor={shapeColor} setShapeColor={setShapeColor} droppedShapes={droppedShapes} activeShape={activeShape} onUpdateShape={onUpdateShape} onDeleteShape={onDeleteShape}/>}
-            <div style={{marginBottom: 20, alignItems: "center", display: "flex", flexDirection: "column"}}>
-                <Button
-                    variant="contained"
-                    color="inherit"
-                    sx={{width: 1, backgroundColor: "var(--color-primary)", color: "var(--color-bg)", marginBottom: "10px"}}
-                    onClick={handleSettingsChange}
+            <div className="settings-bar-topbar">
+                <Tabs
+                    value={showYarnSettings ? 1 : 0}
+                    onChange={handleTabChange}
+                    variant="fullWidth"
+                    className="settings-bar-tabs"
                 >
-                    {showYarnSettings ? "Go to Shape settings" : "Go to Yarn settings"}
-                </Button>
+                    <Tab label="Shape settings" disableRipple />
+                    <Tab label="Yarn settings" disableRipple />
+                </Tabs>
+                <IconButton
+                    aria-label="Help"
+                    size="small"
+                    className="settings-bar-help-btn"
+                    onClick={() => setShowHelp(true)}
+                >
+                    <HelpOutline fontSize="small" />
+                </IconButton>
+            </div>
+            <div className="settings-bar-scroll">
+                {showYarnSettings ? (
+                    <YarnSettings ref={yarnSettingsRef} onUpdateYarnInfo={onUpdateYarnInfo} yarnInfo={yarnInfo} onDirtyChange={setYarnDirty}/>
+                ) : <ShapeSettings shapeColor={shapeColor} setShapeColor={setShapeColor} droppedShapes={droppedShapes} activeShape={activeShape} onUpdateShape={onUpdateShape}/>}
+            </div>
+            <div className="settings-bar-footer" style={{marginBottom: 20, alignItems: "center", display: "flex", flexDirection: "column"}}>
+                {!showYarnSettings && activeShape && (
+                    <Button
+                        type="button"
+                        variant="contained"
+                        color="inherit"
+                        sx={{width: 1, backgroundColor: "var(--color-primary)", color: "var(--color-bg)", marginBottom: "10px"}}
+                        onClick={() => onDeleteShape(activeShape.id)}
+                    >
+                        Delete shape
+                    </Button>
+                )}
+                {showYarnSettings && (
+                    <div style={{width: "100%", position: "relative", marginBottom: "10px"}}>
+                        <Button
+                            type="button"
+                            variant="contained"
+                            color="inherit"
+                            className={yarnDirty ? "save-btn-dirty" : ""}
+                            sx={{width: 1, backgroundColor: "var(--color-primary)", color: "var(--color-bg)"}}
+                            onClick={() => yarnSettingsRef.current?.save()}
+                        >
+                            Save
+                        </Button>
+                        {yarnDirty && (
+                            <span className="unsaved-badge">Unsaved changes</span>
+                        )}
+                    </div>
+                )}
                 <Button
                     variant="contained"
                     color="inherit"
@@ -65,6 +138,59 @@ function Settingsbar({
                     Pattern
                 </Button>
             </div>
+            <AppDialog open={pendingLeaveAction !== null} onClose={() => setPendingLeaveAction(null)} maxWidth="xs">
+                <div style={{padding: "32px 24px 24px", textAlign: "center"}}>
+                    <h2 style={{marginTop: 0}}>Unsaved yarn settings</h2>
+                    <p>You've changed the yarn settings but haven't saved them yet. Leaving now will discard those changes.</p>
+                    <div style={{display: "flex", flexDirection: "column", gap: "10px", marginTop: "20px"}}>
+                        <Button
+                            variant="contained"
+                            color="inherit"
+                            sx={{width: 1, backgroundColor: "var(--color-primary)", color: "var(--color-bg)"}}
+                            onClick={handleSaveAndLeave}
+                        >
+                            Save & leave
+                        </Button>
+                        <Button
+                            variant="outlined"
+                            color="inherit"
+                            sx={{width: 1, borderColor: "var(--color-secondary)", color: "var(--color-text)"}}
+                            onClick={handleDiscardAndLeave}
+                        >
+                            Leave without saving
+                        </Button>
+                        <Button
+                            variant="text"
+                            color="inherit"
+                            sx={{width: 1, color: "var(--color-text)"}}
+                            onClick={() => setPendingLeaveAction(null)}
+                        >
+                            Cancel
+                        </Button>
+                    </div>
+                </div>
+            </AppDialog>
+            <AppDialog open={showHelp} onClose={() => setShowHelp(false)} maxWidth="sm">
+                <div style={{padding: "32px 24px 24px"}}>
+                    <h2 style={{marginTop: 0, textAlign: "center"}}>How it works</h2>
+                    <h3 className="shape-settings-title">Getting started</h3>
+                    <ol className="steps">
+                        <li>Go to <b>yarn settings</b> and fill in the details about your yarn</li>
+                        <li><b>Drag a shape</b> from the sidebar on the left and drop it on the canvas</li>
+                        <li>Modify the shape with the <b>settings</b> in the bar on the right, or with the <b>transform functions</b></li>
+                        <li>When happy with your amigurumi, click on the <b>'pattern' button</b> in the sidebar on the right</li>
+                    </ol>
+                    <hr className="help-divider" />
+                    <h3 className="shape-settings-title">Keyboard shortcuts</h3>
+                    <div className="shortcut-grid">
+                        <div className="shortcut-row"><kbd>G</kbd><span>Toggle grid</span></div>
+                        <div className="shortcut-row"><kbd>T</kbd><span>Move (translate) selected shape</span></div>
+                        <div className="shortcut-row"><kbd>R</kbd><span>Rotate selected shape</span></div>
+                        <div className="shortcut-row"><kbd>S</kbd><span>Scale selected shape</span></div>
+                        <div className="shortcut-row"><kbd>Delete</kbd><span>Delete selected shape</span></div>
+                    </div>
+                </div>
+            </AppDialog>
         </nav>
     );
 }

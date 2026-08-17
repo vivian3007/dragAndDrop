@@ -14,6 +14,12 @@ export default function TransformControlsThree ({transformRef, object, transform
     }, [isSelected]);
 
     useEffect(() => {
+        return () => {
+            transformRef.current?.detach();
+        };
+    }, []);
+
+    useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
             const activeElement = document.activeElement as HTMLElement;
             if (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA') {

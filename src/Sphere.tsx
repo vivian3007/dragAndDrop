@@ -88,26 +88,28 @@ function Sphere({
     }, [camera, size, width, height, length, zoom, x, y, z, rotation_x, rotation_y, rotation_z, isSelected, isDragging]);
 
     return (
-        <group
-            onClick={(e) => {
-                e.stopPropagation();
-                onSelect(id);
-            }}
-        >
-            <mesh ref={meshRef} scale={[1, 1, 1]}>
-                {/*position={[x, y, z]*/}
-                <sphereGeometry args={[1, 32, 32]} />
-                <meshBasicMaterial
-                    map={texture}
-                    color={shape?.color ?? 'white'}
-                    metalness={0}
-                    roughness={0.8}
-                />
-            </mesh>
+        <>
+            <group
+                onPointerDown={(e) => {
+                    e.stopPropagation();
+                    onSelect(id);
+                }}
+            >
+                <mesh ref={meshRef} scale={[1, 1, 1]}>
+                    {/*position={[x, y, z]*/}
+                    <sphereGeometry args={[1, 32, 32]} />
+                    <meshBasicMaterial
+                        map={texture}
+                        color={shape?.color ?? 'white'}
+                        metalness={0}
+                        roughness={0.8}
+                    />
+                </mesh>
+            </group>
             {isSelected && (
                 <TransformControlsThree transformRef={transformControlsRef} object={meshRef.current} transformMode={transformMode} setTransformMode={setTransformMode} isSelected={isSelected} setIsDragging={handleDraggingChange} orbitControlsRef={orbitControlsRef} meshRef={meshRef} size={size} onUpdateShape={onUpdateShape} shape={shape} width={width} />
             )}
-        </group>
+        </>
     );
 }
 

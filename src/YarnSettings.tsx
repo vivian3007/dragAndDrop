@@ -1,17 +1,22 @@
-import {memo, useEffect, useState} from "react";
+import {forwardRef, memo, useEffect, useImperativeHandle, useState} from "react";
 import { db } from "../firebase-config.js";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import {Button} from "@mui/material";
 import {v4 as uuidv4} from "uuid";
 import {toast} from "react-toastify";
 
-function YarnSettings({onUpdateYarnInfo, yarnInfo} : {onUpdateYarnInfo: any,  yarnInfo: {id: number, name: string, weight: string, mPerSkein: number, hooksize: number, material: string, color: string}}) {
+export type YarnSettingsHandle = {
+    save: () => void;
+};
+
+const YarnSettings = forwardRef<YarnSettingsHandle, {onUpdateYarnInfo: any,  yarnInfo: {id: number, name: string, weight: string, mPerSkein: number, hooksize: number, material: string, color: string}, onDirtyChange?: (dirty: boolean) => void}>(
+    function YarnSettings({onUpdateYarnInfo, yarnInfo, onDirtyChange}, ref) {
     const [name, setName] = useState<string | null>(null);
     const [weight, setWeight] = useState<string | null>(null);
     const [mPerSkein, setMPerSkein] = useState<number | null>(null);
     const [material, setMaterial] = useState<string | null>(null);
     const [hooksize, setHooksize] = useState<number | null>(null);
     const [color, setColor] = useState<string | null>(null);
+    const [dirty, setDirty] = useState(false);
     const storedAmigurumi = localStorage.getItem("amigurumi");
 
     const yarnWeights = [
@@ -55,6 +60,7 @@ function YarnSettings({onUpdateYarnInfo, yarnInfo} : {onUpdateYarnInfo: any,  ya
                 color: color ?? yarnInfo.color,
             });
 
+            setDirty(false);
             toast.success("Yarn opgeslagen en gekoppeld aan amigurumi!");
             console.log("Yarn data saved successfully:", yarnData);
         } catch (error) {
@@ -63,15 +69,9 @@ function YarnSettings({onUpdateYarnInfo, yarnInfo} : {onUpdateYarnInfo: any,  ya
         }
     };
 
-    const handleUpdate = (updates: Partial<any>) => {
-        if(yarnInfo) {
-            onUpdateYarnInfo({
-                id: yarnInfo.id,
-                ...yarnInfo,
-                ...updates
-            });
-        }
-    };
+    useImperativeHandle(ref, () => ({
+        save: saveToFirestore
+    }));
 
     useEffect(() => {
         if(yarnInfo) {
@@ -81,74 +81,76 @@ function YarnSettings({onUpdateYarnInfo, yarnInfo} : {onUpdateYarnInfo: any,  ya
             setHooksize(yarnInfo.hooksize);
             setMaterial(yarnInfo.material);
             setColor(yarnInfo.color);
+            setDirty(false);
         }
     }, [yarnInfo]);
 
-    console.log(yarnInfo)
-
-    // const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    //     const newName = e.target.value;
-    //     setName(newName);
-    //     handleUpdate({name: newName});
-    // };
-    //
-    // const handleWeightChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    //     const newWeight = e.target.value;
-    //     setWeight(newWeight);
-    //     handleUpdate({weight: newWeight});
-    // };
-    //
-    // const handleMPerSkeinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    //     const newMPerSkein = Number(e.target.value);
-    //     setMPerSkein(newMPerSkein);
-    //     handleUpdate({mPerSkein: newMPerSkein});
-    // };
-    //
-    // const handleMaterialChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    //     const newMaterial = e.target.value;
-    //     setMaterial(newMaterial);
-    //     handleUpdate({material: newMaterial});
-    // };
-    //
-    // const handleHooksizeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    //     const newHooksize = Number(e.target.value);
-    //     setHooksize(newHooksize);
-    //     handleUpdate({hooksize: newHooksize});
-    // };
-    //
-    // const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    //     const newColor = e.target.value;
-    //     setColor(newColor);
-    //     handleUpdate({color: newColor});
-    // };
+    useEffect(() => {
+        onDirtyChange?.(dirty);
+    }, [dirty, onDirtyChange]);
 
     return (
-        <div className="yarn-settings-group">
-            <form className="yarn-settings-group">
-                <h1>Yarn settings</h1>
+        <form>
+            <div className="shape-settings-group">
+                <h3 className="shape-settings-title">General info</h3>
                 <div className="input-text">
-                    <label>Name: </label>
+                    <label htmlFor="yarn-name">Name: </label>
                     <input
                         type="text"
-                        id="part"
+                        id="yarn-name"
                         value={name ?? ""}
                         onChange={(e) => {
                             setName(e.target.value)
+                            setDirty(true)
                         }}
                         required={true}
-                        placeholder="Name of the yarn"
+                        placeholder="Soft Pink"
                     />
                 </div>
                 <div className="input-text">
-                    <label>Yarn weight: </label>
+                    <label htmlFor="yarn-material">Material: </label>
+                    <input
+                        type="text"
+                        id="yarn-material"
+                        value={material ?? ""}
+                        onChange={(e) => {
+                            setMaterial(e.target.value)
+                            setDirty(true)
+                        }}
+                        required={true}
+                        placeholder="Cotton"
+                    />
+                </div>
+                <div className="input-text">
+                    <label htmlFor="yarn-color">Color: </label>
+                    <input
+                        type="text"
+                        id="yarn-color"
+                        value={color ?? ""}
+                        onChange={(e) => {
+                            setColor(e.target.value)
+                            setDirty(true)
+                        }}
+                        required={true}
+                        placeholder="Pink"
+                    />
+                </div>
+            </div>
+            <div className="shape-settings-group">
+                <h3 className="shape-settings-title">Specifications</h3>
+                <div className="input-text">
+                    <label htmlFor="yarn-weight">Yarn weight: </label>
                     <select
-                        id="part"
-                        value={weight ?? null}
-                        onChange={(e) => {setWeight(e.target.value)}}
+                        id="yarn-weight"
+                        value={weight ?? ""}
+                        onChange={(e) => {
+                            setWeight(e.target.value)
+                            setDirty(true)
+                        }}
                         required={true}
                     >
-                        <option value={null}>
-                            Select yarn weight
+                        <option value="">
+                            Weight
                         </option>
                         {yarnWeights.map((yarnWeight) => (
                             <option key={yarnWeight.value} value={yarnWeight.value}>
@@ -158,67 +160,40 @@ function YarnSettings({onUpdateYarnInfo, yarnInfo} : {onUpdateYarnInfo: any,  ya
                     </select>
                 </div>
                 <div className="input-text">
-                    <label>Meters per skein: </label>
+                    <label htmlFor="yarn-mPerSkein">Meters per skein: </label>
                     <input
                         type="number"
-                        id="part"
+                        id="yarn-mPerSkein"
                         value={mPerSkein ?? ""}
                         onChange={(e) => {
                             setMPerSkein(Number(e.target.value))
+                            setDirty(true)
                         }}
                         required={true}
-                        placeholder="Meters per skein"
+                        placeholder="50"
                         min={0}
                         step={1}
                     />
                 </div>
                 <div className="input-text">
-                    <label>Hooksize: </label>
+                    <label htmlFor="yarn-hooksize">Hooksize: </label>
                     <input
                         type="number"
-                        id="part"
+                        id="yarn-hooksize"
                         value={hooksize ?? ""}
                         onChange={(e) => {
                             setHooksize(Number(e.target.value))
+                            setDirty(true)
                         }}
                         required={true}
-                        placeholder="Hooksize"
+                        placeholder="4"
                         min={0}
                         step={0.1}
                     />
                 </div>
-                <div className="input-text">
-                    <label>Material: </label>
-                    <input
-                        type="text"
-                        id="part"
-                        value={material ?? ""}
-                        onChange={(e) => {
-                            setMaterial(e.target.value)
-                        }}
-                        required={true}
-                        placeholder="Material of the yarn"
-                    />
-                </div>
-                <div className="input-text">
-                    <label>Color: </label>
-                    <input
-                        type="text"
-                        id="part"
-                        value={color ?? ""}
-                        onChange={(e) => {
-                            setColor(e.target.value)
-                        }}
-                        required={true}
-                        placeholder="Color of the yarn"
-                    />
-                </div>
-            </form>
-            <Button variant="contained" color="inherit"
-                    sx={{width: 1, backgroundColor: "var(--color-primary)", color: "var(--color-bg)", marginBottom: "10px"}}
-                    onClick={saveToFirestore}>Save</Button>
-        </div>
+            </div>
+        </form>
     )
-}
+});
 
 export default memo(YarnSettings);

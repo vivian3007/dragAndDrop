@@ -24,6 +24,8 @@ export default function ThreeJsField({
                                          onSetView,
                                          transformMode,
                                          setTransformMode,
+                                         showGrid,
+                                         setShowGrid,
                                         camera,
                                          setCamera,
                                          setIntersections,
@@ -43,6 +45,8 @@ export default function ThreeJsField({
     onSetView: (setView: (viewKey: string) => void) => void;
     transformMode: any;
     setTransformMode: any;
+    showGrid: boolean;
+    setShowGrid: any;
     camera: any;
     setCamera: any;
     setIntersections: any;
@@ -53,7 +57,6 @@ export default function ThreeJsField({
     setScene: any;
 }) {
     const orbitControlsRef = useRef<any>(null);
-    const [showGrid, setShowGrid] = useState(false);
     const [currentView, setCurrentView] = useState<'front' | 'back' | 'left' | 'right' | 'top'>('front');
     const [isDragging, setIsDragging] = useState(false);
 
@@ -72,7 +75,7 @@ export default function ThreeJsField({
                 return;
             }
             if (event.key.toLowerCase() === 'g') {
-                setShowGrid((prev) => !prev);
+                setShowGrid((prev: boolean) => !prev);
             }
             if (event.key.toLowerCase() === 'delete' && activeId) {
                 onDeleteShape(activeId);

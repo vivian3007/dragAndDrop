@@ -29,6 +29,8 @@ const Editor = ({
     setView,
     transformMode,
     setTransformMode,
+    showGrid,
+    setShowGrid,
     intersections,
     setIntersections,
     meshes,
@@ -59,6 +61,8 @@ const Editor = ({
     setView: any;
     transFormMode: any;
     setTransformMode: any;
+    showGrid: boolean;
+    setShowGrid: any;
     intersections: any;
     setIntersections: any;
     meshes: any;
@@ -99,6 +103,8 @@ const Editor = ({
                 camera={camera}
                 setView={setView}
                 setTransformMode={setTransformMode}
+                showGrid={showGrid}
+                setShowGrid={setShowGrid}
             />
             <ThreeJsField
                 droppedShapes={droppedShapes}
@@ -113,6 +119,8 @@ const Editor = ({
                 onSetView={onSetView}
                 transformMode={transformMode}
                 setTransformMode={setTransformMode}
+                showGrid={showGrid}
+                setShowGrid={setShowGrid}
                 intersections={intersections}
                 setIntersections={setIntersections}
                 meshes={meshes}

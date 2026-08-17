@@ -1,7 +1,7 @@
 import React from "react";
 import {Button} from "@mui/material";
 
-function Toolbar({ setView, setTransformMode }: { setView: (viewKey: string) => void, setTransformMode: any }) {
+function Toolbar({ setView, setTransformMode, showGrid, setShowGrid }: { setView: (viewKey: string) => void, setTransformMode: any, showGrid: boolean, setShowGrid: any }) {
 
     return (
         <div className="toolbar">
@@ -18,6 +18,12 @@ function Toolbar({ setView, setTransformMode }: { setView: (viewKey: string) => 
                 <Button variant="contained" onClick={() => setTransformMode('translate')}>Translate</Button>
                 <Button variant="contained" onClick={() => setTransformMode('scale')}>Scale</Button>
                 <Button variant="contained" onClick={() => setTransformMode('rotate')}>Rotate</Button>
+            </div>
+            <h1 className="shapes-text">Grid</h1>
+            <div className="toolbar-category">
+                <Button variant="contained" onClick={() => setShowGrid((v: boolean) => !v)}>
+                    {showGrid ? 'Hide grid' : 'Show grid'}
+                </Button>
             </div>
         </div>
     );
