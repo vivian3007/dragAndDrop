@@ -161,11 +161,11 @@ function Shapebar({ setDroppedShapes, setActiveId, threeJsContainerRef, dragging
     return (
         <div className="shapebar">
 
+            <h1 className="shapes-text">Shapes</h1>
             <div className={"draggables"}>
-                <h1 className="shapes-text" style={{marginBottom: "20px"}}>Shapes</h1>
-                {shapes.map((shape) => {
+                {shapes.map((shape, index) => {
                     return (
-                        <div key={shape.type} className={`draggable-shape ${shape.type}`}
+                        <div key={`${shape.type}-${index}`} className={`draggable-shape ${shape.type}`}
                              onMouseDown={(e) => handleMouseDown(e, shape.type)} onMouseMove={handleMouseMove}
                              onMouseUp={handleMouseUp} onTouchStart={(e) => {
                             handleMouseDown(e, shape.type)

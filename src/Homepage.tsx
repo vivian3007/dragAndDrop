@@ -1,7 +1,7 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {CircularProgress, Typography} from '@mui/material';
-import {doc, getDocs, updateDoc, where} from 'firebase/firestore';
-import { db } from '../firebase-config.js';
+import {doc, deleteDoc, getDocs, updateDoc, where} from 'firebase/firestore';
+import { db, auth } from '../firebase-config.js';
 import { useCollection } from 'react-firebase-hooks/firestore';
 import { query, collection } from 'firebase/firestore';
 import {useNavigate} from "react-router-dom";
@@ -16,6 +16,7 @@ import { useStableArray } from "./useStableArray.ts";
 
 const Homepage = ({yarnInfo, intersections} : {yarnInfo: Yarn, intersections: any}) => {
     const navigate = useNavigate();
+    const loggedInUser = auth.currentUser?.email;
     const [selectedAmigurumi, setSelectedAmigurumi] = useState<Amigurumi | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -83,8 +84,34 @@ const Homepage = ({yarnInfo, intersections} : {yarnInfo: Yarn, intersections: an
         }
     }, [navigate, yarnInfo, intersections]);
 
+    const handleEditClick = useCallback(async (amigurumi: Amigurumi) => {
+        try {
+            const shapesQuery = query(collection(db, 'shapes'), where('amigurumi_id', '==', amigurumi.id));
+            const shapesSnapshot = await getDocs(shapesQuery);
+            const shapes = shapesSnapshot.docs.map((doc) => ({
+                id: doc.id,
+                ...doc.data(),
+            })) as Shape[];
+
+            navigate(`/${amigurumi.id}/editor`, { state: { amigurumi, shapes } });
+        } catch (error) {
+            console.error('Fout bij het ophalen van shapes:', error);
+        }
+    }, [navigate]);
+
     const handleCardClick = useCallback((amigurumi: Amigurumi) => {
         setSelectedAmigurumi(amigurumi);
+    }, []);
+
+    const handleDeleteAmigurumi = useCallback(async (amigurumi: Amigurumi) => {
+        if (window.confirm(`Weet je zeker dat je "${amigurumi.name}" wilt verwijderen?`)) {
+            try {
+                await deleteDoc(doc(db, 'amigurumi', amigurumi.id));
+            } catch (error) {
+                console.error('Fout bij verwijderen van amigurumi:', error);
+                alert('Fout bij verwijderen van amigurumi');
+            }
+        }
     }, []);
 
     if (loading) {
@@ -120,6 +147,8 @@ const Homepage = ({yarnInfo, intersections} : {yarnInfo: Yarn, intersections: an
                             amigurumi={amigurumi}
                             onFavoriteChange={handleFavoriteChange}
                             onPatternClick={handlePatternClick}
+                            onEditClick={amigurumi.user_id === loggedInUser ? handleEditClick : undefined}
+                            onDeleteClick={amigurumi.user_id === loggedInUser ? handleDeleteAmigurumi : undefined}
                             onCardClick={handleCardClick}
                         />
                     )}

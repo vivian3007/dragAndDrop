@@ -94,41 +94,35 @@ body {
 .Navbar {
     width: 15vw;
     height: 88vh;
-    background-color: var(--color-accent-soft);
+    background-color: var(--color-bg-card);
     display: flex;
     flex-direction: column;
-    align-items: center;
-     overflow-y: auto;
-    overflow-x: hidden;
+    align-items: stretch;
+    overflow: hidden;
     padding: 2vh;
 }
 
 .shapebar {
     width: 100%;
-    height: 70%;
-    /*background-color: #EACBD2;*/
-    /*margin-right: 10px;*/
+    flex: 1 1 auto;
+    min-height: 0;
     display: flex;
     flex-direction: column;
-    align-items: start;
-    padding-left: 20px;
-    /*justify-content: center;*/
+    align-items: stretch;
+    padding-left: 10px;
     overflow-y: auto;
     overflow-x: hidden;
 }
 
 .toolbar {
     width: 100%;
-    height: 30%;
-    /*background-color: green;*/
-    /*margin-right: 10px;*/
+    flex: 0 0 auto;
     display: flex;
     flex-direction: column;
     align-items: start;
-    /*justify-content: center;*/
-    overflow-y: auto;
-    overflow-x: hidden;
-    margin-top: 20px;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 2px solid var(--color-accent-soft-hover);
 }
 
 .toolbar-category {
@@ -136,15 +130,20 @@ body {
     flex-wrap: wrap;
     width: 100%;
     gap: 5px;
+    margin-bottom: 10px;
 }
 
 .toolbar-category button {
     background-color: var(--color-primary);
     color: var(--color-bg);
+    padding: 4px 10px !important;
+    font-size: 0.75rem !important;
+    min-width: 0 !important;
 }
 
 .shapes-text {
-    margin: 10px 0 10px 0;
+    margin: 4px 0 8px 0;
+    font-size: 1.1rem;
 }
 
 .settings-bar {
@@ -225,13 +224,20 @@ body {
 }
 
 .settings-bar-tabs .MuiTab-root {
+    flex: 1 1 0 !important;
     min-height: 38px;
     margin: 0 3px;
+    padding-left: 4px;
+    padding-right: 4px;
     border-radius: 9px;
     font-family: inherit;
     font-weight: 600;
+    font-size: 0.8rem;
     text-transform: none;
     color: var(--color-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     transition: color 0.2s ease;
 }
 
@@ -311,8 +317,8 @@ body {
 }
 
 .Sphere {
-    width: 120px;
-    height: 120px;
+    width: 56px;
+    height: 56px;
     /*background-color: red;*/
     background-color: #FFFFFF;
     border-radius: 50%;
@@ -328,10 +334,10 @@ body {
 }
 
 .Arm {
-    width: 120px;
-    height: 120px;
+    width: 56px;
+    height: 56px;
     background-color: #FFFFFF;
-    border-radius: 60px 60px 0 0;
+    border-radius: 28px 28px 0 0;
 }
 
 .oval {
@@ -399,18 +405,26 @@ body {
 }
 
 .draggables {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    align-items: center;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    justify-items: center;
+    gap: 12px;
+    width: 100%;
     margin-bottom: 20px;
 }
 
 .draggable-shape {
+    box-sizing: border-box;
     text-align: center;
     align-items: center;
     cursor: grab;
-    border: 5px solid var(--color-text);
+    border: 3px solid var(--color-text);
+    transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.draggable-shape:hover {
+    transform: scale(1.05);
+    border-color: var(--color-primary);
 }
 
 .yarn-settings-group {
