@@ -4,12 +4,13 @@ import * as THREE from "three";
 import { CSG } from "three-csg-ts";
 import calculateIntersections from "./calculateIntersections.tsx";
 
+// Camera-offsets t.o.v. het midden van het patroon (zie patternCenterRef hieronder).
 const views = {
-    front: { position: [0, 0, 40], lookAt: [0, 0, 0] },
-    back: { position: [0, 0, -40], lookAt: [0, 0, 0] },
-    left: { position: [-40, 0, 0], lookAt: [0, 0, 0] },
-    right: { position: [40, 0, 0], lookAt: [0, 0, 0] },
-    top: { position: [0, 40, 0], lookAt: [0, 0, 0] },
+    front: { position: [0, 0, 40] },
+    back: { position: [0, 0, -40] },
+    left: { position: [-40, 0, 0] },
+    right: { position: [40, 0, 0] },
+    top: { position: [0, 40, 0] },
 };
 
 export default function SceneController({
@@ -41,6 +42,7 @@ export default function SceneController({
     isDragging: boolean;
 }) {
     const { camera, scene } = useThree();
+    const patternCenterRef = useRef(new THREE.Vector3(0, 0, 0));
 
     // useEffect(() => {
     //     setScene(scene);
@@ -49,10 +51,16 @@ export default function SceneController({
     const setView = (viewKey: string) => {
         const view = views[viewKey as keyof typeof views];
         if (view) {
-            camera.position.set(...view.position);
-            camera.lookAt(...view.lookAt);
+            const center = patternCenterRef.current;
+            camera.position.set(
+                center.x + view.position[0],
+                center.y + view.position[1],
+                center.z + view.position[2]
+            );
+            camera.lookAt(center);
             camera.updateProjectionMatrix();
             if (orbitControlsRef.current) {
+                orbitControlsRef.current.target.copy(center);
                 orbitControlsRef.current.update();
             }
             setCamera(camera);
@@ -73,6 +81,29 @@ export default function SceneController({
         }
         setCamera(camera);
     }, [camera, orbitControlsRef]);
+
+    // Houdt het rotatie-/zoom-middelpunt van OrbitControls gelijk aan het midden
+    // van de bounding box van alle vormen samen, zodat draaien en inzoomen om
+    // het patroon heen gebeurt in plaats van om de wereld-oorsprong.
+    useEffect(() => {
+        if (!meshes || meshes.length === 0 || !orbitControlsRef.current) {
+            return;
+        }
+
+        const box = new THREE.Box3();
+        meshes.forEach(({ mesh }: { mesh: THREE.Mesh }) => {
+            box.expandByObject(mesh);
+        });
+
+        if (box.isEmpty()) {
+            return;
+        }
+
+        const center = box.getCenter(new THREE.Vector3());
+        patternCenterRef.current.copy(center);
+        orbitControlsRef.current.target.copy(center);
+        orbitControlsRef.current.update();
+    }, [meshes, orbitControlsRef]);
 
     const intersectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 

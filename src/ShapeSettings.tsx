@@ -43,8 +43,6 @@ function ShapeSettings({
     const [lockAspectRatio, setLockAspectRatio] = useState(false);
     const [checkboxBounce, setCheckboxBounce] = useState(false);
 
-    const [aspectRatio, setAspectRatio] = useState<{w: number, h: number, l: number}>({w: 1, h: 1, l: 1});
-
     const activeShapeRef = useRef(activeShape);
     activeShapeRef.current = activeShape;
 
@@ -72,24 +70,7 @@ function ShapeSettings({
         setRotateZ(activeShape?.rotation_z || 0)
         setZIndex(activeShape?.zIndex || 10);
         setZoom(activeShape?.zoom || 1);
-
-        if (activeShape) {
-            setAspectRatio({
-                w: activeShape.width,
-                h: activeShape.height,
-                l: activeShape.length
-            });
-        }
     }, [activeShape]);
-
-    const getRatios = () => {
-        if (!aspectRatio.w || !aspectRatio.h || !aspectRatio.l) return {wh: 1, wl: 1, hl: 1};
-        return {
-            wh: aspectRatio.w / aspectRatio.h,
-            wl: aspectRatio.w / aspectRatio.l,
-            hl: aspectRatio.h / aspectRatio.l,
-        };
-    };
 
     const handleXChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newScaledX = Number(e.target.value);
@@ -114,52 +95,67 @@ function ShapeSettings({
 
     const handleWidthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newScaledWidth = Number(e.target.value);
+        const zoomFactor = activeShape?.zoom || 1;
         setWidth(newScaledWidth);
 
-        if (lockAspectRatio && aspectRatio.w && aspectRatio.h && aspectRatio.l) {
-            const ratioH = aspectRatio.h / aspectRatio.w;
-            const ratioL = aspectRatio.l / aspectRatio.w;
+        if (lockAspectRatio && width && height && length) {
+            const ratioH = height / width;
+            const ratioL = length / width;
             const newHeight = newScaledWidth * ratioH;
             const newLength = newScaledWidth * ratioL;
             setHeight(newHeight);
             setLength(newLength);
-            handleUpdate({ width: newScaledWidth * PIXELS_PER_CM, height: newHeight * PIXELS_PER_CM, length: newLength * PIXELS_PER_CM });
+            handleUpdate({
+                width: newScaledWidth * PIXELS_PER_CM / zoomFactor,
+                height: newHeight * PIXELS_PER_CM / zoomFactor,
+                length: newLength * PIXELS_PER_CM / zoomFactor,
+            });
         } else {
-            handleUpdate({ width: newScaledWidth * PIXELS_PER_CM });
+            handleUpdate({ width: newScaledWidth * PIXELS_PER_CM / zoomFactor });
         }
     };
 
     const handleHeightChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newScaledHeight = Number(e.target.value);
+        const zoomFactor = activeShape?.zoom || 1;
         setHeight(newScaledHeight);
 
-        if (lockAspectRatio && aspectRatio.w && aspectRatio.h && aspectRatio.l) {
-            const ratioW = aspectRatio.w / aspectRatio.h;
-            const ratioL = aspectRatio.l / aspectRatio.h;
+        if (lockAspectRatio && width && height && length) {
+            const ratioW = width / height;
+            const ratioL = length / height;
             const newWidth = newScaledHeight * ratioW;
             const newLength = newScaledHeight * ratioL;
             setWidth(newWidth);
             setLength(newLength);
-            handleUpdate({ height: newScaledHeight * PIXELS_PER_CM, width: newWidth * PIXELS_PER_CM, length: newLength * PIXELS_PER_CM });
+            handleUpdate({
+                height: newScaledHeight * PIXELS_PER_CM / zoomFactor,
+                width: newWidth * PIXELS_PER_CM / zoomFactor,
+                length: newLength * PIXELS_PER_CM / zoomFactor,
+            });
         } else {
-            handleUpdate({ height: newScaledHeight * PIXELS_PER_CM });
+            handleUpdate({ height: newScaledHeight * PIXELS_PER_CM / zoomFactor });
         }
     };
 
     const handleLengthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newScaledLength = Number(e.target.value);
+        const zoomFactor = activeShape?.zoom || 1;
         setLength(newScaledLength);
 
-        if (lockAspectRatio && aspectRatio.w && aspectRatio.h && aspectRatio.l) {
-            const ratioW = aspectRatio.w / aspectRatio.l;
-            const ratioH = aspectRatio.h / aspectRatio.l;
+        if (lockAspectRatio && width && height && length) {
+            const ratioW = width / length;
+            const ratioH = height / length;
             const newWidth = newScaledLength * ratioW;
             const newHeight = newScaledLength * ratioH;
             setWidth(newWidth);
             setHeight(newHeight);
-            handleUpdate({ length: newScaledLength * PIXELS_PER_CM, width: newWidth * PIXELS_PER_CM, height: newHeight * PIXELS_PER_CM });
+            handleUpdate({
+                length: newScaledLength * PIXELS_PER_CM / zoomFactor,
+                width: newWidth * PIXELS_PER_CM / zoomFactor,
+                height: newHeight * PIXELS_PER_CM / zoomFactor,
+            });
         } else {
-            handleUpdate({ length: newScaledLength * PIXELS_PER_CM });
+            handleUpdate({ length: newScaledLength * PIXELS_PER_CM / zoomFactor });
         }
     };
 
@@ -183,7 +179,7 @@ function ShapeSettings({
 
     const handleRotateZChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newRotateZ = Number(e.target.value);
-        setRotateX(newRotateZ);
+        setRotateZ(newRotateZ);
         handleUpdate({ rotation_z: newRotateZ });
     };
 
@@ -209,8 +205,6 @@ function ShapeSettings({
     };
 
     const displayName = name !== null ? name : activeShape?.name ?? "";
-
-    console.log(lockAspectRatio)
 
     // const handleSubmit = (e: React.FormEvent) => {
     //     e.preventDefault();

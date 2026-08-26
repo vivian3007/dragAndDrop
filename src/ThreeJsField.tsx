@@ -153,9 +153,10 @@ export default function ThreeJsField({
             <spotLight position={[100, 1000, 100]} intensity={1.2} />
             <OrbitControls
                 ref={orbitControlsRef}
-                enableRotate={false}
+                enableRotate={true}
                 enablePan={true}
                 enableZoom={true}
+                zoomToCursor={true}
             />
             {/* <RenderProvider meshCount={meshCount} onAllRendered={handleAllRendered}> */}
                 {droppedShapes.map((shape: any) => {
