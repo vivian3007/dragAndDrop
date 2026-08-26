@@ -560,9 +560,9 @@ body {
     transition: transform 0.45s ease-out;
 }
 
-.my-pattern-text-container:hover {
+/* .my-pattern-text-container:hover {
     transform: translate3d(0, -6px, 0);
-}
+} */
 
 @keyframes heart-bounce {
     0% { transform: scale(1); }
