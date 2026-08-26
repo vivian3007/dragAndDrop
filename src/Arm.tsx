@@ -3,6 +3,7 @@ import {useLoader, useThree} from '@react-three/fiber';
 import * as THREE from 'three';
 import { TransformControls } from '@react-three/drei';
 import TransformControlsThree from "./TransformControlsThree.tsx";
+import { ARM_TOTAL_LOCAL_LENGTH } from "./geometry/armGeometry";
 
 function Arm({
                                          id,
@@ -57,7 +58,10 @@ function Arm({
         const canvasHeight = size.height;
 
         const scaledWidth = width * zoom;
-        const scaledHeight = height * zoom - width / 2;
+        // `height` (zoals de gebruiker die invoert, in cm) staat voor de TOTALE zichtbare
+        // armlengte (cilinder + bolvormig kapje), niet alleen de cilinder. Los scaleY op
+        // zodat ARM_TOTAL_LOCAL_LENGTH * scaleY gelijk is aan de gewenste totale wereldlengte.
+        const scaledHeight = (height * zoom) / ARM_TOTAL_LOCAL_LENGTH;
         const scaledLength = length * zoom;
 
         const scaleFactor = 0.01;

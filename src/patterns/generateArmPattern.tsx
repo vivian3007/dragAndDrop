@@ -1,7 +1,11 @@
 const generateArmPattern = (singleShape: Shape, yarnWeight: string, PIXELS_PER_CM: number, rowHeights: Record<string, number>, intersections, shapes) => {
     const rowHeight = rowHeights[yarnWeight] * PIXELS_PER_CM ?? 4;
     const shapeHeight = singleShape.height;
-    const shapeWidth = singleShape.width;
+    // Doorsnede-basis voor omtrek-/stekenwiskunde: width (X) en length (Z) zijn onafhankelijk
+    // instelbaar (zie ShapeSettings.tsx) en kunnen de Arm in 3D een ovale doorsnede geven,
+    // terwijl het haakpatroon maar één omtrek-getal per rij kent. Gemiddelde van beide als
+    // effectieve diameter — komt overeen met "cirkel met gelijkwaardige omtrek".
+    const shapeWidth = (singleShape.width + singleShape.length) / 2;
 
     const rows = shapeHeight ? shapeHeight / rowHeight + 1 : 0;
     const extraScRows = shapeHeight && shapeWidth ? (shapeHeight - shapeWidth) / rowHeight : 0;
@@ -49,7 +53,7 @@ const generateArmPattern = (singleShape: Shape, yarnWeight: string, PIXELS_PER_C
     }
 
     for (let i = 1; i < incRows; i++) {
-        incArray.push(`Row ${rowArray[i + 1]}: 1inc, ${i}sc (${12 + i * 6})`);
+        incArray.push(`Row ${rowArray[i + 1]}: [1inc, ${i}sc] * 6 (${12 + i * 6})`);
     }
 
     const maxStitches = incRows * 6 + 6;

@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import {CSG} from "three-csg-ts";
 import {computeSphereSphereIntersection} from "./geometry/sphereIntersection";
+import {ARM_TOTAL_LOCAL_LENGTH} from "./geometry/armGeometry";
 
 // CSG boolean intersecties zijn duur en schalen met het aantal driehoeken van
 // de operanden. De zichtbare vormen (Sphere/Arm) zijn vrij hoog-poly voor een
@@ -76,6 +77,16 @@ function createCsgProxyMesh(mesh: THREE.Mesh, worldBounds: THREE.Box3): THREE.Me
 // benaderd door de drie assen te middelen — zie sphereIntersection.ts voor de beperking.
 function getSphereWorldRadius(mesh: THREE.Mesh): number {
     return (mesh.scale.x + mesh.scale.y + mesh.scale.z) / 3;
+}
+
+// Generieke grootte-maat voor niet-Sphere-paren (CSG-branch): wereld-AABB-volume.
+// Voor Sphere-Sphere gebruiken we getSphereWorldRadius (preciezer); voor Arm-Sphere/
+// Arm-Arm hebben we geen radius-begrip, dus een bounding-box-volume-proxy volstaat om
+// consistent te bepalen welke vorm de kleinere/"self" vorm is.
+function getBoxVolume(box: THREE.Box3): number {
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    return size.x * size.y * size.z;
 }
 
 export default function calculateIntersections(
@@ -186,11 +197,35 @@ export default function calculateIntersections(
                         });
                     }
                 } else {
+                    // Order-onafhankelijke shape1/self-toewijzing, zelfde conventie als de
+                    // sphere-analytic tak hierboven (aIsBase) maar gegeneraliseerd via
+                    // bounding-box-volume: de kleinste vorm wordt altijd "self" (shape1),
+                    // ongeacht de volgorde waarin de vormen op canvas zijn gesleept.
+                    const volumeA = getBoxVolume(boxA);
+                    const volumeB = getBoxVolume(boxB);
+                    const volumeIsEqual = Math.abs(volumeA - volumeB) < 1e-6 * Math.max(volumeA, volumeB, 1);
+                    // Tie-break spiegelt sphere-analytic: bij gelijke grootte is de laagste
+                    // vorm "base/other", de hoogste vorm "self/attached".
+                    const aIsSelf = volumeIsEqual ? meshA.position.y > meshB.position.y : volumeA < volumeB;
+
+                    const self = aIsSelf
+                        ? {id: meshesArray[i].id, mesh: meshA, shape: shapeA, box: boxA}
+                        : {id: meshesArray[j].id, mesh: meshB, shape: shapeB, box: boxB};
+                    const other = aIsSelf
+                        ? {id: meshesArray[j].id, mesh: meshB, shape: shapeB, box: boxB}
+                        : {id: meshesArray[i].id, mesh: meshA, shape: shapeA, box: boxA};
+
                     try {
-                        const csgA = CSG.fromMesh(createCsgProxyMesh(meshA, boxA));
-                        const csgB = CSG.fromMesh(createCsgProxyMesh(meshB, boxB));
-                        const intersectionCSG = csgA.intersect(csgB);
-                        const intersectionMesh = CSG.toMesh(intersectionCSG, meshA.matrix);
+                        const csgSelf = CSG.fromMesh(createCsgProxyMesh(self.mesh, self.box));
+                        const csgOther = CSG.fromMesh(createCsgProxyMesh(other.mesh, other.box));
+                        const intersectionCSG = csgSelf.intersect(csgOther);
+                        // three-csg-ts bakt de output-vertices relatief aan de matrix die hier wordt
+                        // meegegeven — dit MOET self.mesh.matrix zijn, en elke plek verderop die
+                        // wereldcoördinaten reconstrueert moet exact dezelfde matrix gebruiken (zie
+                        // de vertex-loop hieronder). De intersectie zelf is symmetrisch (intersect(A,B)
+                        // == intersect(B,A) als volume), dus de operand-volgorde omdraaien is veilig —
+                        // de enige eis is dat "self" hierna consistent blijft.
+                        const intersectionMesh = CSG.toMesh(intersectionCSG, self.mesh.matrix);
 
                         const geometry = intersectionMesh.geometry;
                         const positionAttribute = geometry.attributes.position;
@@ -203,8 +238,8 @@ export default function calculateIntersections(
                             let highestPoint: { x: number, y: number, z: number } | null = null;
                             let lowestPoint: { x: number, y: number, z: number } | null = null;
 
-                            // De CSG-geometrie ligt in de lokale ruimte van meshA (zie three-csg-ts'
-                            // CSG.toGeometry, die de inverse van meshA.matrix toepast) — meshA.matrix
+                            // De CSG-geometrie ligt in de lokale ruimte van self.mesh (zie three-csg-ts'
+                            // CSG.toGeometry, die de inverse van self.mesh.matrix toepast) — self.mesh.matrix
                             // terug toepassen geeft de echte wereld-coördinaten.
                             const worldVertex = new THREE.Vector3();
                             for (let k = 0; k < positionAttribute.count; k++) {
@@ -212,7 +247,7 @@ export default function calculateIntersections(
                                     positionAttribute.getX(k),
                                     positionAttribute.getY(k),
                                     positionAttribute.getZ(k)
-                                ).applyMatrix4(meshA.matrix);
+                                ).applyMatrix4(self.mesh.matrix);
                                 const x = worldVertex.x;
                                 const y = worldVertex.y;
                                 const z = worldVertex.z;
@@ -253,26 +288,29 @@ export default function calculateIntersections(
                                 );
 
                                 // Camera-onafhankelijk: projecteer highestPoint/lowestPoint op shape1
-                                // (meshA) z'n eigen wereld-omhoog-as, als fractie van shape1 z'n eigen
+                                // (self.mesh) z'n eigen wereld-omhoog-as, als fractie van shape1 z'n eigen
                                 // referentiegrootte — dezelfde aanpak als bij de analytische
                                 // Sphere-Sphere berekening hierboven, nu toegepast op de al berekende
                                 // CSG-overlappunten i.p.v. een analytische cirkel.
-                                const upAxisWorld = new THREE.Vector3(0, 1, 0).applyQuaternion(meshA.quaternion).normalize();
+                                const upAxisWorld = new THREE.Vector3(0, 1, 0).applyQuaternion(self.mesh.quaternion).normalize();
 
                                 // Sphere: mesh.position is het middelpunt, radius als referentie
-                                // (fractie -1..+1). Arm: mesh.position is de open onderkant, de
-                                // lengte (scale.y) als referentie (fractie 0..1, basis naar kapje) —
-                                // zie Arm.tsx voor de T·R·S-opbouw.
-                                const referenceSize = shapeA?.type === "Arm" ? meshA.scale.y : getSphereWorldRadius(meshA);
+                                // (fractie -1..+1). Arm: mesh.position is de open onderkant, de totale
+                                // lengte incl. bolvormig kapje (scale.y * ARM_TOTAL_LOCAL_LENGTH) als
+                                // referentie (fractie 0..1, basis naar kapje) — zie Arm.tsx voor de
+                                // T·R·S-opbouw en geometry/armGeometry.ts voor de kapje-afleiding.
+                                const referenceSize = self.shape?.type === "Arm"
+                                    ? self.mesh.scale.y * ARM_TOTAL_LOCAL_LENGTH
+                                    : getSphereWorldRadius(self.mesh);
 
                                 const axisHighFraction = new THREE.Vector3(highestPoint.x, highestPoint.y, highestPoint.z)
-                                    .sub(meshA.position).dot(upAxisWorld) / referenceSize;
+                                    .sub(self.mesh.position).dot(upAxisWorld) / referenceSize;
                                 const axisLowFraction = new THREE.Vector3(lowestPoint.x, lowestPoint.y, lowestPoint.z)
-                                    .sub(meshA.position).dot(upAxisWorld) / referenceSize;
+                                    .sub(self.mesh.position).dot(upAxisWorld) / referenceSize;
 
                                 intersectionArray.push({
-                                    shape1: meshesArray[i].id,
-                                    shape2: meshesArray[j].id,
+                                    shape1: self.id,
+                                    shape2: other.id,
                                     source: "csg-world-axis",
                                     leftmostPoint,
                                     rightmostPoint,
