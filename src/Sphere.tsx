@@ -14,6 +14,7 @@ function Sphere({
                                    transformMode,
                                    setTransformMode,
                                    onDraggingChange,
+                                   activeTransformControlsRef,
                                }: {
     id: string;
     shape: any;
@@ -24,6 +25,7 @@ function Sphere({
     transformMode: any;
     setTransformMode: any;
     onDraggingChange?: (isDragging: boolean) => void;
+    activeTransformControlsRef?: React.MutableRefObject<any>;
 }) {
     const width = shape?.width ?? 50;
     const height = shape?.height ?? 50;
@@ -91,6 +93,9 @@ function Sphere({
         <>
             <group
                 onPointerDown={(e) => {
+                    if (activeTransformControlsRef?.current?.axis) {
+                        return;
+                    }
                     e.stopPropagation();
                     onSelect(id);
                 }}
@@ -107,7 +112,7 @@ function Sphere({
                 </mesh>
             </group>
             {isSelected && (
-                <TransformControlsThree transformRef={transformControlsRef} object={meshRef.current} transformMode={transformMode} setTransformMode={setTransformMode} isSelected={isSelected} setIsDragging={handleDraggingChange} orbitControlsRef={orbitControlsRef} meshRef={meshRef} size={size} onUpdateShape={onUpdateShape} shape={shape} width={width} />
+                <TransformControlsThree transformRef={transformControlsRef} object={meshRef.current} transformMode={transformMode} setTransformMode={setTransformMode} isSelected={isSelected} setIsDragging={handleDraggingChange} orbitControlsRef={orbitControlsRef} meshRef={meshRef} size={size} onUpdateShape={onUpdateShape} shape={shape} width={width} activeTransformControlsRef={activeTransformControlsRef} />
             )}
         </>
     );

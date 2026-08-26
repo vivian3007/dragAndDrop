@@ -57,6 +57,7 @@ export default function ThreeJsField({
     setScene: any;
 }) {
     const orbitControlsRef = useRef<any>(null);
+    const activeTransformControlsRef = useRef<any>(null);
     const [currentView, setCurrentView] = useState<'front' | 'back' | 'left' | 'right' | 'top'>('front');
     const [isDragging, setIsDragging] = useState(false);
 
@@ -120,6 +121,10 @@ export default function ThreeJsField({
             camera={{ position: [40, 0, 0], fov: 75, zoom: 3 }}
             ref={threeJsContainerRef}
             style={{ height: '92vh', backgroundColor: 'var(--color-accent-soft)' }}
+            onPointerMissed={() => {
+                if (activeTransformControlsRef.current?.axis) return;
+                setActiveId(null);
+            }}
         >
             <SceneController
                 orbitControlsRef={orbitControlsRef}
@@ -167,6 +172,7 @@ export default function ThreeJsField({
                                 transformMode={transformMode}
                                 setTransformMode={setTransformMode}
                                 onDraggingChange={setIsDragging}
+                                activeTransformControlsRef={activeTransformControlsRef}
                             />
                     );
                 })}

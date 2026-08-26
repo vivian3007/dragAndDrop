@@ -13,6 +13,7 @@ function Arm({
                                          onSelect,
                                          onUpdateShape,
                                          onDraggingChange,
+                                         activeTransformControlsRef,
                                      }: {
     id: string;
     shape: any;
@@ -21,6 +22,7 @@ function Arm({
     onSelect: (id: string) => void;
     onUpdateShape: (shape: any) => void;
     onDraggingChange?: (isDragging: boolean) => void;
+    activeTransformControlsRef?: React.MutableRefObject<any>;
 }) {
 
     const width = shape?.width ?? 50;
@@ -85,6 +87,9 @@ function Arm({
         <>
             <group
                 onPointerDown={(e) => {
+                    if (activeTransformControlsRef?.current?.axis) {
+                        return;
+                    }
                     e.stopPropagation();
                     onSelect(id);
                 }}
@@ -101,7 +106,7 @@ function Arm({
                 </mesh>
             </group>
             {isSelected && (
-                <TransformControlsThree transformRef={transformControlsRef} object={meshRef.current} transformMode={transformMode} setTransformMode={setTransformMode} isSelected={isSelected} setIsDragging={handleDraggingChange} orbitControlsRef={orbitControlsRef} meshRef={meshRef} size={size} onUpdateShape={onUpdateShape} shape={shape} width={width} />
+                <TransformControlsThree transformRef={transformControlsRef} object={meshRef.current} transformMode={transformMode} setTransformMode={setTransformMode} isSelected={isSelected} setIsDragging={handleDraggingChange} orbitControlsRef={orbitControlsRef} meshRef={meshRef} size={size} onUpdateShape={onUpdateShape} shape={shape} width={width} activeTransformControlsRef={activeTransformControlsRef} />
             )}
         </>
     );
