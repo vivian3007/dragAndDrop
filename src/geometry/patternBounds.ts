@@ -47,10 +47,11 @@ function getShapeWorldBox(shape: Shape): THREE.Box3 {
     return getLocalBox(shape).applyMatrix4(object.matrix);
 }
 
-// Berekent de breedte (wereld-X) van het volledige patroon in cm, op basis van de
-// vorm-data alleen — geen levende three.js scene nodig, zie SceneController.tsx voor
-// de vergelijkbare (live) bounding-box-berekening die dit hier spiegelt.
-export function computePatternWidthCm(shapes: Shape[]): number | null {
+// Wereld-space bounding box van het volledige patroon, op basis van de vorm-data alleen —
+// geen levende three.js scene nodig, zie SceneController.tsx voor de vergelijkbare (live)
+// bounding-box-berekening die dit hier spiegelt. Gebruikt door computePatternWidthCm
+// (hieronder) en door PatternPreview3D.tsx om de camera op het patroon te richten.
+export function computePatternBox(shapes: Shape[]): THREE.Box3 | null {
     if (!shapes || shapes.length === 0) {
         return null;
     }
@@ -60,10 +61,27 @@ export function computePatternWidthCm(shapes: Shape[]): number | null {
         unionBox.union(getShapeWorldBox(shape));
     });
 
-    if (unionBox.isEmpty()) {
+    return unionBox.isEmpty() ? null : unionBox;
+}
+
+// Berekent de breedte (wereld-X) van het volledige patroon in cm.
+export function computePatternWidthCm(shapes: Shape[]): number | null {
+    const box = computePatternBox(shapes);
+    if (!box) {
         return null;
     }
 
-    const size = unionBox.getSize(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
     return size.x / (PIXELS_PER_CM * WORLD_SCALE_FACTOR);
+}
+
+// Berekent de hoogte (wereld-Y) van het volledige patroon in cm.
+export function computePatternHeightCm(shapes: Shape[]): number | null {
+    const box = computePatternBox(shapes);
+    if (!box) {
+        return null;
+    }
+
+    const size = box.getSize(new THREE.Vector3());
+    return size.y / (PIXELS_PER_CM * WORLD_SCALE_FACTOR);
 }

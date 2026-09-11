@@ -5,6 +5,7 @@ import {collection, getDocs} from "firebase/firestore";
 import {db} from "../firebase-config.js";
 import generateSpherePattern from "./patterns/generateSpherePattern";
 import generateArmPattern from "./patterns/generateArmPattern";
+import PatternPreview3D from "./PatternPreview3D.tsx";
 
 const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[], yarn: Yarn, intersections: any, meshes: any}) => {
     const PIXELS_PER_CM = 37.8; // 10 pixels = 1 cm
@@ -27,13 +28,14 @@ const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[],
     shapes = location.state?.shapes ?? [];
     yarnInfo = location.state?.yarnInfo ?? null;
     intersections = location.state?.intersections;
+    const amigurumi = location.state?.amigurumi ?? null;
 
     const isValidYarnWeight = !!yarnInfo && yarnInfo.weight in rowHeights;
 
     const yarnWeight = isValidYarnWeight ? yarnInfo.weight : "Medium";
 
     useEffect(() => {
-        if (shapes && shapes.length > 0 && yarnInfo) {
+        if (shapes && shapes.length > 0) {
             const newPatterns = shapes.map((singleShape) => {
                 // singleShape.width *= singleShape.zoom;
                 // singleShape.height *= singleShape.zoom;
@@ -59,18 +61,43 @@ const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[],
     return (
         <div>
             <div className="pattern">
+                <div className="pattern-preview-panel">
+                    <h1 className="pattern-page-title">{amigurumi?.name ?? "Patroon"}</h1>
+                    <div className="pattern-preview-3d">
+                        <PatternPreview3D shapes={shapes} />
+                    </div>
+                    <Button
+                        variant="contained"
+                        color="inherit"
+                        style={{ backgroundColor: "var(--color-primary)", color: "var(--color-bg)" }}
+                        onClick={() => {
+                            // navigate(-1, {state}) roept enkel history.go(-1) aan — react-router
+                            // negeert de meegegeven state dan volledig en herstelt de *oorspronkelijke*
+                            // editor-locatie-state van vóór deze sessie, met eventueel inmiddels
+                            // verwijderde shapes erin. Expliciet terugnavigeren met de actuele shapes
+                            // voorkomt dat verwijderde shapes na het teruggaan weer verschijnen.
+                            // Let op: `meshes` bevat rauwe THREE.Mesh-objecten en kan niet via
+                            // history-state geserialiseerd worden (Editor.tsx leest dit ook niet
+                            // uit location.state, dus het hoort hier niet bij).
+                            navigate(`/${amigurumi_id}/editor`, {
+                                replace: true,
+                                state: { shapes, intersections },
+                            });
+                        }}
+                    >
+                        Go back
+                    </Button>
+                </div>
                 <div className="pattern-container">
-                    <Card className="pattern-text-container">
-                        <h1 style={{ marginTop: 0 }}>Stitch abbreviations</h1>
-                        <div style={{ display: "flex", justifyContent: "space-between" }}>
-                            <ul style={{ lineHeight: 2 }}>
-                                <li>st = stitch</li>
-                                <li>sl = slip stitch</li>
-                                <li>sc = single crochet</li>
-                                <li>inc = increase (2 single crochet in 1 stitch)</li>
-                                <li>dec = decrease (single crochet 2 stitches together)</li>
-                            </ul>
-                        </div>
+                    <Card className="pattern-text-container pattern-card--legend">
+                        <h2 className="pattern-card-title">Stitch abbreviations</h2>
+                        <dl className="pattern-legend-grid">
+                            <dt>st</dt><dd>stitch</dd>
+                            <dt>sl</dt><dd>slip stitch</dd>
+                            <dt>sc</dt><dd>single crochet</dd>
+                            <dt>inc</dt><dd>increase (2 single crochet in 1 stitch)</dd>
+                            <dt>dec</dt><dd>decrease (single crochet 2 stitches together)</dd>
+                        </dl>
                     </Card>
                     {patterns.length > 0 ? (
                         patterns.map((pattern, index) => {
@@ -90,10 +117,17 @@ const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[],
                             }
 
                             return (
-                                <Card key={index} className="pattern-text-container">
-                                    <h1 style={{ marginTop: 0 }}>Pattern for - {pattern.name ?? "give this part a name"}</h1>
+                                <Card
+                                    key={index}
+                                    className="pattern-text-container pattern-card--shape"
+                                    style={{ borderLeftColor: pattern.color }}
+                                >
+                                    <h2 className="pattern-card-title">
+                                        <span className="pattern-step-badge">{index + 1}</span>
+                                        Pattern for - {pattern.name ?? "give this part a name"}
+                                    </h2>
                                     <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap" }}>
-                                        <ul style={{ lineHeight: 2 }}>
+                                        <ul className="pattern-row-list">
                                             <li>Row 1: 6sc in a magic ring (6)</li>
                                             {pattern.incArray.length > 0 ? (
                                                 <li>Row 2: 6inc (12)</li>
@@ -129,10 +163,10 @@ const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[],
                     ) : (
                         <p>Geen shapes geselecteerd</p>
                     )}
-                    <Card className="pattern-text-container">
-                        <h1 style={{ marginTop: 0 }}>Assembly</h1>
+                    <Card className="pattern-text-container pattern-card--assembly">
+                        <h2 className="pattern-card-title">Assembly</h2>
                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <ul style={{ lineHeight: 2 }}>
+                            <ul className="pattern-row-list">
                                 {(() => {
                                     const allIntersectionRows = patterns.flatMap((p) => p.intersectionRows ?? []);
                                     return allIntersectionRows.length > 0 ? (
@@ -152,29 +186,6 @@ const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[],
                             </ul>
                         </div>
                     </Card>
-                </div>
-                <div className="pattern-image">
-                <Button
-                            variant="contained"
-                            color="inherit"
-                            style={{ position: "sticky", marginLeft: 20, backgroundColor: "var(--color-primary)", color: "var(--color-bg)" }}
-                            onClick={() => {
-                                // navigate(-1, {state}) roept enkel history.go(-1) aan — react-router
-                                // negeert de meegegeven state dan volledig en herstelt de *oorspronkelijke*
-                                // editor-locatie-state van vóór deze sessie, met eventueel inmiddels
-                                // verwijderde shapes erin. Expliciet terugnavigeren met de actuele shapes
-                                // voorkomt dat verwijderde shapes na het teruggaan weer verschijnen.
-                                // Let op: `meshes` bevat rauwe THREE.Mesh-objecten en kan niet via
-                                // history-state geserialiseerd worden (Editor.tsx leest dit ook niet
-                                // uit location.state, dus het hoort hier niet bij).
-                                navigate(`/${amigurumi_id}/editor`, {
-                                    replace: true,
-                                    state: { shapes, intersections },
-                                });
-                            }}
-                        >
-                            Go back
-                        </Button>
                 </div>
             </div>
         </div>

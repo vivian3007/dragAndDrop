@@ -5,7 +5,7 @@ import { Favorite, FavoriteBorder } from '@mui/icons-material';
 import { collection, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore';
 import { auth, db } from '../firebase-config.js';
 import AppDialog from './AppDialog.tsx';
-import { computePatternWidthCm } from './geometry/patternBounds';
+import { computePatternHeightCm, computePatternWidthCm } from './geometry/patternBounds';
 import NewPattern from './NewPattern.tsx';
 import ImagePlaceholder from './ImagePlaceholder.tsx';
 
@@ -26,7 +26,8 @@ const PatternDetail = ({
     const [favorite, setFavorite] = useState(false);
     const [isHeartBouncing, setIsHeartBouncing] = useState(false);
     const [widthCm, setWidthCm] = useState<number | null>(null);
-    const [widthLoading, setWidthLoading] = useState(false);
+    const [heightCm, setHeightCm] = useState<number | null>(null);
+    const [sizeLoading, setSizeLoading] = useState(false);
     const [editOpen, setEditOpen] = useState(false);
 
     useEffect(() => {
@@ -40,17 +41,19 @@ const PatternDetail = ({
     useEffect(() => {
         if (!amigurumi?.id) {
             setWidthCm(null);
+            setHeightCm(null);
             return;
         }
-        setWidthLoading(true);
+        setSizeLoading(true);
         const shapesQuery = query(collection(db, 'shapes'), where('amigurumi_id', '==', amigurumi.id));
         getDocs(shapesQuery)
             .then((snapshot) => {
                 const shapes = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Shape[];
                 setWidthCm(computePatternWidthCm(shapes));
+                setHeightCm(computePatternHeightCm(shapes));
             })
             .catch((error) => console.error('Fout bij het ophalen van shapes:', error))
-            .finally(() => setWidthLoading(false));
+            .finally(() => setSizeLoading(false));
     }, [amigurumi?.id]);
 
     useEffect(() => {
@@ -165,14 +168,18 @@ const PatternDetail = ({
                     </Box>
 
                     <Typography sx={{ mb: 1 }}><strong>Aangemaakt:</strong> {createdDate ?? 'Onbekend'}</Typography>
-                    {amigurumi.height ? (
-                        <Typography sx={{ mb: 1 }}><strong>Hoogte:</strong> {amigurumi.height} cm</Typography>
-                    ) : null}
-                    {widthLoading ? (
+                    {sizeLoading ? (
                         <CircularProgress size={16} sx={{ mb: 1 }} />
-                    ) : widthCm ? (
-                        <Typography sx={{ mb: 1 }}><strong>Breedte:</strong> {Math.round(widthCm)} cm</Typography>
-                    ) : null}
+                    ) : (
+                        <>
+                            {heightCm ? (
+                                <Typography sx={{ mb: 1 }}><strong>Hoogte:</strong> {Math.round(heightCm)} cm</Typography>
+                            ) : null}
+                            {widthCm ? (
+                                <Typography sx={{ mb: 1 }}><strong>Breedte:</strong> {Math.round(widthCm)} cm</Typography>
+                            ) : null}
+                        </>
+                    )}
 
                     <h3 style={{ marginBottom: 10 }}>Garen</h3>
                     {yarnLoading ? (
