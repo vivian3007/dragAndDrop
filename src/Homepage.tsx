@@ -84,21 +84,6 @@ const Homepage = ({yarnInfo, intersections} : {yarnInfo: Yarn, intersections: an
         }
     }, [navigate, yarnInfo, intersections]);
 
-    const handleEditClick = useCallback(async (amigurumi: Amigurumi) => {
-        try {
-            const shapesQuery = query(collection(db, 'shapes'), where('amigurumi_id', '==', amigurumi.id));
-            const shapesSnapshot = await getDocs(shapesQuery);
-            const shapes = shapesSnapshot.docs.map((doc) => ({
-                id: doc.id,
-                ...doc.data(),
-            })) as Shape[];
-
-            navigate(`/${amigurumi.id}/editor`, { state: { amigurumi, shapes } });
-        } catch (error) {
-            console.error('Fout bij het ophalen van shapes:', error);
-        }
-    }, [navigate]);
-
     const handleCardClick = useCallback((amigurumi: Amigurumi) => {
         setSelectedAmigurumi(amigurumi);
     }, []);
@@ -147,7 +132,6 @@ const Homepage = ({yarnInfo, intersections} : {yarnInfo: Yarn, intersections: an
                             amigurumi={amigurumi}
                             onFavoriteChange={handleFavoriteChange}
                             onPatternClick={handlePatternClick}
-                            onEditClick={amigurumi.user_id === loggedInUser ? handleEditClick : undefined}
                             onDeleteClick={amigurumi.user_id === loggedInUser ? handleDeleteAmigurumi : undefined}
                             onCardClick={handleCardClick}
                         />

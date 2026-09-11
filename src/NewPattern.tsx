@@ -1,22 +1,32 @@
 import { v4 as uuidv4 } from "uuid";
 import React, { useEffect, useState } from 'react';
 import { Typography, CircularProgress, TextField, Button, Chip, Box, DialogContent } from '@mui/material';
-import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { setDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db, auth } from '../firebase-config.js';
 import { useNavigate } from 'react-router-dom';
 import AppDialog from './AppDialog.tsx';
+import ImageDropzone from './ImageDropzone.tsx';
+import { uploadPatternImage } from './uploadImage.ts';
 
+// Dient zowel als "nieuw patroon aanmaken" (navigeert na opslaan naar de editor) als
+// "patroon-details bewerken" (via editingAmigurumi, blijft in de details-dialoog) —
+// zelfde velden/opslaanlogica, dus één formulier i.p.v. een bijna-duplicaat.
 const NewPattern = ({
     open,
     onClose,
     setDroppedShapes,
+    editingAmigurumi,
+    onSaved,
 }: {
     open: boolean;
     onClose: () => void;
-    setDroppedShapes: React.Dispatch<React.SetStateAction<Shape[]>>;
+    setDroppedShapes?: React.Dispatch<React.SetStateAction<Shape[]>>;
+    editingAmigurumi?: Amigurumi | null;
+    onSaved?: (updated: Amigurumi) => void;
 }) => {
     const navigate = useNavigate();
     const loggedInUser = auth.currentUser?.email;
+    const isEditing = !!editingAmigurumi;
 
     const [formData, setFormData] = useState({
         name: '',
@@ -24,33 +34,36 @@ const NewPattern = ({
         tags: [] as string[],
         favorite: false,
         yarn_id: '',
+        notes: '',
     });
     const [tagInput, setTagInput] = useState('');
+    const [imageFile, setImageFile] = useState<File | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
     useEffect(() => {
         if (open) {
-            setFormData({ name: '', height: '', tags: [], favorite: false, yarn_id: '' });
+            setFormData({
+                name: editingAmigurumi?.name ?? '',
+                height: editingAmigurumi?.height ? String(editingAmigurumi.height) : '',
+                tags: editingAmigurumi?.tags ?? [],
+                favorite: editingAmigurumi?.favorite ?? false,
+                yarn_id: editingAmigurumi?.yarn_id ?? '',
+                notes: editingAmigurumi?.notes ?? '',
+            });
             setTagInput('');
+            setImageFile(null);
             setError('');
         }
-    }, [open]);
+    }, [open, editingAmigurumi]);
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData((prev) => ({
             ...prev,
             [name]: name === 'height' ? (value === '' ? '' : Number(value)) : value,
         }));
     };
-
-    // const handleFavoriteChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    //     setFormData((prev) => ({
-    //         ...prev,
-    //         favorite: e.target.checked,
-    //     }));
-    // };
 
     const handleTagInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setTagInput(e.target.value);
@@ -88,34 +101,55 @@ const NewPattern = ({
         setError('');
 
         try {
-            const amigurumiId = uuidv4(); // Generate UUID for amigurumi
-            const amigurumiData: Amigurumi = {
-                id: amigurumiId,
-                name: formData.name.trim(),
-                height: formData.height ? Number(formData.height) : null,
-                tags: formData.tags,
-                favorite: formData.favorite,
-                yarn_id: formData.yarn_id.trim() || null,
-                user_id: loggedInUser,
-                createdAt: serverTimestamp(),
-            };
+            let imageUrl = editingAmigurumi?.imageUrl ?? null;
+            if (imageFile) {
+                imageUrl = await uploadPatternImage(imageFile);
+            }
 
-            // Save to Firestore with the UUID as the document ID
-            await setDoc(doc(db, 'amigurumi', amigurumiId), amigurumiData);
-            console.log('Saved amigurumi:', amigurumiData);
+            if (isEditing && editingAmigurumi) {
+                const updatedFields = {
+                    name: formData.name.trim(),
+                    height: formData.height ? Number(formData.height) : null,
+                    tags: formData.tags,
+                    yarn_id: formData.yarn_id.trim() || null,
+                    notes: formData.notes.trim() || null,
+                    imageUrl,
+                };
+                await updateDoc(doc(db, 'amigurumi', editingAmigurumi.id), updatedFields);
+                onSaved?.({ ...editingAmigurumi, ...updatedFields });
+                onClose();
+            } else {
+                const amigurumiId = uuidv4(); // Generate UUID for amigurumi
+                const amigurumiData: Amigurumi = {
+                    id: amigurumiId,
+                    name: formData.name.trim(),
+                    height: formData.height ? Number(formData.height) : null,
+                    tags: formData.tags,
+                    favorite: formData.favorite,
+                    yarn_id: formData.yarn_id.trim() || null,
+                    user_id: loggedInUser,
+                    createdAt: serverTimestamp(),
+                    notes: formData.notes.trim() || null,
+                    imageUrl,
+                };
 
-            // Clear droppedShapes
-            setDroppedShapes([]);
+                // Save to Firestore with the UUID as the document ID
+                await setDoc(doc(db, 'amigurumi', amigurumiId), amigurumiData);
+                console.log('Saved amigurumi:', amigurumiData);
 
-            onClose();
+                // Clear droppedShapes
+                setDroppedShapes?.([]);
 
-            // Navigate to Editor with amigurumi and empty shapes
-            navigate(`/${amigurumiId}/editor`, {
-                state: {
-                    amigurumi: amigurumiData,
-                    shapes: [],
-                },
-            });
+                onClose();
+
+                // Navigate to Editor with amigurumi and empty shapes
+                navigate(`/${amigurumiId}/editor`, {
+                    state: {
+                        amigurumi: amigurumiData,
+                        shapes: [],
+                    },
+                });
+            }
         } catch (err) {
             console.error('Fout bij het opslaan van patroon:', err);
             setError('Kon het patroon niet opslaan. Probeer opnieuw.');
@@ -123,6 +157,10 @@ const NewPattern = ({
             setLoading(false);
         }
     };
+
+    const previewSrc = imageFile
+        ? URL.createObjectURL(imageFile)
+        : editingAmigurumi?.imageUrl ?? null;
 
     return (
         <AppDialog open={open} onClose={onClose} maxWidth="sm">
@@ -132,7 +170,7 @@ const NewPattern = ({
                 ) : (
                     <>
                         <Typography variant="h4" gutterBottom sx={{ pr: 4 }}>
-                            New amigurumi pattern
+                            {isEditing ? 'Bewerk patroon' : 'New amigurumi pattern'}
                         </Typography>
                         <form onSubmit={handleSubmit}>
                             <TextField
@@ -171,6 +209,18 @@ const NewPattern = ({
                                     />
                                 ))}
                             </Box>
+                            <TextField
+                                label="Notes (optioneel)"
+                                name="notes"
+                                value={formData.notes}
+                                onChange={handleInputChange}
+                                fullWidth
+                                multiline
+                                minRows={3}
+                                margin="normal"
+                                placeholder="Bijv. hoeveel wol je nodig hebt, of andere opmerkingen"
+                            />
+                            <ImageDropzone previewSrc={previewSrc} onFileSelected={setImageFile} />
                             {error && (
                                 <Typography color="error" sx={{ mt: 2 }}>
                                     {error}
@@ -183,7 +233,7 @@ const NewPattern = ({
                                 sx={{ width: 1, backgroundColor: "var(--color-primary)", color: "var(--color-bg)", paddingY: 2 }}
                                 disabled={loading}
                             >
-                                {loading ? <CircularProgress size={24} /> : 'Save'}
+                                {loading ? <CircularProgress size={24} /> : (isEditing ? 'Opslaan' : 'Save')}
                             </Button>
                         </form>
                     </>

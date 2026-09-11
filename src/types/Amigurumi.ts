@@ -7,4 +7,6 @@ interface Amigurumi {
     yarn_id: string;
     user_id: string;
     createdAt?: any;
+    notes?: string | null;
+    imageUrl?: string | null;
 }

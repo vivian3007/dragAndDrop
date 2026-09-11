@@ -3,6 +3,7 @@ import {useLoader, useThree, useFrame} from '@react-three/fiber';
 import TransformControlsThree from "./TransformControlsThree.tsx";
 import * as THREE from 'three';
 import { RenderContext } from "./RenderProvider.tsx";
+import { WORLD_SCALE_FACTOR } from "./geometry/units";
 
 function Sphere({
                                    id,
@@ -73,7 +74,7 @@ function Sphere({
         const scaledHeight = height * zoom;
         const scaledLength = length * zoom;
 
-        const scaleFactor = 0.01;
+        const scaleFactor = WORLD_SCALE_FACTOR;
         const scaleX = (scaledWidth / canvasWidth) * canvasWidth * scaleFactor;
         const scaleY = (scaledHeight / canvasHeight) * canvasHeight * scaleFactor;
         const scaleZ = (scaledLength / canvasWidth) * canvasWidth * scaleFactor;

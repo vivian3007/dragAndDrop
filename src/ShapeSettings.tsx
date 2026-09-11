@@ -3,6 +3,7 @@ import {FormControlLabel, Checkbox} from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import Trashcan from "./Trashcan.tsx";
 import { HexColorPicker } from "react-colorful";
+import { PIXELS_PER_CM } from "./geometry/units";
 
 const ColorPicker = memo(function ColorPicker({ color, onColorChange }: { color: string; onColorChange: (newColor: string) => void }) {
     return (
@@ -27,7 +28,6 @@ function ShapeSettings({
     setShapeColor: any,
     droppedShapes: [],
 }) {
-    const PIXELS_PER_CM = 37.8;
     const [width, setWidth] = useState<number | null>(null);
     const [height, setHeight] = useState<number | null>(null);
     const [length, setLength] = useState<number | null>(null);

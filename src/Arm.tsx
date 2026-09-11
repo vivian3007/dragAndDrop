@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { TransformControls } from '@react-three/drei';
 import TransformControlsThree from "./TransformControlsThree.tsx";
 import { ARM_TOTAL_LOCAL_LENGTH } from "./geometry/armGeometry";
+import { WORLD_SCALE_FACTOR } from "./geometry/units";
 
 function Arm({
                                          id,
@@ -66,7 +67,7 @@ function Arm({
         const scaledHeight = (height * zoom) / ARM_TOTAL_LOCAL_LENGTH;
         const scaledLength = length * zoom;
 
-        const scaleFactor = 0.01;
+        const scaleFactor = WORLD_SCALE_FACTOR;
         const scaleX = (scaledWidth / canvasWidth) * canvasWidth * scaleFactor;
         const scaleY = (scaledHeight / canvasHeight) * canvasHeight * scaleFactor;
         const scaleZ = (scaledLength / canvasWidth) * canvasWidth * scaleFactor;

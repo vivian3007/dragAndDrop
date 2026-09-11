@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { Box, Button, Chip, CircularProgress, DialogContent, Table, TableBody, TableCell, TableRow, Typography } from '@mui/material';
 import { Favorite, FavoriteBorder } from '@mui/icons-material';
 import { collection, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore';
-import { db } from '../firebase-config.js';
-import { getImageForId } from './AmigurumiCard.tsx';
+import { auth, db } from '../firebase-config.js';
 import AppDialog from './AppDialog.tsx';
+import { computePatternWidthCm } from './geometry/patternBounds';
+import NewPattern from './NewPattern.tsx';
+import ImagePlaceholder from './ImagePlaceholder.tsx';
 
 const PatternDetail = ({
-    amigurumi,
+    amigurumi: amigurumiProp,
     open,
     onClose,
 }: {
@@ -18,14 +20,38 @@ const PatternDetail = ({
 }) => {
     const navigate = useNavigate();
 
+    const [amigurumi, setAmigurumi] = useState<Amigurumi | null>(amigurumiProp);
     const [yarn, setYarn] = useState<Yarn | null>(null);
     const [yarnLoading, setYarnLoading] = useState(false);
     const [favorite, setFavorite] = useState(false);
     const [isHeartBouncing, setIsHeartBouncing] = useState(false);
+    const [widthCm, setWidthCm] = useState<number | null>(null);
+    const [widthLoading, setWidthLoading] = useState(false);
+    const [editOpen, setEditOpen] = useState(false);
+
+    useEffect(() => {
+        setAmigurumi(amigurumiProp);
+    }, [amigurumiProp]);
 
     useEffect(() => {
         setFavorite(amigurumi?.favorite ?? false);
     }, [amigurumi]);
+
+    useEffect(() => {
+        if (!amigurumi?.id) {
+            setWidthCm(null);
+            return;
+        }
+        setWidthLoading(true);
+        const shapesQuery = query(collection(db, 'shapes'), where('amigurumi_id', '==', amigurumi.id));
+        getDocs(shapesQuery)
+            .then((snapshot) => {
+                const shapes = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Shape[];
+                setWidthCm(computePatternWidthCm(shapes));
+            })
+            .catch((error) => console.error('Fout bij het ophalen van shapes:', error))
+            .finally(() => setWidthLoading(false));
+    }, [amigurumi?.id]);
 
     useEffect(() => {
         if (!amigurumi?.yarn_id) {
@@ -69,9 +95,28 @@ const PatternDetail = ({
         }
     }, [amigurumi, yarn, navigate, onClose]);
 
+    const handleEditShapesClick = useCallback(async () => {
+        if (!amigurumi) return;
+        try {
+            const shapesQuery = query(collection(db, 'shapes'), where('amigurumi_id', '==', amigurumi.id));
+            const shapesSnapshot = await getDocs(shapesQuery);
+            const shapes = shapesSnapshot.docs.map((d) => ({
+                id: d.id,
+                ...d.data(),
+            })) as Shape[];
+
+            onClose();
+            navigate(`/${amigurumi.id}/editor`, { state: { amigurumi, shapes } });
+        } catch (error) {
+            console.error('Fout bij het ophalen van shapes:', error);
+        }
+    }, [amigurumi, navigate, onClose]);
+
     if (!amigurumi) {
         return null;
     }
+
+    const isOwner = amigurumi.user_id === auth.currentUser?.email;
 
     const createdDate = amigurumi.createdAt?.toDate
         ? amigurumi.createdAt.toDate().toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -80,11 +125,15 @@ const PatternDetail = ({
     return (
         <AppDialog open={open} onClose={onClose} maxWidth="lg">
             <DialogContent className="detail-card">
-                <img
-                    src={getImageForId(amigurumi.id)}
-                    alt={amigurumi.name}
-                    className="detail-image"
-                />
+                {amigurumi.imageUrl ? (
+                    <img
+                        src={amigurumi.imageUrl}
+                        alt={amigurumi.name}
+                        className="detail-image"
+                    />
+                ) : (
+                    <ImagePlaceholder className="detail-image" iconSize="4rem" />
+                )}
                 <div className="detail-info">
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pr: 5 }}>
                         <h1 style={{ margin: 0 }}>{amigurumi.name}</h1>
@@ -118,6 +167,11 @@ const PatternDetail = ({
                     <Typography sx={{ mb: 1 }}><strong>Aangemaakt:</strong> {createdDate ?? 'Onbekend'}</Typography>
                     {amigurumi.height ? (
                         <Typography sx={{ mb: 1 }}><strong>Hoogte:</strong> {amigurumi.height} cm</Typography>
+                    ) : null}
+                    {widthLoading ? (
+                        <CircularProgress size={16} sx={{ mb: 1 }} />
+                    ) : widthCm ? (
+                        <Typography sx={{ mb: 1 }}><strong>Breedte:</strong> {Math.round(widthCm)} cm</Typography>
                     ) : null}
 
                     <h3 style={{ marginBottom: 10 }}>Garen</h3>
@@ -156,6 +210,13 @@ const PatternDetail = ({
                         <Typography>Geen garen gekoppeld aan dit patroon.</Typography>
                     )}
 
+                    {amigurumi.notes ? (
+                        <>
+                            <h3 style={{ marginTop: 20, marginBottom: 10 }}>Notities</h3>
+                            <Typography sx={{ whiteSpace: 'pre-wrap' }}>{amigurumi.notes}</Typography>
+                        </>
+                    ) : null}
+
                     <div style={{ display: 'flex', gap: '10px', marginTop: 20, flexWrap: 'wrap' }}>
                         <Button
                             type="button"
@@ -166,9 +227,35 @@ const PatternDetail = ({
                         >
                             Bekijk patroon
                         </Button>
+                        {isOwner && (
+                            <>
+                                <Button
+                                    type="button"
+                                    variant="outlined"
+                                    sx={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}
+                                    onClick={() => setEditOpen(true)}
+                                >
+                                    Bewerken
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="outlined"
+                                    sx={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}
+                                    onClick={handleEditShapesClick}
+                                >
+                                    Amigurumi bewerken
+                                </Button>
+                            </>
+                        )}
                     </div>
                 </div>
             </DialogContent>
+            <NewPattern
+                open={editOpen}
+                onClose={() => setEditOpen(false)}
+                editingAmigurumi={amigurumi}
+                onSaved={setAmigurumi}
+            />
         </AppDialog>
     );
 };
