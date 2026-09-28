@@ -1,5 +1,5 @@
-import React, { useLayoutEffect, useMemo, useRef } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import React, { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { Canvas, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import Sphere from './Sphere.tsx';
 import Arm from './Arm.tsx';
@@ -40,21 +40,31 @@ function CameraFraming({ box }: { box: THREE.Box3 }) {
 // alleen als je net vanuit de editor komt; vanuit Home/My patterns/Favorites/de detail-dialoog
 // waren ze leeg of hoorden ze bij een ander amigurumi. We wachten tot alle meshes in de
 // scene staan (Sphere/Arm suspenden op hun texture en zetten hun uuid pas in een effect).
+// Bewust een interval i.p.v. useFrame: requestAnimationFrame staat stil in een tabblad op de
+// achtergrond, waardoor de Assembly dan nooit verscheen.
 function IntersectionReporter({ shapes, onIntersections }: { shapes: Shape[]; onIntersections: (intersections: any[]) => void }) {
     const { scene } = useThree();
-    const reportedForRef = useRef<Shape[] | null>(null);
 
-    useFrame(() => {
-        if (reportedForRef.current === shapes) {
+    useEffect(() => {
+        const tryCalculate = () => {
+            const allMeshesReady = shapes.every((shape) => scene.getObjectByProperty('uuid', shape.id));
+            if (!allMeshesReady) {
+                return false;
+            }
+            calculateIntersections(shapes, scene, [], onIntersections, noop);
+            return true;
+        };
+
+        if (tryCalculate()) {
             return;
         }
-        const allMeshesReady = shapes.every((shape) => scene.getObjectByProperty('uuid', shape.id));
-        if (!allMeshesReady) {
-            return;
-        }
-        reportedForRef.current = shapes;
-        calculateIntersections(shapes, scene, [], onIntersections, noop);
-    });
+        const interval = setInterval(() => {
+            if (tryCalculate()) {
+                clearInterval(interval);
+            }
+        }, 100);
+        return () => clearInterval(interval);
+    }, [shapes, scene, onIntersections]);
 
     return null;
 }

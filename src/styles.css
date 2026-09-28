@@ -615,6 +615,44 @@ body {
     margin: 0;
 }
 
+.pattern-legend-subtitle {
+    margin: 16px 0 8px;
+    font-size: 1rem;
+}
+
+.pattern-legend-note {
+    margin: 12px 0 0;
+}
+
+.pattern-materials-list {
+    margin: 0;
+    padding-left: 18px;
+    display: grid;
+    gap: 6px;
+}
+
+.pattern-color-list {
+    list-style: none;
+    margin: 6px 0 0;
+    padding: 0;
+    display: grid;
+    gap: 4px;
+}
+
+.pattern-color-list li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pattern-color-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    flex-shrink: 0;
+}
+
 /* Instructie-kaart per vorm — gekleurde accentrand in de kleur van die vorm koppelt de
    kaart visueel aan het bijbehorende swatch-blokje. */
 .pattern-card--shape {

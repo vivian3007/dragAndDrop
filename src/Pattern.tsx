@@ -1,11 +1,12 @@
 import React, {useEffect, useState} from "react";
 import {Link, useLocation, useNavigate, useParams} from "react-router-dom";
 import {AppBar, Button, Card, Container, Toolbar} from "@mui/material";
-import {collection, getDocs} from "firebase/firestore";
+import {collection, doc, getDoc, getDocs} from "firebase/firestore";
 import {db} from "../firebase-config.js";
 import generateSpherePattern from "./patterns/generateSpherePattern";
 import generateArmPattern from "./patterns/generateArmPattern";
 import PatternPreview3D from "./PatternPreview3D.tsx";
+import { computePatternHeightCm, computePatternWidthCm } from "./geometry/patternBounds";
 
 // Splitst "Row 3: [1inc, 2sc] * 6 (24)" in een label- en tekst-kolom, zodat de
 // dubbele punten van alle rijen in de lijst netjes onder elkaar uitlijnen
@@ -28,11 +29,19 @@ const RowLine = ({ text }: { text: string }) => {
     );
 };
 
+// Vaste lege array: `?? []` maakte elke render een nieuwe array, waardoor de useEffect op
+// [shapes] eindeloos opnieuw liep (en de pagina bevroor) als er geen navigatie-state was.
+const NO_SHAPES: Shape[] = [];
+
 const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[], yarn: Yarn, intersections: any, meshes: any}) => {
     const PIXELS_PER_CM = 37.8; // 10 pixels = 1 cm
     const [patterns, setPatterns] = useState<any[]>([]);
     // Door PatternPreview3D uit de 3D-scene berekend; null zolang de preview nog laadt.
     const [computedIntersections, setComputedIntersections] = useState<any[] | null>(null);
+    // Het garen van dít amigurumi. De yarnInfo in de navigatie-state komt vanuit Home/My
+    // patterns/Favorites uit de App-state en kan bij een ander amigurumi horen (zelfde
+    // probleem als de intersections), dus we halen het hier zelf op via yarn_id.
+    const [fetchedYarn, setFetchedYarn] = useState<Yarn | null>(null);
     const location = useLocation();
     const navigate = useNavigate();
     const { amigurumi_id } = useParams();
@@ -48,10 +57,23 @@ const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[],
         Jumbo: 1.0,
     };
 
-    shapes = location.state?.shapes ?? [];
-    yarnInfo = location.state?.yarnInfo ?? null;
-    intersections = computedIntersections ?? location.state?.intersections ?? [];
+    shapes = location.state?.shapes ?? NO_SHAPES;
     const amigurumi = location.state?.amigurumi ?? null;
+    yarnInfo = fetchedYarn ?? location.state?.yarnInfo ?? null;
+    intersections = computedIntersections ?? location.state?.intersections ?? [];
+
+    useEffect(() => {
+        if (!amigurumi?.yarn_id) {
+            return;
+        }
+        getDoc(doc(db, "yarn", amigurumi.yarn_id))
+            .then((snap) => {
+                if (snap.exists()) {
+                    setFetchedYarn(snap.data() as Yarn);
+                }
+            })
+            .catch((error) => console.error("Fout bij het ophalen van garen:", error));
+    }, [amigurumi?.yarn_id]);
 
     const isValidYarnWeight = !!yarnInfo && yarnInfo.weight in rowHeights;
 
@@ -76,7 +98,17 @@ const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[],
         } else {
             setPatterns([]);
         }
-    }, [shapes, yarnInfo, computedIntersections]);
+    }, [shapes, yarnWeight, computedIntersections]);
+
+    const heightCm = computePatternHeightCm(shapes);
+    const widthCm = computePatternWidthCm(shapes);
+
+    // Eén regel per kleur, met de onderdelen die in die kleur gehaakt worden.
+    const partsByColor = shapes.reduce<Record<string, string[]>>((acc, shape) => {
+        const color = shape.color ?? "#cccccc";
+        (acc[color] ??= []).push(shape.name ?? shape.type);
+        return acc;
+    }, {});
 
     console.log(patterns);
     console.log(intersections);
@@ -124,14 +156,57 @@ const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[],
                 </div>
                 <div className="pattern-container">
                     <Card className="pattern-text-container pattern-card--legend">
+                        <h2 className="pattern-card-title">Materials</h2>
+                        <ul className="pattern-materials-list">
+                            <li>
+                                <strong>Yarn:</strong>{" "}
+                                {yarnInfo?.name
+                                    ? `${yarnInfo.name} (${[yarnInfo.weight, yarnInfo.material].filter(Boolean).join(", ")})`
+                                    : `${yarnWeight} weight yarn`}
+                                {yarnInfo?.mPerSkein ? `, ${yarnInfo.mPerSkein} m per skein` : null}
+                            </li>
+                            <li>
+                                <strong>Colours:</strong>
+                                <ul className="pattern-color-list">
+                                    {Object.entries(partsByColor).map(([color, parts]) => (
+                                        <li key={color}>
+                                            <span className="pattern-color-swatch" style={{ backgroundColor: color }} />
+                                            {parts.join(", ")}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </li>
+                            <li>
+                                <strong>Hook:</strong>{" "}
+                                {yarnInfo?.hooksize
+                                    ? `${yarnInfo.hooksize} mm`
+                                    : "one size smaller than recommended on your yarn label, for tight stitches"}
+                            </li>
+                            <li><strong>Also:</strong> fiberfill stuffing, stitch marker, tapestry needle, scissors</li>
+                            {heightCm && widthCm ? (
+                                <li><strong>Finished size:</strong> about {Math.round(heightCm)} cm tall and {Math.round(widthCm)} cm wide</li>
+                            ) : null}
+                        </ul>
+                    </Card>
+                    <Card className="pattern-text-container pattern-card--legend">
                         <h2 className="pattern-card-title">Stitch abbreviations</h2>
                         <dl className="pattern-legend-grid">
                             <dt>st</dt><dd>stitch</dd>
-                            <dt>sl</dt><dd>slip stitch</dd>
                             <dt>sc</dt><dd>single crochet</dd>
                             <dt>inc</dt><dd>increase (2 single crochet in 1 stitch)</dd>
                             <dt>dec</dt><dd>decrease (single crochet 2 stitches together)</dd>
+                            <dt>magic ring</dt><dd>adjustable loop to start crocheting in the round; pull the tail to close the centre</dd>
                         </dl>
+                        <h3 className="pattern-legend-subtitle">How to read the rows</h3>
+                        <dl className="pattern-legend-grid">
+                            <dt>[1inc, 2sc] * 6</dt><dd>repeat what is between the brackets 6 times</dd>
+                            <dt>(24)</dt><dd>total number of stitches at the end of the row</dd>
+                            <dt>Row 4-6</dt><dd>repeat the same instruction for each of these rows</dd>
+                        </dl>
+                        <p className="pattern-legend-note">
+                            Work in a continuous spiral without joining the rows. Place a stitch marker in the
+                            first stitch of each row so you don't lose count.
+                        </p>
                     </Card>
                     {patterns.length > 0 ? (
                         patterns.map((pattern, index) => {
@@ -172,6 +247,9 @@ const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[],
                                             {pattern.scArray.map((row, idx) => (
                                                 <RowLine key={idx} text={row} />
                                             ))}
+                                            {pattern.type !== "Arm" ? (
+                                                <RowLine text="Start stuffing firmly now, and keep adding stuffing as you decrease" />
+                                            ) : null}
                                             {pattern.decArray.map((row, idx) => (
                                                 <RowLine key={idx} text={row} />
                                             ))}
@@ -180,7 +258,9 @@ const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[],
                                                     <RowLine text={`Row ${pattern.rowArray.length - 1}: 6dec (6)`} />
                                                     <RowLine text="Sew closed" />
                                                 </>
-                                            ) : null}
+                                            ) : (
+                                                <RowLine text="Stuff lightly, leaving the open end unstuffed so it is easy to sew on" />
+                                            )}
                                         </ul>
                                         <div
                                             className={`shape ${pattern.type}`}
