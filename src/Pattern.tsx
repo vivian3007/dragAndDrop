@@ -7,6 +7,9 @@ import generateSpherePattern from "./patterns/generateSpherePattern";
 import generateArmPattern from "./patterns/generateArmPattern";
 import PatternPreview3D from "./PatternPreview3D.tsx";
 import { computePatternHeightCm, computePatternWidthCm } from "./geometry/patternBounds";
+import { useIntl } from "react-intl";
+import { useT } from "./i18n/LanguageProvider";
+import { usePatternTerms } from "./i18n/usePatternTerms";
 
 // Splitst "Row 3: [1inc, 2sc] * 6 (24)" in een label- en tekst-kolom, zodat de
 // dubbele punten van alle rijen in de lijst netjes onder elkaar uitlijnen
@@ -42,6 +45,9 @@ const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[],
     // patterns/Favorites uit de App-state en kan bij een ander amigurumi horen (zelfde
     // probleem als de intersections), dus we halen het hier zelf op via yarn_id.
     const [fetchedYarn, setFetchedYarn] = useState<Yarn | null>(null);
+    const intl = useIntl();
+    const t = useT();
+    const terms = usePatternTerms();
     const location = useLocation();
     const navigate = useNavigate();
     const { amigurumi_id } = useParams();
@@ -75,9 +81,15 @@ const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[],
             .catch((error) => console.error("Fout bij het ophalen van garen:", error));
     }, [amigurumi?.yarn_id]);
 
-    const isValidYarnWeight = !!yarnInfo && yarnInfo.weight in rowHeights;
+    // YarnSettings slaat diktes op zoals ze in de lijst staan ("Super Fine", "Super Bulky"),
+    // terwijl rowHeights sleutels zonder spatie heeft. Zonder spaties vergelijken, anders
+    // viel "Super Fine" stilletjes terug op Medium en klopten de rij-aantallen niet.
+    const yarnWeightKey = yarnInfo?.weight?.replace(/\s+/g, "") ?? "";
+    const isValidYarnWeight = yarnWeightKey in rowHeights;
 
-    const yarnWeight = isValidYarnWeight ? yarnInfo.weight : "Medium";
+    const yarnWeight = isValidYarnWeight ? yarnWeightKey : "Medium";
+    // Voor het label de waarde zoals hij in Firestore staat, want daar zijn de vertalingen op gesleuteld.
+    const yarnWeightDisplay = isValidYarnWeight ? yarnInfo.weight : "Medium";
 
     useEffect(() => {
         if (shapes && shapes.length > 0) {
@@ -87,9 +99,9 @@ const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[],
                 // singleShape.length *= singleShape.zoom;
                 switch (singleShape.type) {
                     case "Sphere":
-                        return generateSpherePattern(singleShape, yarnWeight, PIXELS_PER_CM, rowHeights, intersections, shapes);
+                        return generateSpherePattern(singleShape, yarnWeight, PIXELS_PER_CM, rowHeights, intersections, shapes, terms);
                     case "Arm":
-                        return generateArmPattern(singleShape, yarnWeight, PIXELS_PER_CM, rowHeights, intersections, shapes);
+                        return generateArmPattern(singleShape, yarnWeight, PIXELS_PER_CM, rowHeights, intersections, shapes, terms);
                     default:
                         return null;
                 }
@@ -98,7 +110,12 @@ const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[],
         } else {
             setPatterns([]);
         }
-    }, [shapes, yarnWeight, computedIntersections]);
+    }, [shapes, yarnWeight, computedIntersections, terms]);
+
+    // Garendikte staat als Engelse waarde in Firestore ("Super Fine"); alleen het label
+    // wordt vertaald, met de ruwe waarde als terugval voor onbekende diktes.
+    const weightLabel = (weight: string) =>
+        intl.formatMessage({ id: `yarnWeight.${weight}`, defaultMessage: weight });
 
     const heightCm = computePatternHeightCm(shapes);
     const widthCm = computePatternWidthCm(shapes);
@@ -117,7 +134,7 @@ const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[],
         <div>
             <div className="pattern">
                 <div className="pattern-preview-panel">
-                    <h1 className="pattern-page-title">{amigurumi?.name ?? "Patroon"}</h1>
+                    <h1 className="pattern-page-title">{amigurumi?.name ?? t("pattern.defaultTitle")}</h1>
                     <div className="pattern-preview-3d">
                         <PatternPreview3D shapes={shapes} onIntersections={setComputedIntersections} />
                     </div>
@@ -151,63 +168,91 @@ const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[],
                             });
                         }}
                     >
-                        Go back
+                        {t("pattern.goBack")}
                     </Button>
                 </div>
                 <div className="pattern-container">
-                    <Card className="pattern-text-container pattern-card--legend">
-                        <h2 className="pattern-card-title">Materials</h2>
-                        <ul className="pattern-materials-list">
-                            <li>
-                                <strong>Yarn:</strong>{" "}
-                                {yarnInfo?.name
-                                    ? `${yarnInfo.name} (${[yarnInfo.weight, yarnInfo.material].filter(Boolean).join(", ")})`
-                                    : `${yarnWeight} weight yarn`}
-                                {yarnInfo?.mPerSkein ? `, ${yarnInfo.mPerSkein} m per skein` : null}
-                            </li>
-                            <li>
-                                <strong>Colours:</strong>
-                                <ul className="pattern-color-list">
-                                    {Object.entries(partsByColor).map(([color, parts]) => (
-                                        <li key={color}>
-                                            <span className="pattern-color-swatch" style={{ backgroundColor: color }} />
-                                            {parts.join(", ")}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </li>
-                            <li>
-                                <strong>Hook:</strong>{" "}
-                                {yarnInfo?.hooksize
-                                    ? `${yarnInfo.hooksize} mm`
-                                    : "one size smaller than recommended on your yarn label, for tight stitches"}
-                            </li>
-                            <li><strong>Also:</strong> fiberfill stuffing, stitch marker, tapestry needle, scissors</li>
-                            {heightCm && widthCm ? (
-                                <li><strong>Finished size:</strong> about {Math.round(heightCm)} cm tall and {Math.round(widthCm)} cm wide</li>
-                            ) : null}
-                        </ul>
-                    </Card>
-                    <Card className="pattern-text-container pattern-card--legend">
-                        <h2 className="pattern-card-title">Stitch abbreviations</h2>
-                        <dl className="pattern-legend-grid">
-                            <dt>st</dt><dd>stitch</dd>
-                            <dt>sc</dt><dd>single crochet</dd>
-                            <dt>inc</dt><dd>increase (2 single crochet in 1 stitch)</dd>
-                            <dt>dec</dt><dd>decrease (single crochet 2 stitches together)</dd>
-                            <dt>magic ring</dt><dd>adjustable loop to start crocheting in the round; pull the tail to close the centre</dd>
-                        </dl>
-                        <h3 className="pattern-legend-subtitle">How to read the rows</h3>
-                        <dl className="pattern-legend-grid">
-                            <dt>[1inc, 2sc] * 6</dt><dd>repeat what is between the brackets 6 times</dd>
-                            <dt>(24)</dt><dd>total number of stitches at the end of the row</dd>
-                            <dt>Row 4-6</dt><dd>repeat the same instruction for each of these rows</dd>
-                        </dl>
-                        <p className="pattern-legend-note">
-                            Work in a continuous spiral without joining the rows. Place a stitch marker in the
-                            first stitch of each row so you don't lose count.
-                        </p>
-                    </Card>
+                    {/* Naslag vóór de instructies: materialen en afkortingen naast elkaar, zodat ze
+                        samen één blok vormen en de instructiekaarten eronder direct beginnen. */}
+                    <div className="pattern-reference-grid">
+                        <Card className="pattern-text-container pattern-card--legend">
+                            <h2 className="pattern-card-title">{t("pattern.materials")}</h2>
+                            <dl className="pattern-info-list">
+                                <dt>{t("yarn.title")}</dt>
+                                <dd>
+                                    {yarnInfo?.name ? (
+                                        <>
+                                            <span className="pattern-info-strong">{yarnInfo.name}</span>
+                                            <span className="pattern-info-muted">
+                                                {[
+                                                    yarnInfo.weight && weightLabel(yarnInfo.weight),
+                                                    yarnInfo.material,
+                                                    yarnInfo.mPerSkein && t("pattern.perSkein", { meters: yarnInfo.mPerSkein }),
+                                                ].filter(Boolean).join(" · ")}
+                                            </span>
+                                        </>
+                                    ) : (
+                                        t("pattern.yarnFallback", { weight: weightLabel(yarnWeightDisplay) })
+                                    )}
+                                </dd>
+
+                                {Object.keys(partsByColor).length > 0 ? (
+                                    <>
+                                        <dt>{t("pattern.colours")}</dt>
+                                        <dd>
+                                            <ul className="pattern-color-list">
+                                                {Object.entries(partsByColor).map(([color, parts]) => (
+                                                    <li key={color}>
+                                                        <span className="pattern-color-swatch" style={{ backgroundColor: color }} />
+                                                        {parts.join(", ")}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </dd>
+                                    </>
+                                ) : null}
+
+                                <dt>{t("yarn.hooksize")}</dt>
+                                <dd>
+                                    {yarnInfo?.hooksize ? (
+                                        <span className="pattern-info-strong">{yarnInfo.hooksize} mm</span>
+                                    ) : (
+                                        t("pattern.hookFallback")
+                                    )}
+                                </dd>
+
+                                <dt>{t("pattern.also")}</dt>
+                                <dd>{t("pattern.alsoItems")}</dd>
+
+                                {heightCm && widthCm ? (
+                                    <>
+                                        <dt>{t("pattern.finishedSize")}</dt>
+                                        <dd>{t("pattern.finishedSizeValue", { height: Math.round(heightCm), width: Math.round(widthCm) })}</dd>
+                                    </>
+                                ) : null}
+                            </dl>
+                        </Card>
+                        <Card className="pattern-text-container pattern-card--legend">
+                            <h2 className="pattern-card-title">{t("pattern.abbreviations")}</h2>
+                            {/* Eén raster voor beide lijstjes, zodat de uitleg in dezelfde kolom begint. */}
+                            <div className="pattern-legend-grid">
+                                <dl className="pattern-legend-group">
+                                    <dt>{t("pattern.abbr.st")}</dt><dd>{t("pattern.abbr.stMeaning")}</dd>
+                                    <dt>{t("pattern.abbr.sc")}</dt><dd>{t("pattern.abbr.scMeaning")}</dd>
+                                    <dt>{t("pattern.abbr.inc")}</dt><dd>{t("pattern.abbr.incMeaning")}</dd>
+                                    <dt>{t("pattern.abbr.dec")}</dt><dd>{t("pattern.abbr.decMeaning")}</dd>
+                                    <dt>{t("pattern.abbr.magicRing")}</dt><dd>{t("pattern.abbr.magicRingMeaning")}</dd>
+                                </dl>
+                                <h3 className="pattern-legend-subtitle">{t("pattern.howToRead")}</h3>
+                                <dl className="pattern-legend-group">
+                                    <dt>[{terms.inc(1)}, {terms.sc(2)}] * 6</dt><dd>{t("pattern.howToRead.repeat")}</dd>
+                                    <dt>(24)</dt><dd>{t("pattern.howToRead.count")}</dd>
+                                    <dt>{terms.row("4-6")}</dt><dd>{t("pattern.howToRead.range")}</dd>
+                                </dl>
+                            </div>
+                            <p className="pattern-legend-note">{t("pattern.spiralNote")}</p>
+                        </Card>
+                    </div>
                     {patterns.length > 0 ? (
                         patterns.map((pattern, index) => {
                             const maxDimension = 180;
@@ -233,13 +278,13 @@ const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[],
                                 >
                                     <h2 className="pattern-card-title">
                                         <span className="pattern-step-badge">{index + 1}</span>
-                                        Pattern for - {pattern.name ?? "give this part a name"}
+                                        {t("pattern.partTitle", { name: pattern.name ?? t("pattern.unnamedPart") })}
                                     </h2>
                                     <div className="pattern-card-body">
                                         <ul className="pattern-row-list">
-                                            <RowLine text="Row 1: 6sc in a magic ring (6)" />
+                                            <RowLine text={`${terms.row(1)}: ${t("pattern.magicRingStart", { stitches: terms.sc(6) })} (6)`} />
                                             {pattern.incArray.length > 0 ? (
-                                                <RowLine text="Row 2: 6inc (12)" />
+                                                <RowLine text={`${terms.row(2)}: ${terms.inc(6)} (12)`} />
                                             ) : null}
                                             {pattern.incArray.map((row, idx) => (
                                                 <RowLine key={idx} text={row} />
@@ -248,18 +293,18 @@ const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[],
                                                 <RowLine key={idx} text={row} />
                                             ))}
                                             {pattern.type !== "Arm" ? (
-                                                <RowLine text="Start stuffing firmly now, and keep adding stuffing as you decrease" />
+                                                <RowLine text={t("pattern.startStuffing")} />
                                             ) : null}
                                             {pattern.decArray.map((row, idx) => (
                                                 <RowLine key={idx} text={row} />
                                             ))}
                                             {pattern.type !== "Arm" ? (
                                                 <>
-                                                    <RowLine text={`Row ${pattern.rowArray.length - 1}: 6dec (6)`} />
-                                                    <RowLine text="Sew closed" />
+                                                    <RowLine text={`${terms.row(pattern.rowArray.length - 1)}: ${terms.dec(6)} (6)`} />
+                                                    <RowLine text={t("pattern.sewClosed")} />
                                                 </>
                                             ) : (
-                                                <RowLine text="Stuff lightly, leaving the open end unstuffed so it is easy to sew on" />
+                                                <RowLine text={t("pattern.stuffLightly")} />
                                             )}
                                         </ul>
                                         <div
@@ -275,26 +320,26 @@ const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[],
                             );
                         })
                     ) : (
-                        <p>Geen shapes geselecteerd</p>
+                        <p>{t("pattern.noShapes")}</p>
                     )}
                     <Card className="pattern-text-container pattern-card--assembly">
-                        <h2 className="pattern-card-title">Assembly</h2>
+                        <h2 className="pattern-card-title">{t("pattern.assembly")}</h2>
                         <ul className="pattern-row-list">
                             {(() => {
                                 const allIntersectionRows = patterns.flatMap((p) => p.intersectionRows ?? []);
                                 return allIntersectionRows.length > 0 ? (
                                     allIntersectionRows.map((intersection, idx) => {
-                                        const shape1 = shapes.find((shape) => shape.id === intersection.shapeId1)?.name ?? `Shape ${intersection.shapeId1}`;
-                                        const shape2 = shapes.find((shape) => shape.id === intersection.shapeId2)?.name ?? `Shape ${intersection.shapeId2}`;
+                                        const shape1 = shapes.find((shape) => shape.id === intersection.shapeId1)?.name ?? t("pattern.unknownShape", { id: intersection.shapeId1 });
+                                        const shape2 = shapes.find((shape) => shape.id === intersection.shapeId2)?.name ?? t("pattern.unknownShape", { id: intersection.shapeId2 });
                                         return (
                                             <RowLine
                                                 key={idx}
-                                                text={`Connect ${shape1} to ${shape2}: between row ${intersection.topRow} and ${intersection.bottomRow}`}
+                                                text={t("pattern.connect", { part1: shape1, part2: shape2, top: intersection.topRow, bottom: intersection.bottomRow })}
                                             />
                                         );
                                     })
                                 ) : (
-                                    <RowLine text="No intersections to assemble" />
+                                    <RowLine text={t("pattern.noIntersections")} />
                                 );
                             })()}
                         </ul>

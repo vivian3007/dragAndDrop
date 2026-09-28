@@ -15,12 +15,14 @@ import Login from "./Login.tsx";
 import { signOut } from 'firebase/auth';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { useT } from './i18n/LanguageProvider';
 
 // Editor pulls in Three.js/drei/three-csg-ts (het grootste deel van de bundel) —
 // pas laden zodra de editor daadwerkelijk bezocht wordt.
 const Editor = lazy(() => import("./Editor"));
 
 export default function App() {
+    const t = useT();
     const [droppedShapes, setDroppedShapes] = useState<Shape[]
         // { id: string; type: string; x: number; y: number,z: number, width: number, height: number, length:number, color: string, name: string, zoom: number, rotation_x: number, rotation_y: number, rotation_z: number }[]
     >([]);
@@ -105,7 +107,7 @@ export default function App() {
             }
         } catch (error) {
             console.error("Fout bij ophalen van amigurumiShape:", error);
-            alert("Fout bij ophalen van gegevens: " + error);
+            alert(t("errors.loadData", { message: String(error) }));
         }
     };
 
@@ -220,7 +222,7 @@ export default function App() {
             });
         } catch (error) {
             console.error("Error updating shape:", error);
-            alert("Error updating shape: " + error);
+            alert(t("errors.updateShape", { message: String(error) }));
         }
     };
 

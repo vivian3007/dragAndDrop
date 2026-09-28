@@ -1,4 +1,6 @@
-const generateArmPattern = (singleShape: Shape, yarnWeight: string, PIXELS_PER_CM: number, rowHeights: Record<string, number>, intersections, shapes) => {
+import {englishPatternTerms, PatternTerms} from "./patternTerms";
+
+const generateArmPattern = (singleShape: Shape, yarnWeight: string, PIXELS_PER_CM: number, rowHeights: Record<string, number>, intersections, shapes, t: PatternTerms = englishPatternTerms) => {
     const rowHeight = rowHeights[yarnWeight] * PIXELS_PER_CM ?? 4;
     const shapeHeight = singleShape.height;
     // Doorsnede-basis voor omtrek-/stekenwiskunde: width (X) en length (Z) zijn onafhankelijk
@@ -53,7 +55,7 @@ const generateArmPattern = (singleShape: Shape, yarnWeight: string, PIXELS_PER_C
     }
 
     for (let i = 1; i < incRows; i++) {
-        incArray.push(`Row ${rowArray[i + 1]}: [1inc, ${i}sc] * 6 (${12 + i * 6})`);
+        incArray.push(`${t.row(rowArray[i + 1])}: [${t.inc(1)}, ${t.sc(i)}] * 6 (${12 + i * 6})`);
     }
 
     const maxStitches = incRows * 6 + 6;
@@ -61,8 +63,8 @@ const generateArmPattern = (singleShape: Shape, yarnWeight: string, PIXELS_PER_C
     if (scRows > 0) {
         const startRow = incRows + 2;
         const endRow = incRows + scRows;
-        const rowText = scRows === 1 ? `Row ${startRow}` : `Row ${startRow}-${endRow}`;
-        scArray.push(`${rowText}: ${maxStitches}sc (${maxStitches})`);
+        const rowText = scRows === 1 ? t.row(startRow) : t.row(`${startRow}-${endRow}`);
+        scArray.push(`${rowText}: ${t.sc(maxStitches)} (${maxStitches})`);
     }
 
     return {

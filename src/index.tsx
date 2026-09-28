@@ -5,13 +5,16 @@ import { BrowserRouter } from "react-router-dom";
 import { ThemeProvider } from "@mui/material";
 import theme from "./theme";
 import "./styles.css";
+import { LanguageProvider } from "./i18n/LanguageProvider";
 
 const container = document.getElementById("root");
 const root = createRoot(container!);
 root.render(
     <ThemeProvider theme={theme}>
-        <BrowserRouter>
-            <App />
-        </BrowserRouter>
+        <LanguageProvider>
+            <BrowserRouter>
+                <App />
+            </BrowserRouter>
+        </LanguageProvider>
     </ThemeProvider>
 );

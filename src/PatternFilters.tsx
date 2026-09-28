@@ -1,12 +1,13 @@
 import React from 'react';
 import { Autocomplete, Box, Chip, MenuItem, TextField } from '@mui/material';
 import { SortOption } from './filterAmigurumis';
+import { useT } from './i18n/LanguageProvider';
 
-const sortLabels: Record<SortOption, string> = {
-    newest: 'Nieuwste eerst',
-    oldest: 'Oudste eerst',
-    favorite: 'Favorieten eerst',
-    name: 'Naam (A-Z)',
+const sortLabelIds: Record<SortOption, string> = {
+    newest: 'filters.sort.newest',
+    oldest: 'filters.sort.oldest',
+    favorite: 'filters.sort.favorite',
+    name: 'filters.sort.name',
 };
 
 const PatternFilters = ({
@@ -29,6 +30,7 @@ const PatternFilters = ({
     actions?: React.ReactNode;
 }) => {
     const hasActions = Boolean(actions);
+    const t = useT();
 
     const fieldSx = {
         minWidth: 220,
@@ -74,7 +76,7 @@ const PatternFilters = ({
             }}
         >
             <TextField
-                label="Zoek op naam"
+                label={t('filters.search')}
                 value={searchTerm}
                 onChange={(e) => onSearchChange(e.target.value)}
                 size="small"
@@ -111,18 +113,19 @@ const PatternFilters = ({
                         />
                     ))
                 }
-                renderInput={(params) => <TextField {...params} label="Filter op tags" />}
+                renderInput={(params) => <TextField {...params} label={t('filters.tags')} />}
+                noOptionsText={t('filters.noTags')}
             />
             <TextField
                 select
-                label="Sorteren op"
+                label={t('filters.sortBy')}
                 value={sortBy}
                 onChange={(e) => onSortChange(e.target.value as SortOption)}
                 size="small"
                 sx={{ ...fieldSx, gridArea: 'sort', minWidth: 0, width: { xs: '100%', sm: '100%', md: 200 } }}
             >
-                {Object.entries(sortLabels).map(([value, label]) => (
-                    <MenuItem key={value} value={value}>{label}</MenuItem>
+                {Object.entries(sortLabelIds).map(([value, labelId]) => (
+                    <MenuItem key={value} value={value}>{t(labelId)}</MenuItem>
                 ))}
             </TextField>
             {actions && (

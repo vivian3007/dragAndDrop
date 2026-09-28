@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import AppDialog from './AppDialog.tsx';
 import ImageDropzone from './ImageDropzone.tsx';
 import { uploadPatternImage } from './uploadImage.ts';
+import { useT } from './i18n/LanguageProvider';
 
 // Dient zowel als "nieuw patroon aanmaken" (navigeert na opslaan naar de editor) als
 // "patroon-details bewerken" (via editingAmigurumi, blijft in de details-dialoog) —
@@ -25,6 +26,7 @@ const NewPattern = ({
     onSaved?: (updated: Amigurumi) => void;
 }) => {
     const navigate = useNavigate();
+    const t = useT();
     const loggedInUser = auth.currentUser?.email;
     const isEditing = !!editingAmigurumi;
 
@@ -39,6 +41,7 @@ const NewPattern = ({
     const [tagInput, setTagInput] = useState('');
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [loading, setLoading] = useState(false);
+    // Sleutel van de foutmelding (of ''), zodat hij meevertaalt bij een taalwissel.
     const [error, setError] = useState('');
 
     useEffect(() => {
@@ -89,11 +92,11 @@ const NewPattern = ({
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!loggedInUser) {
-            setError('Je moet ingelogd zijn om een patroon aan te maken.');
+            setError('newPattern.error.loginRequired');
             return;
         }
         if (!formData.name.trim()) {
-            setError('Naam is verplicht.');
+            setError('newPattern.error.nameRequired');
             return;
         }
 
@@ -152,7 +155,7 @@ const NewPattern = ({
             }
         } catch (err) {
             console.error('Fout bij het opslaan van patroon:', err);
-            setError('Kon het patroon niet opslaan. Probeer opnieuw.');
+            setError('newPattern.error.saveFailed');
         } finally {
             setLoading(false);
         }
@@ -166,15 +169,15 @@ const NewPattern = ({
         <AppDialog open={open} onClose={onClose} maxWidth="sm">
             <DialogContent sx={{ padding: 4 }}>
                 {!loggedInUser ? (
-                    <Typography>Log in om een nieuw patroon aan te maken.</Typography>
+                    <Typography>{t('newPattern.loginRequired')}</Typography>
                 ) : (
                     <>
                         <Typography variant="h4" gutterBottom sx={{ pr: 4 }}>
-                            {isEditing ? 'Bewerk patroon' : 'New amigurumi pattern'}
+                            {isEditing ? t('newPattern.editTitle') : t('newPattern.title')}
                         </Typography>
                         <form onSubmit={handleSubmit}>
                             <TextField
-                                label="Name"
+                                label={t('newPattern.name')}
                                 name="name"
                                 value={formData.name}
                                 onChange={handleInputChange}
@@ -184,7 +187,7 @@ const NewPattern = ({
                             />
                             <Box sx={{ display: 'flex', alignItems: 'stretch', margin: '16px 0' }}>
                                 <TextField
-                                    label="Tag"
+                                    label={t('newPattern.tag')}
                                     value={tagInput}
                                     onChange={handleTagInputChange}
                                     onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
@@ -196,7 +199,7 @@ const NewPattern = ({
                                     sx={{ ml: 1, backgroundColor: "var(--color-primary)", color: "var(--color-bg)" }}
                                     disabled={!tagInput.trim()}
                                 >
-                                    Add
+                                    {t('newPattern.addTag')}
                                 </Button>
                             </Box>
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
@@ -210,7 +213,7 @@ const NewPattern = ({
                                 ))}
                             </Box>
                             <TextField
-                                label="Notes (optioneel)"
+                                label={t('newPattern.notes')}
                                 name="notes"
                                 value={formData.notes}
                                 onChange={handleInputChange}
@@ -218,12 +221,12 @@ const NewPattern = ({
                                 multiline
                                 minRows={3}
                                 margin="normal"
-                                placeholder="Bijv. hoeveel wol je nodig hebt, of andere opmerkingen"
+                                placeholder={t('newPattern.notesPlaceholder')}
                             />
                             <ImageDropzone previewSrc={previewSrc} onFileSelected={setImageFile} />
                             {error && (
                                 <Typography color="error" sx={{ mt: 2 }}>
-                                    {error}
+                                    {t(error)}
                                 </Typography>
                             )}
                             <Button
@@ -233,7 +236,7 @@ const NewPattern = ({
                                 sx={{ width: 1, backgroundColor: "var(--color-primary)", color: "var(--color-bg)", paddingY: 2 }}
                                 disabled={loading}
                             >
-                                {loading ? <CircularProgress size={24} /> : (isEditing ? 'Opslaan' : 'Save')}
+                                {loading ? <CircularProgress size={24} /> : t('newPattern.save')}
                             </Button>
                         </form>
                     </>

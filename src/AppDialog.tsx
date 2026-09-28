@@ -1,6 +1,7 @@
 import React from 'react';
 import { Dialog, IconButton } from '@mui/material';
 import { Close } from '@mui/icons-material';
+import { useT } from './i18n/LanguageProvider';
 
 const AppDialog = ({
     open,
@@ -13,6 +14,7 @@ const AppDialog = ({
     maxWidth?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
     children: React.ReactNode;
 }) => {
+    const t = useT();
     return (
         <Dialog
             open={open}
@@ -27,6 +29,7 @@ const AppDialog = ({
         >
             <IconButton
                 onClick={onClose}
+                aria-label={t('dialog.close')}
                 sx={{
                     position: 'absolute',
                     top: 12,

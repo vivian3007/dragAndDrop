@@ -16,10 +16,12 @@ import { filterAndSortAmigurumis, SortOption } from "./filterAmigurumis.ts";
 import { useDebouncedValue } from "./useDebouncedValue.ts";
 import { useStableArray } from "./useStableArray.ts";
 import { useResponsiveMinColumns } from "./useResponsiveMinColumns.ts";
+import { useT } from "./i18n/LanguageProvider";
 
 const MyPatterns = ({yarnInfo, intersections, setDroppedShapes} : {yarnInfo: Yarn, intersections: any, setDroppedShapes: React.Dispatch<React.SetStateAction<Shape[]>>}) => {
     const loggedInUser = auth.currentUser?.email;
     const minColumns = useResponsiveMinColumns();
+    const t = useT();
 
     const navigate = useNavigate();
     const [selectedAmigurumi, setSelectedAmigurumi] = useState<Amigurumi | null>(null);
@@ -100,16 +102,16 @@ const MyPatterns = ({yarnInfo, intersections, setDroppedShapes} : {yarnInfo: Yar
     }, []);
 
     const handleDeleteAmigurumi = useCallback(async (amigurumi: Amigurumi) => {
-        if (window.confirm(`Weet je zeker dat je "${amigurumi.name}" wilt verwijderen?`)) {
+        if (window.confirm(t('patterns.deleteConfirm', { name: amigurumi.name }))) {
             try {
                 await deleteDoc(doc(db, 'amigurumi', amigurumi.id));
                 // Optioneel: feedback/toast of refresh
             } catch (error) {
                 console.error('Fout bij verwijderen van amigurumi:', error);
-                alert('Fout bij verwijderen van amigurumi');
+                alert(t('patterns.deleteError'));
             }
         }
-    }, []);
+    },[t]);
 
     const filterActions = useMemo(() => (
         <Button
@@ -120,20 +122,20 @@ const MyPatterns = ({yarnInfo, intersections, setDroppedShapes} : {yarnInfo: Yar
             sx={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-bg)', paddingY: 1 }}
             onClick={() => setIsNewPatternOpen(true)}
         >
-            Nieuw patroon
+            {t('patterns.new')}
         </Button>
-    ), []);
+    ), [t]);
 
     if (loading) {
         return <CircularProgress />;
     }
 
     if (error) {
-        return <Typography color="error">Fout bij het ophalen van patronen: {error.message}</Typography>;
+        return <Typography color="error">{t('patterns.loadError', { message: error.message })}</Typography>;
     }
 
     if (!loggedInUser) {
-        return <Typography>Log in om je patronen te bekijken.</Typography>;
+        return <Typography>{t('patterns.loginRequired')}</Typography>;
     }
 
     return (
@@ -149,9 +151,9 @@ const MyPatterns = ({yarnInfo, intersections, setDroppedShapes} : {yarnInfo: Yar
                 actions={filterActions}
             />
             {amigurumis.length === 0 ? (
-                <Typography sx={{ px: { xs: '8px', sm: '24px', md: '40px' } }}>Geen patronen gevonden.</Typography>
+                <Typography sx={{ px: { xs: '8px', sm: '24px', md: '40px' } }}>{t('patterns.empty')}</Typography>
             ) : filteredAmigurumis.length === 0 ? (
-                <Typography sx={{ px: { xs: '8px', sm: '24px', md: '40px' } }}>Geen patronen gevonden voor deze zoekopdracht/filter.</Typography>
+                <Typography sx={{ px: { xs: '8px', sm: '24px', md: '40px' } }}>{t('patterns.noResults')}</Typography>
             ) : (
                 <MasonryGrid
                     className="my-pattern-container"

@@ -8,6 +8,8 @@ import AppDialog from './AppDialog.tsx';
 import { computePatternHeightCm, computePatternWidthCm } from './geometry/patternBounds';
 import NewPattern from './NewPattern.tsx';
 import ImagePlaceholder from './ImagePlaceholder.tsx';
+import { useIntl } from 'react-intl';
+import { useT } from './i18n/LanguageProvider';
 
 const PatternDetail = ({
     amigurumi: amigurumiProp,
@@ -19,6 +21,8 @@ const PatternDetail = ({
     onClose: () => void;
 }) => {
     const navigate = useNavigate();
+    const intl = useIntl();
+    const t = useT();
 
     const [amigurumi, setAmigurumi] = useState<Amigurumi | null>(amigurumiProp);
     const [yarn, setYarn] = useState<Yarn | null>(null);
@@ -122,7 +126,7 @@ const PatternDetail = ({
     const isOwner = amigurumi.user_id === auth.currentUser?.email;
 
     const createdDate = amigurumi.createdAt?.toDate
-        ? amigurumi.createdAt.toDate().toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })
+        ? intl.formatDate(amigurumi.createdAt.toDate(), { day: 'numeric', month: 'long', year: 'numeric' })
         : null;
 
     return (
@@ -146,6 +150,7 @@ const PatternDetail = ({
                                 onAnimationEnd={() => setIsHeartBouncing(false)}
                                 sx={{ color: 'var(--color-favorite)', fontSize: { xs: '2rem', sm: '2.5rem' }, cursor: 'pointer' }}
                                 onClick={() => { setIsHeartBouncing(true); handleFavoriteChange(); }}
+                                titleAccess={t('card.unfavorite')}
                             />
                         ) : (
                             <FavoriteBorder
@@ -153,6 +158,7 @@ const PatternDetail = ({
                                 onAnimationEnd={() => setIsHeartBouncing(false)}
                                 sx={{ color: 'var(--color-text)', fontSize: { xs: '2rem', sm: '2.5rem' }, cursor: 'pointer' }}
                                 onClick={() => { setIsHeartBouncing(true); handleFavoriteChange(); }}
+                                titleAccess={t('card.favorite')}
                             />
                         )}
                     </Box>
@@ -167,59 +173,59 @@ const PatternDetail = ({
                         ))}
                     </Box>
 
-                    <Typography sx={{ mb: 1 }}><strong>Aangemaakt:</strong> {createdDate ?? 'Onbekend'}</Typography>
+                    <Typography sx={{ mb: 1 }}><strong>{t('detail.created')}:</strong> {createdDate ?? t('detail.unknown')}</Typography>
                     {sizeLoading ? (
                         <CircularProgress size={16} sx={{ mb: 1 }} />
                     ) : (
                         <>
                             {heightCm ? (
-                                <Typography sx={{ mb: 1 }}><strong>Hoogte:</strong> {Math.round(heightCm)} cm</Typography>
+                                <Typography sx={{ mb: 1 }}><strong>{t('detail.height')}:</strong> {Math.round(heightCm)} cm</Typography>
                             ) : null}
                             {widthCm ? (
-                                <Typography sx={{ mb: 1 }}><strong>Breedte:</strong> {Math.round(widthCm)} cm</Typography>
+                                <Typography sx={{ mb: 1 }}><strong>{t('detail.width')}:</strong> {Math.round(widthCm)} cm</Typography>
                             ) : null}
                         </>
                     )}
 
-                    <h3 style={{ marginBottom: 10 }}>Garen</h3>
+                    <h3 style={{ marginBottom: 10 }}>{t('yarn.title')}</h3>
                     {yarnLoading ? (
                         <CircularProgress size={20} />
                     ) : yarn ? (
                         <Table size="small" className="detail-yarn-table">
                             <TableBody>
                                 <TableRow>
-                                    <TableCell>Naam</TableCell>
+                                    <TableCell>{t('yarn.name')}</TableCell>
                                     <TableCell>{yarn.name}</TableCell>
                                 </TableRow>
                                 <TableRow>
-                                    <TableCell>Kleur</TableCell>
+                                    <TableCell>{t('yarn.color')}</TableCell>
                                     <TableCell>{yarn.color}</TableCell>
                                 </TableRow>
                                 <TableRow>
-                                    <TableCell>Dikte</TableCell>
+                                    <TableCell>{t('yarn.weight')}</TableCell>
                                     <TableCell>{yarn.weight}</TableCell>
                                 </TableRow>
                                 <TableRow>
-                                    <TableCell>Materiaal</TableCell>
+                                    <TableCell>{t('yarn.material')}</TableCell>
                                     <TableCell>{yarn.material}</TableCell>
                                 </TableRow>
                                 <TableRow>
-                                    <TableCell>Haaknaald</TableCell>
+                                    <TableCell>{t('yarn.hooksize')}</TableCell>
                                     <TableCell>{yarn.hooksize} mm</TableCell>
                                 </TableRow>
                                 <TableRow>
-                                    <TableCell>Meter per bol</TableCell>
+                                    <TableCell>{t('yarn.mPerSkein')}</TableCell>
                                     <TableCell>{yarn.mPerSkein} m</TableCell>
                                 </TableRow>
                             </TableBody>
                         </Table>
                     ) : (
-                        <Typography>Geen garen gekoppeld aan dit patroon.</Typography>
+                        <Typography>{t('detail.noYarn')}</Typography>
                     )}
 
                     {amigurumi.notes ? (
                         <>
-                            <h3 style={{ marginTop: 20, marginBottom: 10 }}>Notities</h3>
+                            <h3 style={{ marginTop: 20, marginBottom: 10 }}>{t('detail.notes')}</h3>
                             <Typography sx={{ whiteSpace: 'pre-wrap' }}>{amigurumi.notes}</Typography>
                         </>
                     ) : null}
@@ -232,7 +238,7 @@ const PatternDetail = ({
                             sx={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-bg)', width: { xs: '100%', sm: 'auto' } }}
                             onClick={handlePatternClick}
                         >
-                            Bekijk patroon
+                            {t('detail.viewPattern')}
                         </Button>
                         {isOwner && (
                             <>
@@ -242,7 +248,7 @@ const PatternDetail = ({
                                     sx={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)', width: { xs: '100%', sm: 'auto' } }}
                                     onClick={() => setEditOpen(true)}
                                 >
-                                    Bewerken
+                                    {t('detail.edit')}
                                 </Button>
                                 <Button
                                     type="button"
@@ -250,7 +256,7 @@ const PatternDetail = ({
                                     sx={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)', width: { xs: '100%', sm: 'auto' } }}
                                     onClick={handleEditShapesClick}
                                 >
-                                    Amigurumi bewerken
+                                    {t('detail.editShapes')}
                                 </Button>
                             </>
                         )}

@@ -1,7 +1,6 @@
-import {useEffect} from "react";
-import {useLocation} from "react-router-dom";
+import {englishPatternTerms, PatternTerms} from "./patternTerms";
 
-const generateSpherePattern = (singleShape: Shape, yarnWeight: string, PIXELS_PER_CM: number, rowHeights: Record<string, number>, intersections, shapes: Shape[]) => {
+const generateSpherePattern = (singleShape: Shape, yarnWeight: string, PIXELS_PER_CM: number, rowHeights: Record<string, number>, intersections, shapes: Shape[], t: PatternTerms = englishPatternTerms) => {
     const rowHeight = rowHeights[yarnWeight] * PIXELS_PER_CM ?? 4;
     const shapeHeight = singleShape.width > singleShape.height ? singleShape.width : singleShape.height;
     const shapeWidth = singleShape.width > singleShape.height ? singleShape.height : singleShape.width;
@@ -90,7 +89,7 @@ const generateSpherePattern = (singleShape: Shape, yarnWeight: string, PIXELS_PE
     console.log(rowArray)
 
     for (let i = 1; i < incRows; i++) {
-        incArray.push(`Row ${rowArray[i + 1]}: [1inc, ${i}sc] * 6 (${12 + i * 6})`);
+        incArray.push(`${t.row(rowArray[i + 1])}: [${t.inc(1)}, ${t.sc(i)}] * 6 (${12 + i * 6})`);
     }
 
     console.log(singleShape.name, incRows);
@@ -100,8 +99,8 @@ const generateSpherePattern = (singleShape: Shape, yarnWeight: string, PIXELS_PE
     if (scRows > 0) {
         const startRow = incRows > 1 ? incRows + 2 : incRows + 1;
         const endRow = incRows + scRows;
-        const rowText = scRows === 1 ? `Row ${startRow}` : `Row ${startRow}-${endRow}`;
-        scArray.push(`${rowText}: ${maxStitches}sc (${maxStitches})`);
+        const rowText = scRows === 1 ? t.row(startRow) : t.row(`${startRow}-${endRow}`);
+        scArray.push(`${rowText}: ${t.sc(maxStitches)} (${maxStitches})`);
     }
 
     let currentStitches = maxStitches;
@@ -109,7 +108,7 @@ const generateSpherePattern = (singleShape: Shape, yarnWeight: string, PIXELS_PE
     for (let i = 0; i < decRows - 1; i++) {
         currentStitches -= 6;
         const rowIndex = incRows + scRows + i;
-        decArray.push(`Row ${rowArray[rowIndex]}: [1dec, ${decRows - i - 1}sc] * 6 (${currentStitches})`);
+        decArray.push(`${t.row(rowArray[rowIndex])}: [${t.dec(1)}, ${t.sc(decRows - i - 1)}] * 6 (${currentStitches})`);
     }
 
     return {

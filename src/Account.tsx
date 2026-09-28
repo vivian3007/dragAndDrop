@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
 import { Box, Typography, CircularProgress, Card, CardContent, Avatar, Button } from '@mui/material';
 import { auth } from '../firebase-config.js';
+import { useT } from './i18n/LanguageProvider';
 
 const Account: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const t = useT();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -70,19 +72,19 @@ const Account: React.FC = () => {
       >
         <Card sx={{ padding: 3, backgroundColor: 'var(--color-bg-card)' }}>
           <Typography component="h1" variant="h5" sx={{ textAlign: 'center', color: 'var(--color-text)' }}>
-            Account
+            {t('account.title')}
           </Typography>
           <CardContent sx={{ textAlign: 'center' }}>
             <Avatar
               src={user.photoURL || "../img/avatar.jpg"}
-              alt={user.displayName || 'User'}
+              alt={user.displayName || t('nav.account')}
               sx={{ width: 100, height: 100, mx: 'auto', mb: 2 }}
             />
             <Typography variant="body1" sx={{ color: 'var(--color-text)' }} gutterBottom>
-              Name: {user.displayName || 'Vivian Vlaanderen'}
+              {t('account.name')}: {user.displayName || 'Vivian Vlaanderen'}
             </Typography>
             <Typography variant="body1" sx={{ color: 'var(--color-text)' }} gutterBottom>
-              Email: {user.email || 'N/A'}
+              {t('account.email')}: {user.email || t('account.notAvailable')}
             </Typography>
             <Typography variant="body2" sx={{ color: 'var(--color-text)' }} gutterBottom>
               UID: {user.uid}
@@ -93,7 +95,7 @@ const Account: React.FC = () => {
                 sx={{ mt: 3, mb: 2, backgroundColor: "var(--color-primary)", color: "var(--color-bg)" }}
                 onClick={handleLogout}
               >
-                Log Out
+                {t('account.logOut')}
               </Button>
             </Box>
           </CardContent>

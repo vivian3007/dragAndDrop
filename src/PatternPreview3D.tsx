@@ -5,6 +5,7 @@ import Sphere from './Sphere.tsx';
 import Arm from './Arm.tsx';
 import { computePatternBox } from './geometry/patternBounds';
 import calculateIntersections from './calculateIntersections';
+import { useT } from './i18n/LanguageProvider';
 
 const shapeComponents: { [key: string]: React.ComponentType<any> } = {
     Sphere,
@@ -75,10 +76,11 @@ function IntersectionReporter({ shapes, onIntersections }: { shapes: Shape[]; on
 const PatternPreview3D = ({ shapes, onIntersections }: { shapes: Shape[]; onIntersections?: (intersections: any[]) => void }) => {
     const box = useMemo(() => computePatternBox(shapes), [shapes]);
     const dummyOrbitControlsRef = useRef<any>(null);
+    const t = useT();
 
     if (!shapes || shapes.length === 0 || !box) {
         return (
-            <div className="pattern-preview-empty">Geen 3D-voorbeeld beschikbaar</div>
+            <div className="pattern-preview-empty">{t("pattern.noPreview")}</div>
         );
     }
 

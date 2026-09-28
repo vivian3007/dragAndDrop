@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
+import { useT } from "./i18n/LanguageProvider";
 import React, {Ref, useEffect, useRef, useState} from "react";
 import Trashcan from "./Trashcan.tsx";
 import * as THREE from "three";
@@ -16,6 +17,7 @@ function Shapebar({ setDroppedShapes, setActiveId, threeJsContainerRef, dragging
         { type: "Sphere", label: "Sphere" },
     ];
 
+    const t = useT();
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [currentShape, setCurrentShape] = useState<string | null>(null);
     const dragItemRef = useRef<HTMLDivElement | null>(null);
@@ -128,7 +130,7 @@ function Shapebar({ setDroppedShapes, setActiveId, threeJsContainerRef, dragging
                     await setDoc(shapeRef, shapeData);
                 } catch (error) {
                     console.error("Error saving shape to Firestore:", error);
-                    alert("Error saving shape: " + error);
+                    alert(t("errors.saveShape", { message: String(error) }));
                 }
             }
         }
@@ -161,7 +163,7 @@ function Shapebar({ setDroppedShapes, setActiveId, threeJsContainerRef, dragging
     return (
         <div className="shapebar">
 
-            <h1 className="shapes-text">Shapes</h1>
+            <h1 className="shapes-text">{t("shapebar.title")}</h1>
             <div className={"draggables"}>
                 {shapes.map((shape, index) => {
                     return (

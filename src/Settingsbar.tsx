@@ -8,6 +8,8 @@ import { ColorResult } from '@uiw/color-convert';
 import YarnSettings, { YarnSettingsHandle } from "./YarnSettings.tsx";
 import ShapeSettings from "./ShapeSettings.tsx"
 import AppDialog from "./AppDialog.tsx";
+import { FormattedMessage } from "react-intl";
+import { useT } from "./i18n/LanguageProvider";
 function Settingsbar({
                                         activeShape,
                                         onUpdateShape,
@@ -35,6 +37,7 @@ function Settingsbar({
     const [pendingLeaveAction, setPendingLeaveAction] = useState<(() => void) | null>(null)
     const yarnSettingsRef = useRef<YarnSettingsHandle>(null);
     const navigate = useNavigate();
+    const t = useT();
     const currentAmigurumiId = localStorage.getItem("amigurumi")
 
     const goToPattern = () => {
@@ -82,11 +85,11 @@ function Settingsbar({
                     variant="fullWidth"
                     className="settings-bar-tabs"
                 >
-                    <Tab label="Shape settings" disableRipple />
-                    <Tab label="Yarn settings" disableRipple />
+                    <Tab label={t("editor.tab.shape")} disableRipple />
+                    <Tab label={t("editor.tab.yarn")} disableRipple />
                 </Tabs>
                 <IconButton
-                    aria-label="Help"
+                    aria-label={t("editor.help")}
                     size="small"
                     className="settings-bar-help-btn"
                     onClick={() => setShowHelp(true)}
@@ -108,7 +111,7 @@ function Settingsbar({
                         sx={{width: 1, backgroundColor: "var(--color-primary)", color: "var(--color-bg)", marginBottom: "10px"}}
                         onClick={() => onDeleteShape(activeShape.id)}
                     >
-                        Delete shape
+                        {t("editor.deleteShape")}
                     </Button>
                 )}
                 {showYarnSettings && (
@@ -121,10 +124,10 @@ function Settingsbar({
                             sx={{width: 1, backgroundColor: "var(--color-primary)", color: "var(--color-bg)"}}
                             onClick={() => yarnSettingsRef.current?.save()}
                         >
-                            Save
+                            {t("editor.save")}
                         </Button>
                         {yarnDirty && (
-                            <span className="unsaved-badge">Unsaved changes</span>
+                            <span className="unsaved-badge">{t("editor.unsavedChanges")}</span>
                         )}
                     </div>
                 )}
@@ -135,13 +138,13 @@ function Settingsbar({
                     disabled={!droppedShapes || droppedShapes.length < 1}
                     onClick={handlePatternNavigation}
                 >
-                    Pattern
+                    {t("editor.pattern")}
                 </Button>
             </div>
             <AppDialog open={pendingLeaveAction !== null} onClose={() => setPendingLeaveAction(null)} maxWidth="xs">
                 <div style={{padding: "32px 24px 24px", textAlign: "center"}}>
-                    <h2 style={{marginTop: 0}}>Unsaved yarn settings</h2>
-                    <p>You've changed the yarn settings but haven't saved them yet. Leaving now will discard those changes.</p>
+                    <h2 style={{marginTop: 0}}>{t("editor.unsavedYarn.title")}</h2>
+                    <p>{t("editor.unsavedYarn.body")}</p>
                     <div style={{display: "flex", flexDirection: "column", gap: "10px", marginTop: "20px"}}>
                         <Button
                             variant="contained"
@@ -149,7 +152,7 @@ function Settingsbar({
                             sx={{width: 1, backgroundColor: "var(--color-primary)", color: "var(--color-bg)"}}
                             onClick={handleSaveAndLeave}
                         >
-                            Save & leave
+                            {t("editor.unsavedYarn.saveAndLeave")}
                         </Button>
                         <Button
                             variant="outlined"
@@ -157,7 +160,7 @@ function Settingsbar({
                             sx={{width: 1, borderColor: "var(--color-secondary)", color: "var(--color-text)"}}
                             onClick={handleDiscardAndLeave}
                         >
-                            Leave without saving
+                            {t("editor.unsavedYarn.leave")}
                         </Button>
                         <Button
                             variant="text"
@@ -165,29 +168,29 @@ function Settingsbar({
                             sx={{width: 1, color: "var(--color-text)"}}
                             onClick={() => setPendingLeaveAction(null)}
                         >
-                            Cancel
+                            {t("editor.unsavedYarn.cancel")}
                         </Button>
                     </div>
                 </div>
             </AppDialog>
             <AppDialog open={showHelp} onClose={() => setShowHelp(false)} maxWidth="sm">
                 <div style={{padding: "32px 24px 24px"}}>
-                    <h2 style={{marginTop: 0, textAlign: "center"}}>How it works</h2>
-                    <h3 className="shape-settings-title">Getting started</h3>
+                    <h2 style={{marginTop: 0, textAlign: "center"}}>{t("editor.helpDialog.title")}</h2>
+                    <h3 className="shape-settings-title">{t("editor.helpDialog.gettingStarted")}</h3>
                     <ol className="steps">
-                        <li>Go to <b>yarn settings</b> and fill in the details about your yarn</li>
-                        <li><b>Drag a shape</b> from the sidebar on the left and drop it on the canvas</li>
-                        <li>Modify the shape with the <b>settings</b> in the bar on the right, or with the <b>transform functions</b></li>
-                        <li>When happy with your amigurumi, click on the <b>'pattern' button</b> in the sidebar on the right</li>
+                        <li><FormattedMessage id="editor.helpDialog.step1" values={{ b: (chunks) => <b>{chunks}</b> }} /></li>
+                        <li><FormattedMessage id="editor.helpDialog.step2" values={{ b: (chunks) => <b>{chunks}</b> }} /></li>
+                        <li><FormattedMessage id="editor.helpDialog.step3" values={{ b: (chunks) => <b>{chunks}</b> }} /></li>
+                        <li><FormattedMessage id="editor.helpDialog.step4" values={{ b: (chunks) => <b>{chunks}</b> }} /></li>
                     </ol>
                     <hr className="help-divider" />
-                    <h3 className="shape-settings-title">Keyboard shortcuts</h3>
+                    <h3 className="shape-settings-title">{t("editor.helpDialog.shortcuts")}</h3>
                     <div className="shortcut-grid">
-                        <div className="shortcut-row"><kbd>G</kbd><span>Toggle grid</span></div>
-                        <div className="shortcut-row"><kbd>T</kbd><span>Move (translate) selected shape</span></div>
-                        <div className="shortcut-row"><kbd>R</kbd><span>Rotate selected shape</span></div>
-                        <div className="shortcut-row"><kbd>S</kbd><span>Scale selected shape</span></div>
-                        <div className="shortcut-row"><kbd>Delete</kbd><span>Delete selected shape</span></div>
+                        <div className="shortcut-row"><kbd>G</kbd><span>{t("editor.shortcut.grid")}</span></div>
+                        <div className="shortcut-row"><kbd>T</kbd><span>{t("editor.shortcut.translate")}</span></div>
+                        <div className="shortcut-row"><kbd>R</kbd><span>{t("editor.shortcut.rotate")}</span></div>
+                        <div className="shortcut-row"><kbd>S</kbd><span>{t("editor.shortcut.scale")}</span></div>
+                        <div className="shortcut-row"><kbd>Delete</kbd><span>{t("editor.shortcut.delete")}</span></div>
                     </div>
                 </div>
             </AppDialog>

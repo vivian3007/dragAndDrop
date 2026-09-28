@@ -14,10 +14,12 @@ import { filterAndSortAmigurumis, SortOption } from "./filterAmigurumis.ts";
 import { useDebouncedValue } from "./useDebouncedValue.ts";
 import { useStableArray } from "./useStableArray.ts";
 import { useResponsiveMinColumns } from "./useResponsiveMinColumns.ts";
+import { useT } from "./i18n/LanguageProvider";
 
 const Homepage = ({yarnInfo, intersections} : {yarnInfo: Yarn, intersections: any}) => {
     const navigate = useNavigate();
     const minColumns = useResponsiveMinColumns();
+    const t = useT();
     const loggedInUser = auth.currentUser?.email;
     const [selectedAmigurumi, setSelectedAmigurumi] = useState<Amigurumi | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
@@ -91,22 +93,22 @@ const Homepage = ({yarnInfo, intersections} : {yarnInfo: Yarn, intersections: an
     }, []);
 
     const handleDeleteAmigurumi = useCallback(async (amigurumi: Amigurumi) => {
-        if (window.confirm(`Weet je zeker dat je "${amigurumi.name}" wilt verwijderen?`)) {
+        if (window.confirm(t('patterns.deleteConfirm', { name: amigurumi.name }))) {
             try {
                 await deleteDoc(doc(db, 'amigurumi', amigurumi.id));
             } catch (error) {
                 console.error('Fout bij verwijderen van amigurumi:', error);
-                alert('Fout bij verwijderen van amigurumi');
+                alert(t('patterns.deleteError'));
             }
         }
-    }, []);
+    },[t]);
 
     if (loading) {
         return <CircularProgress />;
     }
 
     if (error) {
-        return <Typography color="error">Fout bij het ophalen van patronen: {error.message}</Typography>;
+        return <Typography color="error">{t('patterns.loadError', { message: error.message })}</Typography>;
     }
 
     return (
@@ -121,7 +123,7 @@ const Homepage = ({yarnInfo, intersections} : {yarnInfo: Yarn, intersections: an
                 onSortChange={setSortBy}
             />
             {filteredAmigurumis.length === 0 ? (
-                <Typography sx={{ px: { xs: '8px', sm: '24px', md: '40px' } }}>Geen patronen gevonden voor deze zoekopdracht/filter.</Typography>
+                <Typography sx={{ px: { xs: '8px', sm: '24px', md: '40px' } }}>{t('patterns.noResults')}</Typography>
             ) : (
                 <MasonryGrid
                     className="my-pattern-container"

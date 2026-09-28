@@ -592,51 +592,75 @@ body {
     color: var(--color-text);
 }
 
-/* Referentie-kaart (steek-afkortingen) — bewust rustiger dan de instructie-kaarten,
-   zodat die er duidelijk anders uitzien dan de uit te voeren stappen. */
+/* Naslagkaarten (materialen + afkortingen) — bewust rustiger dan de instructie-kaarten,
+   zodat die er duidelijk anders uitzien dan de uit te voeren stappen. Naast elkaar zolang
+   er ruimte is, anders onder elkaar; even hoog, zodat ze als één blok lezen. */
+.pattern-reference-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    align-items: stretch;
+}
+
 .pattern-card--legend {
     background-color: var(--color-accent-soft) !important;
     box-shadow: none !important;
 }
 
-.pattern-legend-grid {
+/* Materialen: label/waarde-rijen met een dunne scheidingslijn, geen opsommingstekens. */
+.pattern-info-list {
     display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 6px 14px;
+    grid-template-columns: max-content 1fr;
+    column-gap: 16px;
     margin: 0;
 }
 
-.pattern-legend-grid dt {
-    font-weight: 700;
-    color: var(--color-primary);
+.pattern-info-list dt,
+.pattern-info-list dd {
+    padding: 9px 0;
+    border-top: 1px solid rgba(var(--shadow-color), 0.14);
 }
 
-.pattern-legend-grid dd {
+.pattern-info-list dt:first-of-type,
+.pattern-info-list dt:first-of-type + dd {
+    border-top: none;
+    padding-top: 0;
+}
+
+.pattern-info-list dt {
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-secondary);
+    padding-top: 11px;
+}
+
+.pattern-info-list dt:first-of-type {
+    padding-top: 2px;
+}
+
+.pattern-info-list dd {
     margin: 0;
+    line-height: 1.4;
 }
 
-.pattern-legend-subtitle {
-    margin: 16px 0 8px;
-    font-size: 1rem;
+.pattern-info-strong {
+    font-weight: 600;
 }
 
-.pattern-legend-note {
-    margin: 12px 0 0;
-}
-
-.pattern-materials-list {
-    margin: 0;
-    padding-left: 18px;
-    display: grid;
-    gap: 6px;
+.pattern-info-muted {
+    display: block;
+    font-size: 0.9rem;
+    opacity: 0.75;
 }
 
 .pattern-color-list {
     list-style: none;
-    margin: 6px 0 0;
+    margin: 0;
     padding: 0;
     display: grid;
-    gap: 4px;
+    gap: 6px;
 }
 
 .pattern-color-list li {
@@ -646,11 +670,77 @@ body {
 }
 
 .pattern-color-swatch {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
     border-radius: 50%;
-    border: 1px solid rgba(0, 0, 0, 0.2);
+    border: 2px solid var(--color-bg-card);
+    box-shadow: 0 0 0 1px rgba(var(--shadow-color), 0.3);
     flex-shrink: 0;
+}
+
+/* Afkortingen: de afkorting als pilletje, de betekenis ernaast. De <dl>'s en de tussenkop
+   zijn `display: contents`, zodat alles in één raster valt en beide lijstjes dezelfde
+   kolombreedte delen. */
+.pattern-legend-grid {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 8px 12px;
+    align-items: baseline;
+}
+
+.pattern-legend-group {
+    display: contents;
+}
+
+.pattern-legend-grid .pattern-legend-subtitle {
+    grid-column: 1 / -1;
+}
+
+.pattern-legend-grid dt {
+    justify-self: start;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background-color: var(--color-bg-card);
+    color: var(--color-primary);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.pattern-legend-grid dd {
+    margin: 0;
+    line-height: 1.4;
+}
+
+.pattern-legend-subtitle {
+    margin: 10px 0 2px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-secondary);
+}
+
+.pattern-legend-note {
+    margin: 16px 0 0;
+    padding: 10px 12px;
+    border-left: 4px solid var(--color-secondary);
+    border-radius: 8px;
+    background-color: var(--color-bg-card);
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+/* Smal scherm: bij de materialen is het label boven de waarde rustiger dan twee smalle
+   kolommen. De afkortingen blijven naast elkaar staan; die pilletjes zijn kort genoeg. */
+@media (max-width: 480px) {
+    .pattern-info-list {
+        grid-template-columns: 1fr;
+    }
+
+    .pattern-info-list dd {
+        border-top: none;
+        padding-top: 0;
+    }
 }
 
 /* Instructie-kaart per vorm — gekleurde accentrand in de kleur van die vorm koppelt de

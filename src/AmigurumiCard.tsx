@@ -3,6 +3,7 @@ import { Box, Button, Card, Chip, IconButton } from '@mui/material';
 import { Favorite, FavoriteBorder, Delete } from '@mui/icons-material';
 import { useStableArray } from './useStableArray.ts';
 import ImagePlaceholder from './ImagePlaceholder.tsx';
+import { useT } from './i18n/LanguageProvider';
 
 const ACTION_HEIGHT = 40;
 
@@ -64,7 +65,9 @@ const areButtonsPropsEqual = (prev: AmigurumiCardButtonsProps, next: AmigurumiCa
 
 // Rendered as a Fragment (no wrapping element) so it can live inside the same flex row as the
 // heart button below, while still being skippable on its own when only `favorite` changes.
-const AmigurumiCardButtons = React.memo(({ onPatternClick, onDeleteClick }: AmigurumiCardButtonsProps) => (
+const AmigurumiCardButtons = React.memo(({ onPatternClick, onDeleteClick }: AmigurumiCardButtonsProps) => {
+    const t = useT();
+    return (
     <>
         <Button
             type="button"
@@ -73,20 +76,22 @@ const AmigurumiCardButtons = React.memo(({ onPatternClick, onDeleteClick }: Amig
             sx={{flex: 1, backgroundColor: "var(--color-primary)", color: "var(--color-bg)", height: ACTION_HEIGHT}}
             onClick={onPatternClick}
         >
-            Pattern
+            {t('card.pattern')}
         </Button>
         {onDeleteClick && (
             <IconButton
                 size="small"
                 onClick={onDeleteClick}
                 sx={actionIconButtonSx}
-                title="Verwijder patroon"
+                title={t('card.delete')}
+                aria-label={t('card.delete')}
             >
                 <Delete sx={{color: 'var(--color-text)', fontSize: '1.25rem'}} />
             </IconButton>
         )}
     </>
-), areButtonsPropsEqual);
+    );
+}, areButtonsPropsEqual);
 
 const AmigurumiCard = ({
     amigurumi,
@@ -102,6 +107,7 @@ const AmigurumiCard = ({
     onCardClick?: (amigurumi: Amigurumi) => void;
 }) => {
     const [isHeartBouncing, setIsHeartBouncing] = useState(false);
+    const t = useT();
 
     // Keeps handlers below referentially stable across renders (e.g. when only `favorite` changes)
     // even though `amigurumi` itself is a fresh object on every Firestore snapshot.
@@ -146,6 +152,7 @@ const AmigurumiCard = ({
                 <IconButton
                     size="small"
                     onClick={handleFavoriteClick}
+                    aria-label={t(amigurumi.favorite ? 'card.unfavorite' : 'card.favorite')}
                     sx={actionIconButtonSx}
                 >
                     {amigurumi.favorite ? (

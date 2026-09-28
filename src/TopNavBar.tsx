@@ -16,11 +16,13 @@ import {
 import { NavLink, useLocation } from "react-router-dom";
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import MenuIcon from '@mui/icons-material/Menu';
+import LanguageSelect from "./i18n/LanguageSelect";
+import { useT } from "./i18n/LanguageProvider";
 
 const navLinks = [
-    { to: "/home", label: "Home" },
-    { to: "/myPatterns", label: "My patterns" },
-    { to: "/favorites", label: "Favorite patterns" },
+    { to: "/home", labelId: "nav.home" },
+    { to: "/myPatterns", labelId: "nav.myPatterns" },
+    { to: "/favorites", labelId: "nav.favorites" },
 ];
 
 function TopNavBar() {
@@ -30,6 +32,7 @@ function TopNavBar() {
     // breedte is er geen ruimte meer voor drie navlinks + avatar op één rij.
     const isCompact = useMediaQuery(theme.breakpoints.down('md'));
     const [drawerOpen, setDrawerOpen] = useState(false);
+    const t = useT();
 
     if (location.pathname === '/') {
         return null;
@@ -59,7 +62,7 @@ function TopNavBar() {
                     {isCompact ? (
                         <IconButton
                             onClick={() => setDrawerOpen(true)}
-                            aria-label="Menu openen"
+                            aria-label={t("nav.openMenu")}
                             sx={{ color: "var(--color-bg)" }}
                         >
                             <MenuIcon fontSize="large" />
@@ -71,11 +74,12 @@ function TopNavBar() {
                                 to={link.to}
                                 className={({ isActive }) => `navbar-button ${isActive ? 'active' : ''}`}
                             >
-                                {link.label}
+                                {t(link.labelId)}
                             </NavLink>
                         ))
                     )}
-                    <Box sx={{ ml: "auto", mr: { xs: "2vw", md: "1.5vw" }, display: "flex", alignItems: "center" }}>
+                    <Box sx={{ ml: "auto", mr: { xs: "2vw", md: "1.5vw" }, display: "flex", alignItems: "center", gap: 2 }}>
+                        <LanguageSelect />
                         <NavLink
                             to={"/account"}
                             className={({ isActive }) => `navbar-button ${isActive ? 'active' : ''}`}
@@ -83,7 +87,7 @@ function TopNavBar() {
                         >
                             <Avatar
                                 src={"../img/avatar.jpg"}
-                                alt={'User'}
+                                alt={t("nav.account")}
                                 sx={{ height: { xs: "5.5vh", md: "6vh" }, width: { xs: "5.5vh", md: "6vh" }, mx: 'auto' }}
                             />
                             <KeyboardArrowDownIcon sx={{ fontSize: "2rem", ml: 1 }} />
@@ -102,7 +106,7 @@ function TopNavBar() {
                     <List>
                         {navLinks.map((link) => (
                             <ListItemButton key={link.to} component={NavLink} to={link.to} sx={{ color: 'var(--color-text)', py: 1.5 }}>
-                                <ListItemText primary={link.label} primaryTypographyProps={{ fontWeight: 600 }} />
+                                <ListItemText primary={t(link.labelId)} primaryTypographyProps={{ fontWeight: 600 }} />
                             </ListItemButton>
                         ))}
                     </List>

@@ -3,6 +3,7 @@ import { db } from "../firebase-config.js";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import {v4 as uuidv4} from "uuid";
 import {toast} from "react-toastify";
+import { useT } from "./i18n/LanguageProvider";
 
 export type YarnSettingsHandle = {
     save: () => void;
@@ -18,6 +19,7 @@ const YarnSettings = forwardRef<YarnSettingsHandle, {onUpdateYarnInfo: any,  yar
     const [color, setColor] = useState<string | null>(null);
     const [dirty, setDirty] = useState(false);
     const storedAmigurumi = localStorage.getItem("amigurumi");
+    const t = useT();
 
     const yarnWeights = [
         { value: "Lace" },
@@ -61,11 +63,11 @@ const YarnSettings = forwardRef<YarnSettingsHandle, {onUpdateYarnInfo: any,  yar
             });
 
             setDirty(false);
-            toast.success("Yarn opgeslagen en gekoppeld aan amigurumi!");
+            toast.success(t("yarnSettings.saved"));
             console.log("Yarn data saved successfully:", yarnData);
         } catch (error) {
             console.error("Fout bij opslaan yarn:", error);
-            toast.error("Fout bij opslaan: " + (error as Error).message);
+            toast.error(t("yarnSettings.saveError", { message: (error as Error).message }));
         }
     };
 
@@ -92,9 +94,9 @@ const YarnSettings = forwardRef<YarnSettingsHandle, {onUpdateYarnInfo: any,  yar
     return (
         <form>
             <div className="shape-settings-group">
-                <h3 className="shape-settings-title">General info</h3>
+                <h3 className="shape-settings-title">{t("shapeSettings.general")}</h3>
                 <div className="input-text">
-                    <label htmlFor="yarn-name">Name: </label>
+                    <label htmlFor="yarn-name">{t("yarn.name")}: </label>
                     <input
                         type="text"
                         id="yarn-name"
@@ -104,11 +106,11 @@ const YarnSettings = forwardRef<YarnSettingsHandle, {onUpdateYarnInfo: any,  yar
                             setDirty(true)
                         }}
                         required={true}
-                        placeholder="Soft Pink"
+                        placeholder={t("yarnSettings.namePlaceholder")}
                     />
                 </div>
                 <div className="input-text">
-                    <label htmlFor="yarn-material">Material: </label>
+                    <label htmlFor="yarn-material">{t("yarn.material")}: </label>
                     <input
                         type="text"
                         id="yarn-material"
@@ -118,11 +120,11 @@ const YarnSettings = forwardRef<YarnSettingsHandle, {onUpdateYarnInfo: any,  yar
                             setDirty(true)
                         }}
                         required={true}
-                        placeholder="Cotton"
+                        placeholder={t("yarnSettings.materialPlaceholder")}
                     />
                 </div>
                 <div className="input-text">
-                    <label htmlFor="yarn-color">Color: </label>
+                    <label htmlFor="yarn-color">{t("yarn.color")}: </label>
                     <input
                         type="text"
                         id="yarn-color"
@@ -132,14 +134,14 @@ const YarnSettings = forwardRef<YarnSettingsHandle, {onUpdateYarnInfo: any,  yar
                             setDirty(true)
                         }}
                         required={true}
-                        placeholder="Pink"
+                        placeholder={t("yarnSettings.colorPlaceholder")}
                     />
                 </div>
             </div>
             <div className="shape-settings-group">
-                <h3 className="shape-settings-title">Specifications</h3>
+                <h3 className="shape-settings-title">{t("yarnSettings.specifications")}</h3>
                 <div className="input-text">
-                    <label htmlFor="yarn-weight">Yarn weight: </label>
+                    <label htmlFor="yarn-weight">{t("yarn.weight")}: </label>
                     <select
                         id="yarn-weight"
                         value={weight ?? ""}
@@ -150,17 +152,17 @@ const YarnSettings = forwardRef<YarnSettingsHandle, {onUpdateYarnInfo: any,  yar
                         required={true}
                     >
                         <option value="">
-                            Weight
+                            {t("yarn.weight")}
                         </option>
                         {yarnWeights.map((yarnWeight) => (
                             <option key={yarnWeight.value} value={yarnWeight.value}>
-                                {yarnWeight.value}
+                                {t(`yarnWeight.${yarnWeight.value}`)}
                             </option>
                         ))}
                     </select>
                 </div>
                 <div className="input-text">
-                    <label htmlFor="yarn-mPerSkein">Meters per skein: </label>
+                    <label htmlFor="yarn-mPerSkein">{t("yarn.mPerSkein")}: </label>
                     <input
                         type="number"
                         id="yarn-mPerSkein"
@@ -176,7 +178,7 @@ const YarnSettings = forwardRef<YarnSettingsHandle, {onUpdateYarnInfo: any,  yar
                     />
                 </div>
                 <div className="input-text">
-                    <label htmlFor="yarn-hooksize">Hooksize: </label>
+                    <label htmlFor="yarn-hooksize">{t("yarnSettings.hooksizeMm")}: </label>
                     <input
                         type="number"
                         id="yarn-hooksize"

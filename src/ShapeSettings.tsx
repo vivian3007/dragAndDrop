@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import Trashcan from "./Trashcan.tsx";
 import { HexColorPicker } from "react-colorful";
 import { PIXELS_PER_CM } from "./geometry/units";
+import { useT } from "./i18n/LanguageProvider";
 
 const ColorPicker = memo(function ColorPicker({ color, onColorChange }: { color: string; onColorChange: (newColor: string) => void }) {
     return (
@@ -28,6 +29,7 @@ function ShapeSettings({
     setShapeColor: any,
     droppedShapes: [],
 }) {
+    const t = useT();
     const [width, setWidth] = useState<number | null>(null);
     const [height, setHeight] = useState<number | null>(null);
     const [length, setLength] = useState<number | null>(null);
@@ -230,21 +232,21 @@ function ShapeSettings({
                 {activeShape ? (
                     <form>
                         <div className="shape-settings-group">
-                            <h3 className="shape-settings-title">General info</h3>
+                            <h3 className="shape-settings-title">{t("shapeSettings.general")}</h3>
                             <div className="input-text">
-                                <label>Name: </label>
+                                <label htmlFor="part">{t("shapeSettings.name")}: </label>
                                 <input
                                     type="text"
                                     id="part"
                                     value={displayName ?? ""}
                                     onChange={handleNameChange}
                                     required={true}
-                                    placeholder="Head"
+                                    placeholder={t("shapeSettings.namePlaceholder")}
                                 />
                             </div>
                         </div>
                         <div className="shape-settings-group">
-                            <h3 className="shape-settings-title">Position</h3>
+                            <h3 className="shape-settings-title">{t("shapeSettings.position")}</h3>
                             <div className="input-text">
                                 <label htmlFor="x">X: </label>
                                 <input
@@ -254,7 +256,7 @@ function ShapeSettings({
                                     onChange={handleXChange}
                                     step="1"
                                     required={true}
-                                    placeholder="Give this part a x"
+                                    placeholder="X"
                                 />
                             </div>
                             <div className="input-text">
@@ -266,7 +268,7 @@ function ShapeSettings({
                                     onChange={handleYChange}
                                     step="1"
                                     required={true}
-                                    placeholder="Give this part a y"
+                                    placeholder="Y"
                                 />
                             </div>
                             <div className="input-text">
@@ -278,12 +280,12 @@ function ShapeSettings({
                                     onChange={handleZChange}
                                     step="1"
                                     required={true}
-                                    placeholder="Give this part a z"
+                                    placeholder="Z"
                                 />
                             </div>
                         </div>
                         <div className="shape-settings-group">
-                            <h3 className="shape-settings-title">Scaling</h3>
+                            <h3 className="shape-settings-title">{t("shapeSettings.scaling")}</h3>
                             <div
                                 style={{
                                     display: "flex",
@@ -300,7 +302,7 @@ function ShapeSettings({
                                         color: "#333",
                                     }}
                                 >
-                                    Lock aspect ratio
+                                    {t("shapeSettings.lockAspectRatio")}
                                 </label>
                                 <Checkbox
                                     id="aspect-ratio"
@@ -321,7 +323,7 @@ function ShapeSettings({
                                 />
                             </div>
                             <div className="input-text">
-                                <label htmlFor="width">Width (cm): </label>
+                                <label htmlFor="width">{t("shapeSettings.width")}: </label>
                                 <input
                                     type="number"
                                     id="width"
@@ -330,11 +332,11 @@ function ShapeSettings({
                                     min="1"
                                     step="1"
                                     required={true}
-                                    placeholder="Give this part a width"
+                                    placeholder={t("shapeSettings.width")}
                                 />
                             </div>
                             <div className="input-text">
-                                <label htmlFor="height">Height (cm): </label>
+                                <label htmlFor="height">{t("shapeSettings.height")}: </label>
                                 <input
                                     type="number"
                                     id="height"
@@ -343,11 +345,11 @@ function ShapeSettings({
                                     min="1"
                                     step="1"
                                     required={true}
-                                    placeholder="Give this part a height"
+                                    placeholder={t("shapeSettings.height")}
                                 />
                             </div>
                             <div className="input-text">
-                                <label htmlFor="length">Length (cm): </label>
+                                <label htmlFor="length">{t("shapeSettings.length")}: </label>
                                 <input
                                     type="number"
                                     id="length"
@@ -356,7 +358,7 @@ function ShapeSettings({
                                     min="1"
                                     step="1"
                                     required={true}
-                                    placeholder="Give this part a length"
+                                    placeholder={t("shapeSettings.length")}
                                 />
                             </div>
                             {/*<div className="input-text">*/}
@@ -373,9 +375,9 @@ function ShapeSettings({
                             {/*</div>*/}
                         </div>
                         <div className="shape-settings-group">
-                            <h3 className="shape-settings-title">Rotation</h3>
+                            <h3 className="shape-settings-title">{t("shapeSettings.rotation")}</h3>
                             <div className="input-text">
-                                <label htmlFor="rotationX">Rotation x: </label>
+                                <label htmlFor="rotationX">{t("shapeSettings.rotationAxis", { axis: "x" })}: </label>
                                 <input
                                     type="number"
                                     id="rotationX"
@@ -384,11 +386,11 @@ function ShapeSettings({
                                     min="0"
                                     step="1"
                                     // required={true}
-                                    placeholder="Give this part a x rotation"
+                                    placeholder={t("shapeSettings.rotationAxis", { axis: "x" })}
                                 />
                             </div>
                             <div className="input-text">
-                                <label htmlFor="rotationY">Rotation y: </label>
+                                <label htmlFor="rotationY">{t("shapeSettings.rotationAxis", { axis: "y" })}: </label>
                                 <input
                                     type="number"
                                     id="rotationY"
@@ -397,11 +399,11 @@ function ShapeSettings({
                                     min="0"
                                     step="1"
                                     // required={true}
-                                    placeholder="Give this part a y rotation"
+                                    placeholder={t("shapeSettings.rotationAxis", { axis: "y" })}
                                 />
                             </div>
                             <div className="input-text">
-                                <label htmlFor="rotationZ">Rotation z: </label>
+                                <label htmlFor="rotationZ">{t("shapeSettings.rotationAxis", { axis: "z" })}: </label>
                                 <input
                                     type="number"
                                     id="rotationZ"
@@ -410,19 +412,19 @@ function ShapeSettings({
                                     min="0"
                                     step="1"
                                     // required={true}
-                                    placeholder="Give this part a z rotation"
+                                    placeholder={t("shapeSettings.rotationAxis", { axis: "z" })}
                                 />
                             </div>
                         </div>
                         <div className="shape-settings-group">
-                            <h3 className="shape-settings-title">Color</h3>
+                            <h3 className="shape-settings-title">{t("shapeSettings.color")}</h3>
                             <ColorPicker color={shapeColor} onColorChange={handleColorChange} />
                         </div>
                     </form>
                     ) : (
                     <div className="empty-shape-state">
-                        <h2>Select a shape!</h2>
-                        <p>Drag one in from the left, or click an existing shape on the canvas.</p>
+                        <h2>{t("shapeSettings.empty.title")}</h2>
+                        <p>{t("shapeSettings.empty.body")}</p>
                     </div>
                 )}
             </div>

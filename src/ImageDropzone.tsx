@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { AddPhotoAlternate } from '@mui/icons-material';
+import { useT } from './i18n/LanguageProvider';
 
 // Interactieve foto-picker: stippelrand met image+plus-icoon als er nog geen foto is,
 // rand wordt donkerder bij hover/drag-over, accepteert een gesleepte afbeelding, en een
@@ -13,6 +14,7 @@ const ImageDropzone = ({
     onFileSelected: (file: File) => void;
 }) => {
     const [isDragActive, setIsDragActive] = useState(false);
+    const t = useT();
 
     return (
         <label
@@ -31,9 +33,9 @@ const ImageDropzone = ({
             }}
         >
             {previewSrc ? (
-                <img src={previewSrc} alt="Voorbeeld" className="pattern-image-dropzone-preview" />
+                <img src={previewSrc} alt={t('imageDropzone.preview')} className="pattern-image-dropzone-preview" />
             ) : (
-                <AddPhotoAlternate className="pattern-image-dropzone-icon" />
+                <AddPhotoAlternate className="pattern-image-dropzone-icon" titleAccess={t('imageDropzone.choose')} />
             )}
             <input
                 type="file"

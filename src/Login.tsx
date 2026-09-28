@@ -4,12 +4,16 @@ import { auth, db } from '../firebase-config.js';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
+import { useT } from './i18n/LanguageProvider';
+import LanguageSelect from './i18n/LanguageSelect';
 
 const Login = () => {
     const [tabValue, setTabValue] = useState(0);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState(null);
+    // Sleutel van de foutmelding i.p.v. de tekst zelf, zodat hij meevertaalt bij een taalwissel.
+    const [error, setError] = useState<string | null>(null);
+    const t = useT();
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -36,16 +40,16 @@ const Login = () => {
         } catch (err) {
             switch (err.code) {
                 case 'auth/invalid-credential':
-                    setError('Invalid credentials.');
+                    setError('login.error.invalidCredentials');
                     break;
                 case 'auth/user-not-found':
-                    setError('User not found.');
+                    setError('login.error.userNotFound');
                     break;
                 case 'auth/wrong-password':
-                    setError('Wrong password.');
+                    setError('login.error.wrongPassword');
                     break;
                 default:
-                    setError('Something went wrong. Try again.');
+                    setError('login.error.generic');
             }
         }
     };
@@ -65,16 +69,16 @@ const Login = () => {
         } catch (err) {
             switch (err.code) {
                 case 'auth/email-already-in-use':
-                    setError('This email adress is already in use.');
+                    setError('login.error.emailInUse');
                     break;
                 case 'auth/invalid-email':
-                    setError('This email adress is invalid.');
+                    setError('login.error.invalidEmail');
                     break;
                 case 'auth/weak-password':
-                    setError('Password is too weak. Use at least 6 characters.');
+                    setError('login.error.weakPassword');
                     break;
                 default:
-                    setError('Something went wrong with your registration.');
+                    setError('login.error.registerGeneric');
             }
         }
     };
@@ -91,12 +95,15 @@ const Login = () => {
                 className="new-pattern-form"
             >
                 <Card sx={{padding: 3}}>
-                    <Typography component="h1" variant="h5">
-                        {tabValue === 0 ? 'Log in' : 'Register'}
-                    </Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
+                        <Typography component="h1" variant="h5">
+                            {tabValue === 0 ? t('login.logIn') : t('login.register')}
+                        </Typography>
+                        <LanguageSelect variant="dark" />
+                    </Box>
                     <Tabs value={tabValue} onChange={handleTabChange} sx={{ mt: 2 }}>
-                        <Tab label="Log in" />
-                        <Tab label="Register" />
+                        <Tab label={t('login.logIn')} />
+                        <Tab label={t('login.register')} />
                     </Tabs>
                     <Box component="form" onSubmit={tabValue === 0 ? handleLogin : handleRegister} sx={{ mt: 1 }}>
                         <TextField
@@ -104,7 +111,7 @@ const Login = () => {
                             required
                             fullWidth
                             id="email"
-                            label="Email adress"
+                            label={t('login.email')}
                             name="email"
                             autoComplete="email"
                             autoFocus
@@ -116,7 +123,7 @@ const Login = () => {
                             required
                             fullWidth
                             name="password"
-                            label="Password"
+                            label={t('login.password')}
                             type="password"
                             id="password"
                             autoComplete={tabValue === 0 ? 'current-password' : 'new-password'}
@@ -125,7 +132,7 @@ const Login = () => {
                         />
                         {error && (
                             <Alert severity="error" sx={{ mt: 2 }}>
-                                {error}
+                                {t(error)}
                             </Alert>
                         )}
                         <Button
@@ -134,7 +141,7 @@ const Login = () => {
                             variant="contained"
                             sx={{ mt: 3, mb: 2, backgroundColor: "#d4929a" }}
                         >
-                            {tabValue === 0 ? 'Log in' : 'Register'}
+                            {tabValue === 0 ? t('login.logIn') : t('login.register')}
                         </Button>
                     </Box>
                 </Card>
