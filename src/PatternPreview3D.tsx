@@ -1,9 +1,10 @@
 import React, { useLayoutEffect, useMemo, useRef } from 'react';
-import { Canvas, useThree } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import Sphere from './Sphere.tsx';
 import Arm from './Arm.tsx';
 import { computePatternBox } from './geometry/patternBounds';
+import calculateIntersections from './calculateIntersections';
 
 const shapeComponents: { [key: string]: React.ComponentType<any> } = {
     Sphere,
@@ -34,10 +35,34 @@ function CameraFraming({ box }: { box: THREE.Box3 }) {
     return null;
 }
 
+// Berekent de intersections opnieuw uit de meshes van deze preview, zodat de Assembly op de
+// patroonpagina niet afhangt van de (in-memory) intersections uit de editor. Die zijn er
+// alleen als je net vanuit de editor komt; vanuit Home/My patterns/Favorites/de detail-dialoog
+// waren ze leeg of hoorden ze bij een ander amigurumi. We wachten tot alle meshes in de
+// scene staan (Sphere/Arm suspenden op hun texture en zetten hun uuid pas in een effect).
+function IntersectionReporter({ shapes, onIntersections }: { shapes: Shape[]; onIntersections: (intersections: any[]) => void }) {
+    const { scene } = useThree();
+    const reportedForRef = useRef<Shape[] | null>(null);
+
+    useFrame(() => {
+        if (reportedForRef.current === shapes) {
+            return;
+        }
+        const allMeshesReady = shapes.every((shape) => scene.getObjectByProperty('uuid', shape.id));
+        if (!allMeshesReady) {
+            return;
+        }
+        reportedForRef.current = shapes;
+        calculateIntersections(shapes, scene, [], onIntersections, noop);
+    });
+
+    return null;
+}
+
 // Alleen-lezen live weergave van het threejs-ontwerp — hergebruikt Sphere.tsx/Arm.tsx
 // rechtstreeks, altijd met isSelected=false, dus TransformControlsThree mount nooit en
 // er is geen selectie/gizmo-gedrag nodig; onSelect/onUpdateShape zijn dan ook no-ops.
-const PatternPreview3D = ({ shapes }: { shapes: Shape[] }) => {
+const PatternPreview3D = ({ shapes, onIntersections }: { shapes: Shape[]; onIntersections?: (intersections: any[]) => void }) => {
     const box = useMemo(() => computePatternBox(shapes), [shapes]);
     const dummyOrbitControlsRef = useRef<any>(null);
 
@@ -53,6 +78,7 @@ const PatternPreview3D = ({ shapes }: { shapes: Shape[] }) => {
             <directionalLight position={[10, 10, 10]} intensity={1} />
             <spotLight position={[100, 1000, 100]} intensity={1.2} />
             <CameraFraming box={box} />
+            {onIntersections ? <IntersectionReporter shapes={shapes} onIntersections={onIntersections} /> : null}
             {shapes.map((shape: any) => {
                 const ShapeComponent = shapeComponents[shape.type] || Sphere;
                 return (

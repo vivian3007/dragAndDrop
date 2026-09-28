@@ -7,9 +7,32 @@ import generateSpherePattern from "./patterns/generateSpherePattern";
 import generateArmPattern from "./patterns/generateArmPattern";
 import PatternPreview3D from "./PatternPreview3D.tsx";
 
+// Splitst "Row 3: [1inc, 2sc] * 6 (24)" in een label- en tekst-kolom, zodat de
+// dubbele punten van alle rijen in de lijst netjes onder elkaar uitlijnen
+// (zie .pattern-row-list in styles.css). Regels zonder ":" (bv. "Sew closed")
+// krijgen de volle breedte.
+const RowLine = ({ text }: { text: string }) => {
+    const colonIndex = text.indexOf(":");
+    if (colonIndex === -1) {
+        return (
+            <li className="pattern-row-line">
+                <span className="pattern-row-text--full">{text}</span>
+            </li>
+        );
+    }
+    return (
+        <li className="pattern-row-line">
+            <span className="pattern-row-label">{text.slice(0, colonIndex)}:</span>
+            <span className="pattern-row-text">{text.slice(colonIndex + 1).trim()}</span>
+        </li>
+    );
+};
+
 const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[], yarn: Yarn, intersections: any, meshes: any}) => {
     const PIXELS_PER_CM = 37.8; // 10 pixels = 1 cm
     const [patterns, setPatterns] = useState<any[]>([]);
+    // Door PatternPreview3D uit de 3D-scene berekend; null zolang de preview nog laadt.
+    const [computedIntersections, setComputedIntersections] = useState<any[] | null>(null);
     const location = useLocation();
     const navigate = useNavigate();
     const { amigurumi_id } = useParams();
@@ -27,7 +50,7 @@ const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[],
 
     shapes = location.state?.shapes ?? [];
     yarnInfo = location.state?.yarnInfo ?? null;
-    intersections = location.state?.intersections;
+    intersections = computedIntersections ?? location.state?.intersections ?? [];
     const amigurumi = location.state?.amigurumi ?? null;
 
     const isValidYarnWeight = !!yarnInfo && yarnInfo.weight in rowHeights;
@@ -53,7 +76,7 @@ const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[],
         } else {
             setPatterns([]);
         }
-    }, [shapes, yarnInfo]);
+    }, [shapes, yarnInfo, computedIntersections]);
 
     console.log(patterns);
     console.log(intersections);
@@ -64,13 +87,24 @@ const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[],
                 <div className="pattern-preview-panel">
                     <h1 className="pattern-page-title">{amigurumi?.name ?? "Patroon"}</h1>
                     <div className="pattern-preview-3d">
-                        <PatternPreview3D shapes={shapes} />
+                        <PatternPreview3D shapes={shapes} onIntersections={setComputedIntersections} />
                     </div>
                     <Button
                         variant="contained"
                         color="inherit"
                         style={{ backgroundColor: "var(--color-primary)", color: "var(--color-bg)" }}
                         onClick={() => {
+                            // Alleen Settingsbar.tsx (de "bekijk patroon"-knop in de editor) laat
+                            // `amigurumi` weg uit de navigatie-state; Home/My patterns/Favorites en
+                            // de detail-dialoog geven 'm altijd mee. Dat onderscheidt of we vanuit
+                            // de editor kwamen (die stale-shapes-fix hieronder nodig heeft) of vanuit
+                            // een patronen-overzicht (dat gewoon opnieuw uit Firestore laadt, dus een
+                            // normale terug-navigatie stuurt je daar correct naartoe).
+                            if (amigurumi) {
+                                navigate(-1);
+                                return;
+                            }
+
                             // navigate(-1, {state}) roept enkel history.go(-1) aan — react-router
                             // negeert de meegegeven state dan volledig en herstelt de *oorspronkelijke*
                             // editor-locatie-state van vóór deze sessie, met eventueel inmiddels
@@ -126,25 +160,25 @@ const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[],
                                         <span className="pattern-step-badge">{index + 1}</span>
                                         Pattern for - {pattern.name ?? "give this part a name"}
                                     </h2>
-                                    <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap" }}>
+                                    <div className="pattern-card-body">
                                         <ul className="pattern-row-list">
-                                            <li>Row 1: 6sc in a magic ring (6)</li>
+                                            <RowLine text="Row 1: 6sc in a magic ring (6)" />
                                             {pattern.incArray.length > 0 ? (
-                                                <li>Row 2: 6inc (12)</li>
+                                                <RowLine text="Row 2: 6inc (12)" />
                                             ) : null}
                                             {pattern.incArray.map((row, idx) => (
-                                                <li key={idx}>{row}</li>
+                                                <RowLine key={idx} text={row} />
                                             ))}
                                             {pattern.scArray.map((row, idx) => (
-                                                <li key={idx}>{row}</li>
+                                                <RowLine key={idx} text={row} />
                                             ))}
                                             {pattern.decArray.map((row, idx) => (
-                                                <li key={idx}>{row}</li>
+                                                <RowLine key={idx} text={row} />
                                             ))}
                                             {pattern.type !== "Arm" ? (
                                                 <>
-                                                    <li>Row {pattern.rowArray.length - 1}: 6dec (6)</li>
-                                                    <li>Sew closed</li>
+                                                    <RowLine text={`Row ${pattern.rowArray.length - 1}: 6dec (6)`} />
+                                                    <RowLine text="Sew closed" />
                                                 </>
                                             ) : null}
                                         </ul>
@@ -165,26 +199,25 @@ const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[],
                     )}
                     <Card className="pattern-text-container pattern-card--assembly">
                         <h2 className="pattern-card-title">Assembly</h2>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <ul className="pattern-row-list">
-                                {(() => {
-                                    const allIntersectionRows = patterns.flatMap((p) => p.intersectionRows ?? []);
-                                    return allIntersectionRows.length > 0 ? (
-                                        allIntersectionRows.map((intersection, idx) => (
-                                            <li key={idx}>
-                                                Connect{' '}
-                                                {shapes.find((shape) => shape.id === intersection.shapeId1)?.name ?? `Shape ${intersection.shapeId1}`}{' '}
-                                                to{' '}
-                                                {shapes.find((shape) => shape.id === intersection.shapeId2)?.name ?? `Shape ${intersection.shapeId2}`}{' '}
-                                                between row {intersection.topRow} and {intersection.bottomRow}
-                                            </li>
-                                        ))
-                                    ) : (
-                                        <li>No intersections to assemble</li>
-                                    );
-                                })()}
-                            </ul>
-                        </div>
+                        <ul className="pattern-row-list">
+                            {(() => {
+                                const allIntersectionRows = patterns.flatMap((p) => p.intersectionRows ?? []);
+                                return allIntersectionRows.length > 0 ? (
+                                    allIntersectionRows.map((intersection, idx) => {
+                                        const shape1 = shapes.find((shape) => shape.id === intersection.shapeId1)?.name ?? `Shape ${intersection.shapeId1}`;
+                                        const shape2 = shapes.find((shape) => shape.id === intersection.shapeId2)?.name ?? `Shape ${intersection.shapeId2}`;
+                                        return (
+                                            <RowLine
+                                                key={idx}
+                                                text={`Connect ${shape1} to ${shape2}: between row ${intersection.topRow} and ${intersection.bottomRow}`}
+                                            />
+                                        );
+                                    })
+                                ) : (
+                                    <RowLine text="No intersections to assemble" />
+                                );
+                            })()}
+                        </ul>
                     </Card>
                 </div>
             </div>

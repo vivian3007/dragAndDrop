@@ -138,20 +138,20 @@ const PatternDetail = ({
                     <ImagePlaceholder className="detail-image" iconSize="4rem" />
                 )}
                 <div className="detail-info">
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pr: 5 }}>
-                        <h1 style={{ margin: 0 }}>{amigurumi.name}</h1>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 1, pr: { xs: 4, sm: 5 } }}>
+                        <h1 style={{ margin: 0, fontSize: 'clamp(1.3rem, 4vw + 0.5rem, 2rem)' }}>{amigurumi.name}</h1>
                         {favorite ? (
                             <Favorite
                                 className={isHeartBouncing ? 'heart-bounce' : ''}
                                 onAnimationEnd={() => setIsHeartBouncing(false)}
-                                sx={{ color: 'var(--color-favorite)', fontSize: '2.5rem', cursor: 'pointer' }}
+                                sx={{ color: 'var(--color-favorite)', fontSize: { xs: '2rem', sm: '2.5rem' }, cursor: 'pointer' }}
                                 onClick={() => { setIsHeartBouncing(true); handleFavoriteChange(); }}
                             />
                         ) : (
                             <FavoriteBorder
                                 className={isHeartBouncing ? 'heart-bounce' : ''}
                                 onAnimationEnd={() => setIsHeartBouncing(false)}
-                                sx={{ color: 'var(--color-text)', fontSize: '2.5rem', cursor: 'pointer' }}
+                                sx={{ color: 'var(--color-text)', fontSize: { xs: '2rem', sm: '2.5rem' }, cursor: 'pointer' }}
                                 onClick={() => { setIsHeartBouncing(true); handleFavoriteChange(); }}
                             />
                         )}
@@ -224,12 +224,12 @@ const PatternDetail = ({
                         </>
                     ) : null}
 
-                    <div style={{ display: 'flex', gap: '10px', marginTop: 20, flexWrap: 'wrap' }}>
+                    <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: '10px', mt: 2.5, flexWrap: 'wrap' }}>
                         <Button
                             type="button"
                             variant="contained"
                             color="inherit"
-                            sx={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-bg)' }}
+                            sx={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-bg)', width: { xs: '100%', sm: 'auto' } }}
                             onClick={handlePatternClick}
                         >
                             Bekijk patroon
@@ -239,7 +239,7 @@ const PatternDetail = ({
                                 <Button
                                     type="button"
                                     variant="outlined"
-                                    sx={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}
+                                    sx={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)', width: { xs: '100%', sm: 'auto' } }}
                                     onClick={() => setEditOpen(true)}
                                 >
                                     Bewerken
@@ -247,14 +247,14 @@ const PatternDetail = ({
                                 <Button
                                     type="button"
                                     variant="outlined"
-                                    sx={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}
+                                    sx={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)', width: { xs: '100%', sm: 'auto' } }}
                                     onClick={handleEditShapesClick}
                                 >
                                     Amigurumi bewerken
                                 </Button>
                             </>
                         )}
-                    </div>
+                    </Box>
                 </div>
             </DialogContent>
             <NewPattern

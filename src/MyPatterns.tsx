@@ -15,9 +15,11 @@ import PatternPagination, { PAGE_SIZE } from "./PatternPagination.tsx";
 import { filterAndSortAmigurumis, SortOption } from "./filterAmigurumis.ts";
 import { useDebouncedValue } from "./useDebouncedValue.ts";
 import { useStableArray } from "./useStableArray.ts";
+import { useResponsiveMinColumns } from "./useResponsiveMinColumns.ts";
 
 const MyPatterns = ({yarnInfo, intersections, setDroppedShapes} : {yarnInfo: Yarn, intersections: any, setDroppedShapes: React.Dispatch<React.SetStateAction<Shape[]>>}) => {
     const loggedInUser = auth.currentUser?.email;
+    const minColumns = useResponsiveMinColumns();
 
     const navigate = useNavigate();
     const [selectedAmigurumi, setSelectedAmigurumi] = useState<Amigurumi | null>(null);
@@ -147,14 +149,16 @@ const MyPatterns = ({yarnInfo, intersections, setDroppedShapes} : {yarnInfo: Yar
                 actions={filterActions}
             />
             {amigurumis.length === 0 ? (
-                <Typography sx={{ px: '40px' }}>Geen patronen gevonden.</Typography>
+                <Typography sx={{ px: { xs: '8px', sm: '24px', md: '40px' } }}>Geen patronen gevonden.</Typography>
             ) : filteredAmigurumis.length === 0 ? (
-                <Typography sx={{ px: '40px' }}>Geen patronen gevonden voor deze zoekopdracht/filter.</Typography>
+                <Typography sx={{ px: { xs: '8px', sm: '24px', md: '40px' } }}>Geen patronen gevonden voor deze zoekopdracht/filter.</Typography>
             ) : (
                 <MasonryGrid
                     className="my-pattern-container"
                     items={pagedAmigurumis}
                     columnWidth={300}
+                    minColumns={minColumns}
+                    compactGap={10}
                     gap={20}
                     renderItem={(amigurumi) => (
                         <AmigurumiCard

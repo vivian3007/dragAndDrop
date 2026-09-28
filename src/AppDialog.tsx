@@ -19,7 +19,11 @@ const AppDialog = ({
             onClose={onClose}
             maxWidth={maxWidth}
             fullWidth
-            PaperProps={{ sx: { borderRadius: '24px', overflow: 'hidden' } }}
+            // Blijft altijd een echte, gecentreerde dialoog met ruimte eromheen (geen fullscreen
+            // op mobiel) — op xs/sm is de standaard MUI-marge van 32px wel wat veel op een klein
+            // scherm, dus die krimpt daar mee zodat er verhoudingsgewijs meer ruimte overblijft
+            // voor de inhoud zelf.
+            PaperProps={{ sx: { borderRadius: '24px', overflow: 'hidden', margin: { xs: '12px', sm: '20px', md: '32px' } } }}
         >
             <IconButton
                 onClick={onClose}

@@ -65,6 +65,10 @@ body {
     flex-direction: row;
 }
 
+.threejs-canvas {
+    height: 92vh;
+}
+
 .navbar-button {
     height: 6vh;
     margin: 1vh 0.3vw;
@@ -617,6 +621,19 @@ body {
     border-left: 6px solid var(--color-primary);
 }
 
+/* Vaste kolombreedte voor het swatch-blokje (matcht maxDimension in Pattern.tsx) zodat
+   de rijenlijst in elke kaart op dezelfde plek begint, ongeacht de afmetingen van de vorm. */
+.pattern-card-body {
+    display: grid;
+    grid-template-columns: 1fr 180px;
+    gap: 20px;
+    align-items: start;
+}
+
+.pattern-card-body .shape {
+    justify-self: end;
+}
+
 .pattern-step-badge {
     flex-shrink: 0;
     width: 28px;
@@ -637,27 +654,54 @@ body {
     border-left: 6px solid var(--color-primary);
 }
 
+/* Grid i.p.v. losse bullets: elke regel bestaat uit een "Row X"-label en een
+   beschrijving, als twee grid-kolommen. Doordat de <li> zelf `display: contents`
+   krijgt, worden de label- en tekst-spans directe grid-items van de <ul> — zo
+   lopen de dubbele punten van alle rijen netjes onder elkaar uit, ook als
+   "Row 1" en "Row 10-14" een andere breedte hebben. */
 .pattern-row-list {
     list-style: none;
     margin: 0;
     padding: 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 10px;
+    row-gap: 6px;
 }
 
-.pattern-row-list li {
-    padding: 4px 0 4px 18px;
-    line-height: 1.6;
+.pattern-row-line {
+    display: contents;
+}
+
+.pattern-row-label,
+.pattern-row-text--full {
     position: relative;
+    padding-left: 18px;
+    line-height: 1.6;
 }
 
-.pattern-row-list li::before {
+.pattern-row-label::before,
+.pattern-row-text--full::before {
     content: "";
     position: absolute;
     left: 4px;
-    top: 14px;
+    top: 10px;
     width: 6px;
     height: 6px;
     border-radius: 50%;
     background-color: var(--color-secondary);
+}
+
+.pattern-row-label {
+    font-weight: 600;
+}
+
+.pattern-row-text {
+    line-height: 1.6;
+}
+
+.pattern-row-text--full {
+    grid-column: 1 / -1;
 }
 
 .my-pattern{
@@ -757,7 +801,6 @@ body {
     padding: 40px;
     width: 100%;
     box-sizing: border-box;
-    container-type: inline-size;
 }
 
 .detail-image {
@@ -774,13 +817,24 @@ body {
     min-width: 0;
 }
 
-@container (max-width: 620px) {
+/* Was ooit een @container-query op .detail-card zelf, maar een element kan niet zijn eigen
+   container-query-ancestor zijn (container-type moet op een voorouder staan, niet op het
+   bevraagde element zelf) — die query matchte daardoor NOOIT, dus de kaart bleef altijd in
+   rij-modus staan en .detail-info klapte op smalle dialogen in tot 0px breedte (onzichtbare
+   tekst). Een gewone viewport-media-query — gelijk aan onze sm-grens, want daaronder is er
+   simpelweg niet genoeg ruimte voor een vaste 380px-afbeelding naast leesbare tekst — lost
+   dat betrouwbaar op. */
+@media (max-width: 899px) {
     .detail-card {
         flex-direction: column;
     }
 
+    /* In kolom-modus loopt de afbeelding anders mee met de volle dialoogbreedte, en wordt
+       hij bij de 4:3-ratio al snel veel te hoog — een max-height met object-fit:cover
+       houdt 'm compact terwijl de aspect-ratio verder gewoon de breedte blijft sturen. */
     .detail-image {
         width: 100%;
+        max-height: 220px;
     }
 }
 
@@ -810,7 +864,24 @@ body {
     padding: 2%;
 }
 
-@media (max-width: 768px) {
+/* ===== Responsive breakpoints, aligned with MUI's scale: xs <600px, sm 600-899px,
+   md 900-1199px. Rules cascade top to bottom — each narrower tier only overrides
+   what actually needs to change further, building on the wider tier above it. ===== */
+
+/* md and down (<=1199px): tablets — the fixed 40px gutters tuned for desktop start
+   crowding out content before the sm layout switch kicks in. */
+@media (max-width: 1199px) {
+    .my-pattern-container {
+        padding: 0 24px;
+    }
+
+    .new-pattern-form {
+        width: 70%;
+    }
+}
+
+/* sm and down (<=899px): stack the multi-column layouts into single columns. */
+@media (max-width: 899px) {
     body {
         margin: 0;
     }
@@ -821,10 +892,16 @@ body {
         overflow-x: hidden;
     }
 
+    /* height:auto i.p.v. een vaste 92vh: Navbar + 3D-veld + settings-bar samen zijn op
+       mobiel al gauw hoger dan het scherm, en een vaste hoogte met .Navbar/.settings-bar op
+       overflow:hidden sneed daardoor letterlijk instellingen weg (zie hieronder). Met
+       height:auto groeit de editor gewoon mee en scrollt de pagina zelf verder — .App en
+       body hebben geen overflow-y:hidden, dus dat werkt gewoon. */
     .editor {
         display: flex;
         flex-direction: column;
-        height: 92vh;
+        height: auto;
+        min-height: 92vh;
     }
 
     html {
@@ -833,28 +910,57 @@ body {
         width: 100vw;
     }
 
-    .Navbar, .settings-bar {
+    /* .shapebar en .toolbar (de twee kinderen hieronder) zijn allebei zelf al opgemaakt als
+       een verticale, volle-breedte stack (width:100%; flex-direction:column) — die botsten
+       met een rij-indeling hier: elk wilde 100% breedte pakken in dezelfde rij, dus kwamen ze
+       half over elkaar/afgesneden te staan achter een horizontale scrollbar. Kolom-indeling
+       laat ze gewoon na elkaar staan, en (net als settings-bar hierboven) geen max-height meer
+       zodat er niets verticaal wordt weggesneden. */
+    .Navbar {
         width: 96%;
         height: auto;
         min-height: 150px;
-        max-height: 10vh;
+        max-height: none;
         padding: 15px;
+        overflow: visible;
+        flex-direction: column;
     }
 
-    .Navbar {
-        overflow-x: auto;
-        overflow-y: hidden;
-        flex-direction: row;
+    /* Was een vaste inline 92vh op de <Canvas> (zie ThreeJsField.tsx) — dat liet op mobiel
+       geen ruimte over voor de settings-bar eronder. */
+    .threejs-canvas {
+        height: 36vh;
     }
 
+    .settings-bar {
+        width: 96%;
+        height: auto;
+        min-height: 55vh;
+        max-height: none;
+        padding: 15px;
+        /* De desktop-regel zet overflow:hidden zodat alleen .settings-bar-scroll intern
+           scrollt binnen een vaste hoogte; op mobiel is de hoogte juist auto, dus die
+           overflow:hidden moet hier expliciet ongedaan gemaakt worden — anders kan de
+           content nooit hoger worden dan de (dan te kleine) berekende auto-hoogte. */
+        overflow: visible;
+    }
+
+    /* De desktop-regel (vaste 88vh-sidebar) geeft .shapebar flex:1 1 auto; min-height:0 zodat
+       hij binnen die vaste hoogte meegroeit/krimpt. Op mobiel is .Navbar nu auto-hoogte, en
+       diezelfde flex-grow + min-height:0 laat Chrome het element dan naar 0px hoogte
+       samenvouwen (geen "restruimte" om te vullen in een auto-hoogte container) — vandaar dat
+       de hele "Shapes"-sectie onzichtbaar leek. flex:none + min-height:auto laat 'm gewoon
+       op zijn eigen inhoud groeien, zoals .toolbar hieronder al deed. */
     .shapebar {
         width: 100%;
-        height: 100%;
+        height: auto;
+        flex: none;
+        min-height: auto;
         background-color: var(--color-accent-soft);
         display: flex;
         flex-direction: column;
         align-items: center;
-        overflow-y: auto;
+        overflow-y: visible;
         overflow-x: hidden;
     }
 
@@ -866,7 +972,6 @@ body {
         align-items: start;
         overflow-y: auto;
         overflow-x: hidden;
-        margin-left: 20px;
     }
 
     .toolbar-category {
@@ -876,12 +981,10 @@ body {
         gap: 5px;
     }
 
-    .draggables {
-        display: flex;
-        /*flex-direction: row;*/
-        justify-content: start;
-        margin: 20px;
-    }
+    /* Geen eigen regel meer nodig: .Navbar staat nu in kolom-indeling (zie hierboven), dus
+       .shapebar heeft de volle breedte en de gewone 2-koloms grid (desktop-regel, verderop
+       niet overschreven) past daar prima. De vorige flex-rij zonder wrap liet vormen buiten
+       beeld vallen zodra de rij niet meer paste. */
 
     /*.shapes-text {*/
     /*    writing-mode: sideways-lr;*/
@@ -962,14 +1065,48 @@ body {
         padding: 15px;
     }
 
+    .pattern-card-body {
+        grid-template-columns: 1fr;
+    }
+
+    .pattern-card-body .shape {
+        justify-self: start;
+    }
+
     .my-pattern {
         flex-direction: column;
     }
 
+    /* Kaarten staan vanaf sm met meerdere naast elkaar (zie MasonryGrid minColumns: 3 op sm,
+       2 op xs), en zijn daardoor zo'n 150-270px breed — de desktop-opmaak (grote titel,
+       40px-knoppen, 30px padding) past daar niet meer, dus alles in de kaart krimpt mee. */
     .my-pattern-text-container {
         margin: 0;
-        padding: 30px;
+        padding: 10px;
         height: auto;
+    }
+
+    .my-pattern-text-container h1 {
+        font-size: 1rem;
+        margin-top: 8px !important;
+        margin-bottom: 8px !important;
+        line-height: 1.3;
+    }
+
+    .my-pattern-text-container .MuiChip-root {
+        height: 22px;
+        font-size: 0.68rem;
+    }
+
+    .my-pattern-text-container .MuiButton-root {
+        min-width: 0 !important;
+        padding: 4px 6px !important;
+        font-size: 0.72rem !important;
+    }
+
+    .my-pattern-text-container .MuiIconButton-root {
+        width: 30px !important;
+        height: 30px !important;
     }
 
     .detail-card {
@@ -991,5 +1128,83 @@ body {
         width: 85%;
         margin: 0;
         padding: 2%;
+    }
+}
+
+/* xs (<=599px): phones — beyond stacking, the desktop font/spacing scale itself
+   needs to shrink so nothing clips or forces horizontal scrolling. */
+@media (max-width: 599px) {
+    .navbar-button {
+        font-size: 1em;
+        padding: 0.5em 3vw;
+        margin: 0.3vh 1vw;
+    }
+
+    .pattern-page-title {
+        font-size: 1.5rem;
+    }
+
+    /* Buitenste paginamarges knijpen extra samen op xs — anders gaat een groot deel van het
+       al krappe scherm op aan lege randen in plaats van inhoud. */
+    .pattern {
+        padding: 0 10px;
+        margin: 10px auto;
+        gap: 16px;
+    }
+
+    .pattern-preview-panel {
+        gap: 10px;
+    }
+
+    .pattern-text-container {
+        padding: 10px;
+    }
+
+    .pattern-card-body {
+        gap: 12px;
+    }
+
+    .pattern-card-title {
+        font-size: 1.05rem;
+    }
+
+    .my-pattern {
+        margin: 10px;
+    }
+
+    .my-pattern-container {
+        padding: 0 8px;
+    }
+
+    /* Op xs zijn de gedwongen 2 kolommen nóg iets smaller dan de 3 op sm, dus de padding en
+       titel krimpen nog een fractie verder door (de rest erft van het sm-and-down blok hierboven). */
+    .my-pattern-text-container {
+        padding: 8px;
+    }
+
+    .my-pattern-text-container h1 {
+        font-size: 0.95rem;
+    }
+
+    .detail-card {
+        padding: 8px;
+        gap: 12px;
+    }
+
+    .detail-image {
+        max-height: 160px;
+    }
+
+    .new-pattern-form {
+        width: 94%;
+        padding: 1.5%;
+    }
+
+    /* Was ooit "max-height: 14vh" op beide — dat was een overblijfsel van vóórdat .Navbar en
+       .settings-bar hierboven (sm-tier) een eigen, ruimere hoogte-regeling kregen. Die oude
+       max-height won op xs alsnog van de cascade (dezelfde media-conditie geldt ook hier) en
+       kliemde alle instellingen alsnog weg. Hier alleen nog de padding verder verkleinen. */
+    .Navbar, .settings-bar {
+        padding: 8px;
     }
 }

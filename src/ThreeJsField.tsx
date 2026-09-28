@@ -120,7 +120,8 @@ export default function ThreeJsField({
         <Canvas
             camera={{ position: [40, 0, 0], fov: 75, zoom: 3 }}
             ref={threeJsContainerRef}
-            style={{ height: '92vh', backgroundColor: 'var(--color-accent-soft)' }}
+            className="threejs-canvas"
+            style={{ backgroundColor: 'var(--color-accent-soft)' }}
             onPointerMissed={() => {
                 if (activeTransformControlsRef.current?.axis) return;
                 setActiveId(null);

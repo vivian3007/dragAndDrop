@@ -13,9 +13,11 @@ import PatternPagination, { PAGE_SIZE } from "./PatternPagination.tsx";
 import { filterAndSortAmigurumis, SortOption } from "./filterAmigurumis.ts";
 import { useDebouncedValue } from "./useDebouncedValue.ts";
 import { useStableArray } from "./useStableArray.ts";
+import { useResponsiveMinColumns } from "./useResponsiveMinColumns.ts";
 
 const Homepage = ({yarnInfo, intersections} : {yarnInfo: Yarn, intersections: any}) => {
     const navigate = useNavigate();
+    const minColumns = useResponsiveMinColumns();
     const loggedInUser = auth.currentUser?.email;
     const [selectedAmigurumi, setSelectedAmigurumi] = useState<Amigurumi | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
@@ -119,12 +121,14 @@ const Homepage = ({yarnInfo, intersections} : {yarnInfo: Yarn, intersections: an
                 onSortChange={setSortBy}
             />
             {filteredAmigurumis.length === 0 ? (
-                <Typography sx={{ px: '40px' }}>Geen patronen gevonden voor deze zoekopdracht/filter.</Typography>
+                <Typography sx={{ px: { xs: '8px', sm: '24px', md: '40px' } }}>Geen patronen gevonden voor deze zoekopdracht/filter.</Typography>
             ) : (
                 <MasonryGrid
                     className="my-pattern-container"
                     items={pagedAmigurumis}
                     columnWidth={300}
+                    minColumns={minColumns}
+                    compactGap={10}
                     gap={20}
                     renderItem={(amigurumi) => (
                         <AmigurumiCard
