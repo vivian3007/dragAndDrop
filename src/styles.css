@@ -65,8 +65,10 @@ body {
     flex-direction: row;
 }
 
+/* !important: <Canvas> van react-three-fiber zet zelf inline height:100% op zijn
+   wrapper, en dat wint anders van deze klasse (canvas krimpt dan naar 150px). */
 .threejs-canvas {
-    height: 92vh;
+    height: 92vh !important;
 }
 
 .navbar-button {
@@ -1057,7 +1059,7 @@ body {
     /* Was een vaste inline 92vh op de <Canvas> (zie ThreeJsField.tsx) — dat liet op mobiel
        geen ruimte over voor de settings-bar eronder. */
     .threejs-canvas {
-        height: 36vh;
+        height: 36vh !important;
     }
 
     .settings-bar {
