@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Button, Chip, CircularProgress, DialogContent, Table, TableBody, TableCell, TableRow, Typography } from '@mui/material';
-import { Favorite, FavoriteBorder } from '@mui/icons-material';
+import { ContentCopy, Favorite, FavoriteBorder } from '@mui/icons-material';
 import { collection, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore';
 import { auth, db } from '../firebase-config.js';
 import AppDialog from './AppDialog.tsx';
@@ -33,6 +33,7 @@ const PatternDetail = ({
     const [heightCm, setHeightCm] = useState<number | null>(null);
     const [sizeLoading, setSizeLoading] = useState(false);
     const [editOpen, setEditOpen] = useState(false);
+    const [copyOpen, setCopyOpen] = useState(false);
 
     useEffect(() => {
         setAmigurumi(amigurumiProp);
@@ -124,6 +125,8 @@ const PatternDetail = ({
     }
 
     const isOwner = amigurumi.user_id === auth.currentUser?.email;
+    const isLoggedIn = !!auth.currentUser;
+    const [directSource, ...olderSources] = amigurumi.copiedFrom ?? [];
 
     const createdDate = amigurumi.createdAt?.toDate
         ? intl.formatDate(amigurumi.createdAt.toDate(), { day: 'numeric', month: 'long', year: 'numeric' })
@@ -172,6 +175,24 @@ const PatternDetail = ({
                             />
                         ))}
                     </Box>
+
+                    {directSource && (
+                        <Box className="detail-lineage" sx={{ mb: 2 }}>
+                            <Typography>
+                                <strong>{t('detail.copiedFrom')}:</strong>{' '}
+                                {t('detail.sourceBy', { name: directSource.name, user: directSource.user_id })}
+                            </Typography>
+                            {olderSources.length > 0 && (
+                                <Box component="ol" sx={{ m: 0, mt: 0.5, pl: 3, fontSize: '0.9rem', opacity: 0.8 }}>
+                                    {olderSources.map((source) => (
+                                        <li key={source.id}>
+                                            {t('detail.sourceBy', { name: source.name, user: source.user_id })}
+                                        </li>
+                                    ))}
+                                </Box>
+                            )}
+                        </Box>
+                    )}
 
                     <Typography sx={{ mb: 1 }}><strong>{t('detail.created')}:</strong> {createdDate ?? t('detail.unknown')}</Typography>
                     {sizeLoading ? (
@@ -260,6 +281,17 @@ const PatternDetail = ({
                                 </Button>
                             </>
                         )}
+                        {isLoggedIn && (
+                            <Button
+                                type="button"
+                                variant="outlined"
+                                startIcon={<ContentCopy />}
+                                sx={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)', width: { xs: '100%', sm: 'auto' } }}
+                                onClick={() => setCopyOpen(true)}
+                            >
+                                {t('detail.useAsTemplate')}
+                            </Button>
+                        )}
                     </Box>
                 </div>
             </DialogContent>
@@ -268,6 +300,11 @@ const PatternDetail = ({
                 onClose={() => setEditOpen(false)}
                 editingAmigurumi={amigurumi}
                 onSaved={setAmigurumi}
+            />
+            <NewPattern
+                open={copyOpen}
+                onClose={() => setCopyOpen(false)}
+                copySource={amigurumi}
             />
         </AppDialog>
     );

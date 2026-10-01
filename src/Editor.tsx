@@ -81,7 +81,9 @@ const Editor = ({
         if (location.state?.amigurumi) {
             const amigurumi: Shape[] = location.state.amigurumi;
             localStorage.setItem("amigurumi", amigurumi.id);
-            const currentYarn = yarns.find((yarn) => yarn.id === amigurumi.yarn_id);
+            // Net gekopieerd garen zit nog niet in de bij het opstarten geladen `yarns`,
+            // dus dat wordt via de navigatie-state meegegeven.
+            const currentYarn = location.state.yarn ?? yarns.find((yarn) => yarn.id === amigurumi.yarn_id);
             if(currentYarn){
                 setYarnInfo(currentYarn);
 

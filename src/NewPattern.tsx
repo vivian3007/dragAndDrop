@@ -8,27 +8,32 @@ import AppDialog from './AppDialog.tsx';
 import ImageDropzone from './ImageDropzone.tsx';
 import { uploadPatternImage } from './uploadImage.ts';
 import { useT } from './i18n/LanguageProvider';
+import { buildCopiedFrom, saveAmigurumiCopy } from './copyAmigurumi.ts';
 
-// Dient zowel als "nieuw patroon aanmaken" (navigeert na opslaan naar de editor) als
-// "patroon-details bewerken" (via editingAmigurumi, blijft in de details-dialoog) —
-// zelfde velden/opslaanlogica, dus één formulier i.p.v. een bijna-duplicaat.
+// Dient als "nieuw patroon aanmaken" (navigeert na opslaan naar de editor),
+// "patroon-details bewerken" (via editingAmigurumi, blijft in de details-dialoog) én
+// "kopie maken van andermans ontwerp" (via copySource: velden voorgevuld, vormen en garen
+// worden mee gekopieerd) — zelfde velden/opslaanlogica, dus één formulier.
 const NewPattern = ({
     open,
     onClose,
     setDroppedShapes,
     editingAmigurumi,
+    copySource,
     onSaved,
 }: {
     open: boolean;
     onClose: () => void;
     setDroppedShapes?: React.Dispatch<React.SetStateAction<Shape[]>>;
     editingAmigurumi?: Amigurumi | null;
+    copySource?: Amigurumi | null;
     onSaved?: (updated: Amigurumi) => void;
 }) => {
     const navigate = useNavigate();
     const t = useT();
     const loggedInUser = auth.currentUser?.email;
     const isEditing = !!editingAmigurumi;
+    const isCopying = !isEditing && !!copySource;
 
     const [formData, setFormData] = useState({
         name: '',
@@ -46,19 +51,21 @@ const NewPattern = ({
 
     useEffect(() => {
         if (open) {
+            const prefill = editingAmigurumi ?? copySource;
             setFormData({
-                name: editingAmigurumi?.name ?? '',
-                height: editingAmigurumi?.height ? String(editingAmigurumi.height) : '',
-                tags: editingAmigurumi?.tags ?? [],
+                name: isCopying ? t('newPattern.copyName', { name: copySource!.name }) : prefill?.name ?? '',
+                height: prefill?.height ? String(prefill.height) : '',
+                tags: prefill?.tags ?? [],
+                // Een kopie begint als eigen, niet-favoriet ontwerp.
                 favorite: editingAmigurumi?.favorite ?? false,
                 yarn_id: editingAmigurumi?.yarn_id ?? '',
-                notes: editingAmigurumi?.notes ?? '',
+                notes: prefill?.notes ?? '',
             });
             setTagInput('');
             setImageFile(null);
             setError('');
         }
-    }, [open, editingAmigurumi]);
+    }, [open, editingAmigurumi, copySource]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -104,7 +111,7 @@ const NewPattern = ({
         setError('');
 
         try {
-            let imageUrl = editingAmigurumi?.imageUrl ?? null;
+            let imageUrl = (editingAmigurumi ?? copySource)?.imageUrl ?? null;
             if (imageFile) {
                 imageUrl = await uploadPatternImage(imageFile);
             }
@@ -136,6 +143,19 @@ const NewPattern = ({
                     imageUrl,
                 };
 
+                if (isCopying && copySource) {
+                    const copy = await saveAmigurumiCopy(copySource, {
+                        ...amigurumiData,
+                        copiedFrom: buildCopiedFrom(copySource),
+                    });
+                    setDroppedShapes?.(copy.shapes);
+                    onClose();
+                    navigate(`/${amigurumiId}/editor`, {
+                        state: { amigurumi: copy.amigurumi, shapes: copy.shapes, yarn: copy.yarn },
+                    });
+                    return;
+                }
+
                 // Save to Firestore with the UUID as the document ID
                 await setDoc(doc(db, 'amigurumi', amigurumiId), amigurumiData);
                 console.log('Saved amigurumi:', amigurumiData);
@@ -163,7 +183,7 @@ const NewPattern = ({
 
     const previewSrc = imageFile
         ? URL.createObjectURL(imageFile)
-        : editingAmigurumi?.imageUrl ?? null;
+        : (editingAmigurumi ?? copySource)?.imageUrl ?? null;
 
     return (
         <AppDialog open={open} onClose={onClose} maxWidth="sm">
@@ -173,8 +193,13 @@ const NewPattern = ({
                 ) : (
                     <>
                         <Typography variant="h4" gutterBottom sx={{ pr: 4 }}>
-                            {isEditing ? t('newPattern.editTitle') : t('newPattern.title')}
+                            {isEditing ? t('newPattern.editTitle') : isCopying ? t('newPattern.copyTitle') : t('newPattern.title')}
                         </Typography>
+                        {isCopying && (
+                            <Typography sx={{ mb: 1, color: 'var(--color-text)' }}>
+                                {t('newPattern.copyInfo', { name: copySource!.name, user: copySource!.user_id })}
+                            </Typography>
+                        )}
                         <form onSubmit={handleSubmit}>
                             <TextField
                                 label={t('newPattern.name')}
