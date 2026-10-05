@@ -3,10 +3,14 @@ import { Box, Button, Card, Chip, IconButton } from '@mui/material';
 import { Favorite, FavoriteBorder } from '@mui/icons-material';
 import { useStableArray } from './useStableArray.ts';
 import DesignSnapshot from './DesignSnapshot.tsx';
+import { sizedImageUrl } from './uploadImage.ts';
 import { useT } from './i18n/LanguageProvider';
 import { useFavorites } from './favorites/FavoritesProvider';
 
 const ACTION_HEIGHT = 40;
+
+// Kaarten zijn hooguit ~300px breed; 600px is scherp op een retina-scherm.
+export const CARD_IMAGE_WIDTH = 600;
 
 const actionIconButtonSx = {
     backgroundColor: 'var(--color-accent-soft)',
@@ -37,7 +41,7 @@ const areMediaPropsEqual = (prev: AmigurumiCardMediaProps, next: AmigurumiCardMe
 const AmigurumiCardMedia = React.memo(({ id, name, tags, imageUrl }: AmigurumiCardMediaProps) => (
     <>
         {imageUrl ? (
-            <img src={imageUrl} alt={name} className="amigurumi-image"/>
+            <img src={sizedImageUrl(imageUrl, CARD_IMAGE_WIDTH)} alt={name} className="amigurumi-image" loading="lazy" decoding="async" />
         ) : (
             <DesignSnapshot amigurumiId={id} alt={name} className="amigurumi-image" />
         )}

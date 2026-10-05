@@ -42,6 +42,7 @@ import { toast } from 'react-toastify';
 import UserLink from './UserLink.tsx';
 import Makes from './Makes.tsx';
 import { useT } from './i18n/LanguageProvider';
+import { sizedImageUrl } from './uploadImage.ts';
 import { useFavorites } from './favorites/FavoritesProvider';
 
 type DetailTab = 'about' | 'yarn' | 'makes';
@@ -255,7 +256,7 @@ const PatternDetail = ({
 
                 <div className="detail-header">
                     {amigurumi.imageUrl ? (
-                        <img src={amigurumi.imageUrl} alt={amigurumi.name} className="detail-image" />
+                        <img src={sizedImageUrl(amigurumi.imageUrl, 1000)} alt={amigurumi.name} className="detail-image" decoding="async" />
                     ) : (
                         <DesignSnapshot key={amigurumi.id} amigurumiId={amigurumi.id} alt={amigurumi.name} className="detail-image" />
                     )}

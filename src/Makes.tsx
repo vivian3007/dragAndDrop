@@ -6,13 +6,13 @@ import { v4 as uuidv4 } from 'uuid';
 import { db } from '../firebase-config.js';
 import { useAuth } from './auth/AuthProvider';
 import AppDialog from './AppDialog.tsx';
-import { AmigurumiCardButtons, FavoriteButton } from './AmigurumiCard.tsx';
+import { AmigurumiCardButtons, CARD_IMAGE_WIDTH, FavoriteButton } from './AmigurumiCard.tsx';
 import ImageDropzone from './ImageDropzone.tsx';
 import MasonryGrid from './MasonryGrid.tsx';
 import { useResponsiveMinColumns } from './useResponsiveMinColumns.ts';
 import { CardGridSkeleton } from './Skeletons.tsx';
 import UserLink from './UserLink.tsx';
-import { uploadPatternImage } from './uploadImage.ts';
+import { sizedImageUrl, uploadPatternImage } from './uploadImage.ts';
 import { useT } from './i18n/LanguageProvider';
 
 const createdAtMillis = (make: Make) =>
@@ -98,7 +98,9 @@ export const MakeGrid = ({
                     >
                         <div className="make-card-media">
                             <img
-                                src={make.imageUrl}
+                                src={sizedImageUrl(make.imageUrl, CARD_IMAGE_WIDTH)}
+                                loading="lazy"
+                                decoding="async"
                                 alt={t('makes.photoAlt', { name: make.amigurumi_name })}
                                 className="amigurumi-image"
                             />
