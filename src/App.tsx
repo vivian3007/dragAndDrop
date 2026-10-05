@@ -9,12 +9,13 @@ import {v4 as uuidv4} from "uuid";
 import Homepage from "./Homepage.tsx";
 import {Route, Routes, Link, useNavigate} from "react-router-dom";
 import {collection, getDocs, doc, updateDoc, getDoc, deleteDoc, where, query} from "firebase/firestore";
-import {db, auth} from "../firebase-config.js";
+import {db} from "../firebase-config.js";
 import {Box, Button, CircularProgress} from "@mui/material";
 import Login from "./Login.tsx";
 import Profile from "./Profile.tsx";
-import { signOut } from 'firebase/auth';
-import { ToastContainer } from 'react-toastify';
+import { toast, ToastContainer } from 'react-toastify';
+import { RequireAuth, useAuth } from './auth/AuthProvider';
+import ChooseUsernameDialog from './users/ChooseUsernameDialog';
 import 'react-toastify/dist/ReactToastify.css';
 import { useT } from './i18n/LanguageProvider';
 
@@ -108,15 +109,30 @@ export default function App() {
             }
         } catch (error) {
             console.error("Fout bij ophalen van amigurumiShape:", error);
-            alert(t("errors.loadData", { message: String(error) }));
+            // Geen alert(): die blokkeert de hele pagina (en elke volgende) tot iemand hem wegklikt.
+            toast.error(t("errors.loadData", { message: String(error) }));
         }
     };
 
+    const { user } = useAuth();
+
+    // Pas ophalen als er iemand is ingelogd (Firestore weigert het anders), en bij uitloggen
+    // alles van de vorige gebruiker uit het geheugen halen.
     useEffect(() => {
+        if (!user) {
+            setAmigurumis([]);
+            setYarns([]);
+            setDroppedShapes([]);
+            setActiveId(null);
+            setIntersections([]);
+            setMeshes([]);
+            setYarnInfo({name: null, weight: null, hooksize: null, mPerSkein: null, material: null, color: null});
+            return;
+        }
         fetchData();
         // setYarnInfo( {id: uuidv4(), name: null, weight: null, mPerSkein: null, hooksize: null, material: null, color: null});
 
-    }, []);
+    }, [user?.uid]);
 
     // console.log(amigurumis)
     // console.log(amigurumiShape)
@@ -223,7 +239,7 @@ export default function App() {
             });
         } catch (error) {
             console.error("Error updating shape:", error);
-            alert(t("errors.updateShape", { message: String(error) }));
+            toast.error(t("errors.updateShape", { message: String(error) }));
         }
     };
 
@@ -300,25 +316,17 @@ export default function App() {
         setSetView(() => setViewFn);
     }, []);
 
-    const handleLogout = async () => {
-        try {
-            await signOut(auth);
-            navigate('/');
-        } catch (error) {
-            console.error('Fout bij uitloggen:', error.message);
-        }
-    };
-
     return (
         <div className="App">
             <TopNavBar />
             <Box>
                 <Routes>
                     <Route path={"/"} element={<Login />} />
-                    <Route path="/home" element={<Homepage amigurumis={amigurumis} setAmigurumis={setAmigurumis} yarnInfo={yarnInfo} intersections={intersections} />} />
-                    <Route path="/myPatterns" element={<MyPatterns amigurumis={amigurumis} setAmigurumis={setAmigurumis} yarnInfo={yarnInfo} intersections={intersections} setDroppedShapes={setDroppedShapes} />} />
-                    <Route path="/favorites" element={<Favorites amigurumis={amigurumis} setAmigurumis={setAmigurumis} yarnInfo={yarnInfo} intersections={intersections} />} />
+                    <Route path="/home" element={<RequireAuth><Homepage amigurumis={amigurumis} setAmigurumis={setAmigurumis} yarnInfo={yarnInfo} intersections={intersections} /></RequireAuth>} />
+                    <Route path="/myPatterns" element={<RequireAuth><MyPatterns amigurumis={amigurumis} setAmigurumis={setAmigurumis} yarnInfo={yarnInfo} intersections={intersections} setDroppedShapes={setDroppedShapes} /></RequireAuth>} />
+                    <Route path="/favorites" element={<RequireAuth><Favorites amigurumis={amigurumis} setAmigurumis={setAmigurumis} yarnInfo={yarnInfo} intersections={intersections} /></RequireAuth>} />
                     <Route path="/:amigurumi_id/editor" element={
+                        <RequireAuth>
                         <Suspense fallback={
                             <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "92vh" }}>
                                 <CircularProgress sx={{ color: 'var(--color-primary)' }} />
@@ -359,13 +367,15 @@ export default function App() {
                                 transFormMode={transformMode}
                             />
                         </Suspense>
+                        </RequireAuth>
                     }
                     />
-                    <Route path="/:amigurumi_id/pattern" element={<Pattern shapes={droppedShapes} yarnInfo={yarnInfo} intersections={intersections} meshes={meshes} />} />
-                    <Route path="/account" element={<Account />} />
-                    <Route path="/profile/:userId" element={<Profile />} />
+                    <Route path="/:amigurumi_id/pattern" element={<RequireAuth><Pattern shapes={droppedShapes} yarnInfo={yarnInfo} intersections={intersections} meshes={meshes} /></RequireAuth>} />
+                    <Route path="/account" element={<RequireAuth><Account /></RequireAuth>} />
+                    <Route path="/profile/:username" element={<RequireAuth><Profile /></RequireAuth>} />
                 </Routes>
             </Box>
+            <ChooseUsernameDialog />
             <ToastContainer position="top-right" autoClose={3000} />
         </div>
     );

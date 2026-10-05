@@ -1,18 +1,32 @@
 import { Link } from 'react-router-dom';
+import { useUsernameForEmail } from './users/usernames';
 import { useT } from './i18n/LanguageProvider';
 
-export const profilePath = (userId: string) => `/profile/${encodeURIComponent(userId)}`;
+export const profilePath = (username: string) => `/profile/${encodeURIComponent(username)}`;
 
 // Gebruiker als kleine chip met initiaal, die naar het openbare profiel linkt. Bewust
 // anders vormgegeven dan een gewone tekstlink: zo is zichtbaar dat je naar een persoon
 // gaat (en de pagina verlaat), niet dat er iets binnen de huidige weergave verandert.
 // `onNavigate` laat een omringende dialoog zich sluiten, anders blijft die over de
 // profielpagina heen open staan.
-// Oude ontwerpen hebben soms geen user_id; dan een niet-klikbare chip i.p.v. een crash.
+//
+// `userId` is het e-mailadres waarmee ontwerpen en foto's hun eigenaar opslaan. Dat tonen
+// we nooit: we zoeken de gebruikersnaam erbij. Zonder gebruikersnaam (oude accounts die
+// nog niet opnieuw hebben ingelogd, of ontwerpen zonder eigenaar) een niet-klikbare chip.
 const UserLink = ({ userId, onNavigate }: { userId?: string | null; onNavigate?: () => void }) => {
     const t = useT();
+    const username = useUsernameForEmail(userId);
 
-    if (!userId) {
+    if (username === undefined) {
+        return (
+            <span className="user-chip user-chip--loading" aria-busy="true">
+                <span className="user-chip-avatar" aria-hidden="true" />
+                <span className="user-chip-name">…</span>
+            </span>
+        );
+    }
+
+    if (!username) {
         return (
             <span className="user-chip user-chip--unknown">
                 <span className="user-chip-avatar" aria-hidden="true">?</span>
@@ -23,15 +37,15 @@ const UserLink = ({ userId, onNavigate }: { userId?: string | null; onNavigate?:
 
     return (
         <Link
-            to={profilePath(userId)}
+            to={profilePath(username)}
             className="user-chip"
             onClick={(e) => {
                 e.stopPropagation();
                 onNavigate?.();
             }}
         >
-            <span className="user-chip-avatar" aria-hidden="true">{userId.charAt(0).toUpperCase()}</span>
-            <span className="user-chip-name">{userId}</span>
+            <span className="user-chip-avatar" aria-hidden="true">{username.charAt(0).toUpperCase()}</span>
+            <span className="user-chip-name">@{username}</span>
         </Link>
     );
 };

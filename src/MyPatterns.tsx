@@ -2,7 +2,8 @@ import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {Typography, CircularProgress, Box, Button} from '@mui/material';
 import {Add} from '@mui/icons-material';
 import { doc, updateDoc, getDocs } from 'firebase/firestore';
-import { db, auth } from '../firebase-config.js';
+import { db } from '../firebase-config.js';
+import { useAuth } from './auth/AuthProvider';
 import { useCollection } from 'react-firebase-hooks/firestore';
 import { query, collection, where } from 'firebase/firestore';
 import {useNavigate} from "react-router-dom";
@@ -19,7 +20,7 @@ import { useResponsiveMinColumns } from "./useResponsiveMinColumns.ts";
 import { useT } from "./i18n/LanguageProvider";
 
 const MyPatterns = ({yarnInfo, intersections, setDroppedShapes} : {yarnInfo: Yarn, intersections: any, setDroppedShapes: React.Dispatch<React.SetStateAction<Shape[]>>}) => {
-    const loggedInUser = auth.currentUser?.email;
+    const loggedInUser = useAuth().user?.email;
     const minColumns = useResponsiveMinColumns();
     const t = useT();
 

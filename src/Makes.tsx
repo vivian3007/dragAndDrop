@@ -3,7 +3,8 @@ import { Box, Button, CircularProgress, DialogContent, IconButton, TextField, Ty
 import { CameraAlt, Delete } from '@mui/icons-material';
 import { collection, deleteDoc, doc, getDocs, query, serverTimestamp, setDoc, where } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
-import { auth, db } from '../firebase-config.js';
+import { db } from '../firebase-config.js';
+import { useAuth } from './auth/AuthProvider';
 import AppDialog from './AppDialog.tsx';
 import ImageDropzone from './ImageDropzone.tsx';
 import UserLink from './UserLink.tsx';
@@ -38,7 +39,7 @@ export const MakeGrid = ({
     onNavigate?: () => void;
 }) => {
     const t = useT();
-    const loggedInUser = auth.currentUser?.email;
+    const loggedInUser = useAuth().user?.email;
 
     return (
         <div className="make-grid">
@@ -86,7 +87,7 @@ const Makes = ({
     showTitle?: boolean;
 }) => {
     const t = useT();
-    const loggedInUser = auth.currentUser?.email;
+    const loggedInUser = useAuth().user?.email;
     const [makes, setMakes] = useState<Make[]>([]);
     const [loading, setLoading] = useState(true);
     const [formOpen, setFormOpen] = useState(false);

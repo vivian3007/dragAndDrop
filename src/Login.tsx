@@ -1,151 +1,219 @@
-import React, { useState, useEffect } from 'react';
-import {Box, TextField, Button, Typography, Container, Alert, Tabs, Tab, Card} from '@mui/material';
-import { auth, db } from '../firebase-config.js';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
-import { useNavigate } from 'react-router-dom';
+import { useCallback, useState } from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
+import { Alert, Box, Button, CircularProgress, IconButton, InputAdornment, Tab, Tabs, TextField, Typography } from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
+import {
+    createUserWithEmailAndPassword,
+    sendEmailVerification,
+    sendPasswordResetEmail,
+    signInWithEmailAndPassword,
+} from 'firebase/auth';
+import { auth } from '../firebase-config.js';
+import { useAuth } from './auth/AuthProvider';
+import { authErrorKey, MIN_PASSWORD_LENGTH } from './auth/authErrors';
+import { claimUsername, isUsernameAvailable, USERNAME_MAX, USERNAME_MIN, usernameError } from './users/usernames';
+import UsernameField, { UsernameStatus } from './users/UsernameField';
 import { useT } from './i18n/LanguageProvider';
 import LanguageSelect from './i18n/LanguageSelect';
 
+type Mode = 'login' | 'register' | 'reset';
+
 const Login = () => {
-    const [tabValue, setTabValue] = useState(0);
+    const t = useT();
+    const location = useLocation();
+    const { user, loading, refreshUser, setUsername: setOwnUsername } = useAuth();
+
+    const [mode, setMode] = useState<Mode>('login');
+    const [username, setUsername] = useState('');
+    const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>('idle');
+    const handleUsernameStatus = useCallback((status: UsernameStatus) => setUsernameStatus(status), []);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    // Sleutel van de foutmelding i.p.v. de tekst zelf, zodat hij meevertaalt bij een taalwissel.
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+    // Sleutels i.p.v. teksten, zodat ze meevertalen bij een taalwissel.
     const [error, setError] = useState<string | null>(null);
-    const t = useT();
-    const navigate = useNavigate();
+    const [info, setInfo] = useState<string | null>(null);
 
-    useEffect(() => {
-        const unsubscribe = auth.onAuthStateChanged((user) => {
-            if (user) {
-                navigate('/home');
-            }
-        });
-        return () => unsubscribe();
-    }, [navigate]);
+    // Na inloggen terug naar waar je heen wilde (RequireAuth geeft dat mee), anders Home.
+    // Tijdens het registreren nog niet doorsturen: dan lopen naam en profiel nog.
+    const destination = (location.state as { from?: string } | null)?.from ?? '/home';
+    if (!loading && user && !submitting) {
+        return <Navigate to={destination} replace />;
+    }
 
-    const handleTabChange = (event, newValue) => {
-        setTabValue(newValue);
+    const switchMode = (next: Mode) => {
+        setMode(next);
         setError(null);
-        setEmail('');
+        setInfo(null);
         setPassword('');
+        setConfirmPassword('');
+        setShowPassword(false);
     };
 
-    const handleLogin = async (e) => {
-        e.preventDefault();
+    const handleLogin = async () => {
+        await signInWithEmailAndPassword(auth, email.trim(), password);
+    };
+
+    const handleRegister = async () => {
+        if (usernameError(username)) throw { code: 'local/username-invalid' };
+        if (password.length < MIN_PASSWORD_LENGTH) throw { code: 'local/password-too-short' };
+        if (password !== confirmPassword) throw { code: 'local/password-mismatch' };
+        // Vooraf controleren, zodat er geen account ontstaat met een al bezette naam. De echte
+        // garantie is de reservering hieronder (firestore.rules weigert een bezette naam).
+        // Lukt de controle niet (bv. oudere Firestore-regels die lezen zonder login weigeren),
+        // dan toch doorgaan: de reservering na het aanmaken vangt een bezette naam alsnog af.
+        const available = await isUsernameAvailable(username).catch(() => true);
+        if (!available) throw { code: 'local/username-taken' };
+
+        const { user: newUser } = await createUserWithEmailAndPassword(auth, email.trim(), password);
         try {
-            await signInWithEmailAndPassword(auth, email, password);
-            navigate('/home');
+            await claimUsername(newUser, username);
+            setOwnUsername(username);
         } catch (err) {
-            switch (err.code) {
-                case 'auth/invalid-credential':
-                    setError('login.error.invalidCredentials');
-                    break;
-                case 'auth/user-not-found':
-                    setError('login.error.userNotFound');
-                    break;
-                case 'auth/wrong-password':
-                    setError('login.error.wrongPassword');
-                    break;
-                default:
-                    setError('login.error.generic');
-            }
+            // Net door iemand anders genomen: het account bestaat al, dus na het doorsturen
+            // vraagt de app (ChooseUsernameDialog) om een andere naam.
+            console.warn('Gebruikersnaam kon niet worden vastgelegd:', err);
+        }
+        // Niet fataal als dit mislukt (bv. te veel verzoeken): op de accountpagina kan de
+        // verificatiemail opnieuw worden aangevraagd.
+        await sendEmailVerification(newUser).catch((err) => console.warn('Verificatiemail niet verstuurd:', err));
+        await refreshUser();
+    };
+
+    const handleReset = async () => {
+        try {
+            await sendPasswordResetEmail(auth, email.trim());
+        } catch (err: any) {
+            // "Geen account met dit adres" bewust niet laten zien: anders kan iedereen
+            // uitproberen welke e-mailadressen een account hebben.
+            if (err?.code !== 'auth/user-not-found') throw err;
+        }
+        setInfo('login.reset.sent');
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (submitting) return;
+        setError(null);
+        setInfo(null);
+        setSubmitting(true);
+        try {
+            if (mode === 'login') await handleLogin();
+            else if (mode === 'register') await handleRegister();
+            else await handleReset();
+        } catch (err: any) {
+            setError(authErrorKey(err?.code, mode));
+        } finally {
+            setSubmitting(false);
         }
     };
 
-    const handleRegister = async (e) => {
-        e.preventDefault();
-        try {
-            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-            const user = userCredential.user;
+    const passwordAdornment = (
+        <InputAdornment position="end">
+            <IconButton
+                onClick={() => setShowPassword((v) => !v)}
+                edge="end"
+                aria-label={t(showPassword ? 'login.hidePassword' : 'login.showPassword')}
+            >
+                {showPassword ? <VisibilityOff /> : <Visibility />}
+            </IconButton>
+        </InputAdornment>
+    );
 
-            await setDoc(doc(db, 'users', user.uid), {
-                email: user.email,
-                createdAt: new Date(),
-            });
-
-            navigate('/home');
-        } catch (err) {
-            switch (err.code) {
-                case 'auth/email-already-in-use':
-                    setError('login.error.emailInUse');
-                    break;
-                case 'auth/invalid-email':
-                    setError('login.error.invalidEmail');
-                    break;
-                case 'auth/weak-password':
-                    setError('login.error.weakPassword');
-                    break;
-                default:
-                    setError('login.error.registerGeneric');
-            }
-        }
-    };
+    const submitLabel = mode === 'login' ? t('login.logIn') : mode === 'register' ? t('login.register') : t('login.reset.submit');
 
     return (
-        <div className="pattern">
-            <Box
-                sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    mt: 8,
-                }}
-                className="new-pattern-form"
-            >
-                <Card sx={{padding: 3}}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
-                        <Typography component="h1" variant="h5">
-                            {tabValue === 0 ? t('login.logIn') : t('login.register')}
-                        </Typography>
-                        <LanguageSelect variant="dark" />
-                    </Box>
-                    <Tabs value={tabValue} onChange={handleTabChange} sx={{ mt: 2 }}>
-                        <Tab label={t('login.logIn')} />
-                        <Tab label={t('login.register')} />
+        <div className="auth-page">
+            <div className="auth-card">
+                <div className="auth-card-top">
+                    <LanguageSelect variant="dark" />
+                </div>
+                <h1 className="auth-brand">Stitchify</h1>
+                <p className="auth-tagline">{t('login.tagline')}</p>
+
+                {mode === 'reset' ? (
+                    <>
+                        <h2 className="auth-heading">{t('login.reset.title')}</h2>
+                        <Typography sx={{ mb: 1, fontSize: '0.95rem' }}>{t('login.reset.intro')}</Typography>
+                    </>
+                ) : (
+                    <Tabs value={mode} onChange={(_, value: Mode) => switchMode(value)} variant="fullWidth" className="auth-tabs">
+                        <Tab value="login" label={t('login.logIn')} disableRipple />
+                        <Tab value="register" label={t('login.register')} disableRipple />
                     </Tabs>
-                    <Box component="form" onSubmit={tabValue === 0 ? handleLogin : handleRegister} sx={{ mt: 1 }}>
+                )}
+
+                <Box component="form" onSubmit={handleSubmit} noValidate={false}>
+                    {mode === 'register' && (
+                        <UsernameField value={username} onChange={setUsername} onStatusChange={handleUsernameStatus} autoFocus />
+                    )}
+                    <TextField
+                        margin="normal"
+                        required
+                        fullWidth
+                        type="email"
+                        label={t('login.email')}
+                        autoComplete={mode === 'register' ? 'email' : 'username'}
+                        autoFocus={mode !== 'register'}
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                    />
+                    {mode !== 'reset' && (
                         <TextField
                             margin="normal"
                             required
                             fullWidth
-                            id="email"
-                            label={t('login.email')}
-                            name="email"
-                            autoComplete="email"
-                            autoFocus
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                        />
-                        <TextField
-                            margin="normal"
-                            required
-                            fullWidth
-                            name="password"
+                            type={showPassword ? 'text' : 'password'}
                             label={t('login.password')}
-                            type="password"
-                            id="password"
-                            autoComplete={tabValue === 0 ? 'current-password' : 'new-password'}
+                            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
+                            helperText={mode === 'register' ? t('login.passwordHint', { min: MIN_PASSWORD_LENGTH }) : undefined}
+                            InputProps={{ endAdornment: passwordAdornment }}
                         />
-                        {error && (
-                            <Alert severity="error" sx={{ mt: 2 }}>
-                                {t(error)}
-                            </Alert>
-                        )}
-                        <Button
-                            type="submit"
+                    )}
+                    {mode === 'register' && (
+                        <TextField
+                            margin="normal"
+                            required
                             fullWidth
-                            variant="contained"
-                            sx={{ mt: 3, mb: 2, backgroundColor: "#d4929a" }}
-                        >
-                            {tabValue === 0 ? t('login.logIn') : t('login.register')}
-                        </Button>
-                    </Box>
-                </Card>
-            </Box>
+                            type={showPassword ? 'text' : 'password'}
+                            label={t('login.confirmPassword')}
+                            autoComplete="new-password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            error={confirmPassword.length > 0 && confirmPassword !== password}
+                        />
+                    )}
+
+                    {mode === 'login' && (
+                        <button type="button" className="auth-link auth-forgot" onClick={() => switchMode('reset')}>
+                            {t('login.forgotPassword')}
+                        </button>
+                    )}
+
+                    {error && <Alert severity="error" sx={{ mt: 2 }}>{t(error, { min: MIN_PASSWORD_LENGTH, usernameMin: USERNAME_MIN, usernameMax: USERNAME_MAX })}</Alert>}
+                    {info && <Alert severity="success" sx={{ mt: 2 }}>{t(info)}</Alert>}
+
+                    <Button
+                        type="submit"
+                        fullWidth
+                        variant="contained"
+                        disabled={submitting || (mode === 'register' && (usernameStatus === 'taken' || usernameStatus === 'invalid'))}
+                        className="auth-submit"
+                    >
+                        {submitting ? <CircularProgress size={22} sx={{ color: 'var(--color-bg)' }} /> : submitLabel}
+                    </Button>
+
+                    {mode === 'reset' && (
+                        <button type="button" className="auth-link auth-back" onClick={() => switchMode('login')}>
+                            {t('login.backToLogin')}
+                        </button>
+                    )}
+                </Box>
+            </div>
         </div>
     );
 };

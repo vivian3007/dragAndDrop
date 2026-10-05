@@ -3,21 +3,48 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Avatar, Box, CircularProgress, Typography } from '@mui/material';
 import { collection, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore';
 import { useCollection } from 'react-firebase-hooks/firestore';
-import { auth, db } from '../firebase-config.js';
+import { db } from '../firebase-config.js';
+import { useAuth } from './auth/AuthProvider';
 import AmigurumiCard from './AmigurumiCard.tsx';
 import MasonryGrid from './MasonryGrid.tsx';
 import PatternDetail from './PatternDetail.tsx';
 import { fetchMakes, MakeGrid } from './Makes.tsx';
 import { useResponsiveMinColumns } from './useResponsiveMinColumns.ts';
+import { lookupUserByUsername } from './users/usernames';
 import { useT } from './i18n/LanguageProvider';
 
-// Openbaar profiel van een gebruiker: hun ontwerpen en de knuffels die ze gemaakt hebben.
+// Openbaar profiel, op gebruikersnaam (/profile/:username). Ontwerpen en foto's slaan hun
+// eigenaar op als e-mailadres; dat zoeken we hier op, maar tonen het nergens.
 const Profile = () => {
-    const { userId = '' } = useParams();
+    const { username = '' } = useParams();
+    const t = useT();
+    const [profile, setProfile] = useState<{ email: string; username: string } | null | undefined>(undefined);
+
+    useEffect(() => {
+        setProfile(undefined);
+        lookupUserByUsername(username)
+            .then((found) => setProfile(found ? { email: found.email, username: found.username } : null))
+            .catch((err) => {
+                console.error('Fout bij ophalen van profiel:', err);
+                setProfile(null);
+            });
+    }, [username]);
+
+    if (profile === undefined) {
+        return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6 }}><CircularProgress /></Box>;
+    }
+    if (!profile) {
+        return <Typography sx={{ m: 5 }}>{t('profile.notFound', { username })}</Typography>;
+    }
+    return <ProfileContent key={profile.email} userId={profile.email} username={profile.username} />;
+};
+
+// Inhoud van het profiel. `userId` is het e-mailadres waarmee ontwerpen/foto's zijn opgeslagen.
+const ProfileContent = ({ userId, username }: { userId: string; username: string }) => {
     const navigate = useNavigate();
     const t = useT();
     const minColumns = useResponsiveMinColumns();
-    const isOwnProfile = auth.currentUser?.email === userId;
+    const isOwnProfile = useAuth().user?.email === userId;
 
     const [selectedAmigurumi, setSelectedAmigurumi] = useState<Amigurumi | null>(null);
     const [makes, setMakes] = useState<Make[]>([]);
@@ -75,10 +102,10 @@ const Profile = () => {
         <div className="my-pattern profile-page">
             <Box className="profile-header">
                 <Avatar sx={{ width: 72, height: 72, fontSize: '2rem', backgroundColor: 'var(--color-primary)', color: 'var(--color-bg)' }}>
-                    {userId.charAt(0).toUpperCase()}
+                    {username.charAt(0).toUpperCase()}
                 </Avatar>
                 <div>
-                    <h1 className="profile-name">{userId}</h1>
+                    <h1 className="profile-name">@{username}</h1>
                     <Typography sx={{ opacity: 0.8 }}>
                         {t('profile.stats', { designs: amigurumis.length, makes: makes.length })}
                         {isOwnProfile ? ` · ${t('profile.yours')}` : ''}

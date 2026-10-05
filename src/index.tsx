@@ -6,15 +6,18 @@ import { ThemeProvider } from "@mui/material";
 import theme from "./theme";
 import "./styles.css";
 import { LanguageProvider } from "./i18n/LanguageProvider";
+import { AuthProvider } from "./auth/AuthProvider";
 
 const container = document.getElementById("root");
 const root = createRoot(container!);
 root.render(
     <ThemeProvider theme={theme}>
         <LanguageProvider>
-            <BrowserRouter>
-                <App />
-            </BrowserRouter>
+            <AuthProvider>
+                <BrowserRouter>
+                    <App />
+                </BrowserRouter>
+            </AuthProvider>
         </LanguageProvider>
     </ThemeProvider>
 );

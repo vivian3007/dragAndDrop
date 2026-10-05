@@ -2,7 +2,9 @@ import { v4 as uuidv4 } from "uuid";
 import React, { useEffect, useState } from 'react';
 import { Typography, CircularProgress, TextField, Button, Chip, Box, DialogContent } from '@mui/material';
 import { setDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
-import { db, auth } from '../firebase-config.js';
+import { db } from '../firebase-config.js';
+import { useAuth } from './auth/AuthProvider';
+import { useUsernameForEmail } from './users/usernames';
 import { useNavigate } from 'react-router-dom';
 import AppDialog from './AppDialog.tsx';
 import ImageDropzone from './ImageDropzone.tsx';
@@ -31,7 +33,9 @@ const NewPattern = ({
 }) => {
     const navigate = useNavigate();
     const t = useT();
-    const loggedInUser = auth.currentUser?.email;
+    const loggedInUser = useAuth().user?.email;
+    // Eigenaar van het origineel als gebruikersnaam, nooit als e-mailadres.
+    const copySourceUsername = useUsernameForEmail(copySource?.user_id);
     const isEditing = !!editingAmigurumi;
     const isCopying = !isEditing && !!copySource;
 
@@ -198,7 +202,7 @@ const NewPattern = ({
                         </Typography>
                         {isCopying && (
                             <Typography sx={{ mb: 1, color: 'var(--color-text)' }}>
-                                {t('newPattern.copyInfo', { name: copySource!.name, user: copySource!.user_id })}
+                                {t('newPattern.copyInfo', { name: copySource!.name, user: copySourceUsername ? `@${copySourceUsername}` : t('detail.unknown') })}
                             </Typography>
                         )}
                         <form onSubmit={handleSubmit}>

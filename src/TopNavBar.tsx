@@ -14,10 +14,10 @@ import {
     useTheme,
 } from "@mui/material";
 import { NavLink, useLocation } from "react-router-dom";
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import MenuIcon from '@mui/icons-material/Menu';
 import LanguageSelect from "./i18n/LanguageSelect";
 import { useT } from "./i18n/LanguageProvider";
+import { useAuth } from "./auth/AuthProvider";
 
 const navLinks = [
     { to: "/home", labelId: "nav.home" },
@@ -33,6 +33,7 @@ function TopNavBar() {
     const isCompact = useMediaQuery(theme.breakpoints.down('md'));
     const [drawerOpen, setDrawerOpen] = useState(false);
     const t = useT();
+    const { user, username } = useAuth();
 
     if (location.pathname === '/') {
         return null;
@@ -85,12 +86,21 @@ function TopNavBar() {
                             className={({ isActive }) => `navbar-button ${isActive ? 'active' : ''}`}
                             style={{ display: "flex", alignItems: "center", height: "100%" }}
                         >
+                            {/* Initiaal van de ingelogde gebruiker, i.p.v. één vaste foto voor iedereen. */}
                             <Avatar
-                                src={"../img/avatar.jpg"}
                                 alt={t("nav.account")}
-                                sx={{ height: { xs: "5.5vh", md: "6vh" }, width: { xs: "5.5vh", md: "6vh" }, mx: 'auto' }}
-                            />
-                            <KeyboardArrowDownIcon sx={{ fontSize: "2rem", ml: 1 }} />
+                                title={t("nav.account")}
+                                sx={{
+                                    height: { xs: "5.5vh", md: "6vh" },
+                                    width: { xs: "5.5vh", md: "6vh" },
+                                    mx: 'auto',
+                                    backgroundColor: 'var(--color-bg)',
+                                    color: 'var(--color-primary)',
+                                    fontWeight: 700,
+                                }}
+                            >
+                                {(username || user?.email || '?').charAt(0).toUpperCase()}
+                            </Avatar>
                         </NavLink>
                     </Box>
                 </Toolbar>

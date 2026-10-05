@@ -29,7 +29,8 @@ export async function saveAmigurumiCopy(
     let yarn: (Yarn & { id: string }) | null = null;
     if (yarnSnapshot?.exists()) {
         const yarnId = uuidv4();
-        const yarnData = yarnSnapshot.data() as Yarn;
+        // De kopie van het garen is van de nieuwe eigenaar (zie firestore.rules).
+        const yarnData = { ...(yarnSnapshot.data() as Yarn), user_id: newAmigurumi.user_id };
         batch.set(doc(db, 'yarn', yarnId), yarnData);
         yarn = { ...yarnData, id: yarnId };
     }

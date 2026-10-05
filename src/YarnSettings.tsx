@@ -1,5 +1,5 @@
 import {forwardRef, memo, useEffect, useImperativeHandle, useState} from "react";
-import { db } from "../firebase-config.js";
+import { auth, db } from "../firebase-config.js";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import {v4 as uuidv4} from "uuid";
 import {toast} from "react-toastify";
@@ -43,6 +43,8 @@ const YarnSettings = forwardRef<YarnSettingsHandle, {onUpdateYarnInfo: any,  yar
                 hooksize: hooksize ?? 0,
                 material: material ?? null,
                 color: color ?? null,
+                // Eigenaar, zodat de Firestore-regels kunnen controleren wie dit garen mag wijzigen.
+                user_id: auth.currentUser?.email ?? null,
             };
 
             const docId = yarnInfo.id ? yarnInfo.id.toString() : uuidv4();

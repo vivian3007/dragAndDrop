@@ -1,119 +1,255 @@
-import React, { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
-import { Box, Typography, CircularProgress, Card, CardContent, Avatar, Button } from '@mui/material';
-import { auth } from '../firebase-config.js';
-import { useT } from './i18n/LanguageProvider';
+import { Alert, Button, Chip, CircularProgress, IconButton, InputAdornment, TextField } from '@mui/material';
+import { CheckCircle, ErrorOutline, Logout, Person, Visibility, VisibilityOff } from '@mui/icons-material';
+import { EmailAuthProvider, reauthenticateWithCredential, sendEmailVerification, updatePassword } from 'firebase/auth';
+import { toast } from 'react-toastify';
+import { logOut, useAuth } from './auth/AuthProvider';
+import { authErrorKey, MIN_PASSWORD_LENGTH } from './auth/authErrors';
 import { profilePath } from './UserLink.tsx';
+import { claimUsername, isUsernameAvailable, usernameError } from './users/usernames';
+import UsernameField, { UsernameStatus } from './users/UsernameField';
+import { useT } from './i18n/LanguageProvider';
 
-const Account: React.FC = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
-  const t = useT();
+// Accountpagina: alleen bereikbaar via RequireAuth, dus `user` is hier altijd gezet.
+const Account = () => {
+    const { user, refreshUser, username, setUsername } = useAuth();
+    const navigate = useNavigate();
+    const t = useT();
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-      } else {
-        setUser(null);
-        navigate('/');
-      }
-      setLoading(false);
-    });
+    const [newUsername, setNewUsername] = useState(username ?? '');
+    const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>('idle');
+    const handleUsernameStatus = useCallback((status: UsernameStatus) => setUsernameStatus(status), []);
+    const [savingUsername, setSavingUsername] = useState(false);
+    const [usernameSaveError, setUsernameSaveError] = useState<string | null>(null);
 
-    return () => unsubscribe();
-  }, [navigate]);
+    const [sendingVerification, setSendingVerification] = useState(false);
 
-  const handleLogout = () => {
-    auth.signOut()
-      .then(() => {
-        navigate('/');
-      })
-      .catch((error) => {
-        console.error('Logout error:', error);
-      });
-  };
+    const [currentPassword, setCurrentPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [showPasswords, setShowPasswords] = useState(false);
+    const [savingPassword, setSavingPassword] = useState(false);
+    const [passwordError, setPasswordError] = useState<string | null>(null);
 
-  if (loading) {
-    return (
-      <div className="pattern">
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            mt: 8,
-          }}
-          className="new-pattern-form"
-        >
-          <Card sx={{ padding: 3, backgroundColor: 'var(--color-bg-card)' }}>
-            <CircularProgress sx={{ color: 'var(--color-primary)' }} />
-          </Card>
-        </Box>
-      </div>
+    useEffect(() => {
+        setNewUsername(username ?? '');
+    }, [username]);
+
+    if (!user) return null;
+
+    const initial = (username || user.email || '?').charAt(0).toUpperCase();
+    const usernameChanged = !!newUsername && newUsername !== username;
+
+    // Nieuwe naam reserveren en de oude in dezelfde batch vrijgeven (zie claimUsername).
+    const handleSaveUsername = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (usernameError(newUsername)) {
+            setUsernameSaveError('username.error.invalid');
+            return;
+        }
+        setSavingUsername(true);
+        setUsernameSaveError(null);
+        try {
+            if (!(await isUsernameAvailable(newUsername))) {
+                setUsernameSaveError('username.error.taken');
+                return;
+            }
+            await claimUsername(user, newUsername, username);
+            setUsername(newUsername);
+            await refreshUser();
+            toast.success(t('account.usernameSaved'));
+        } catch (err) {
+            console.error('Gebruikersnaam wijzigen mislukt:', err);
+            setUsernameSaveError('username.error.saveFailed');
+        } finally {
+            setSavingUsername(false);
+        }
+    };
+
+    const handleResendVerification = async () => {
+        setSendingVerification(true);
+        try {
+            await sendEmailVerification(user);
+            toast.success(t('account.verificationSent', { email: user.email ?? '' }));
+        } catch (err: any) {
+            toast.error(t(authErrorKey(err?.code, 'account')));
+        } finally {
+            setSendingVerification(false);
+        }
+    };
+
+    const handleChangePassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setPasswordError(null);
+        if (newPassword.length < MIN_PASSWORD_LENGTH) {
+            setPasswordError('login.error.passwordTooShort');
+            return;
+        }
+        if (newPassword !== confirmPassword) {
+            setPasswordError('login.error.passwordMismatch');
+            return;
+        }
+        if (!user.email) return;
+        setSavingPassword(true);
+        try {
+            // Firebase vraagt voor een wachtwoordwijziging een recente login; met het huidige
+            // wachtwoord opnieuw bevestigen voorkomt ook dat iemand op een onbewaakte, nog
+            // ingelogde computer zomaar je wachtwoord kan veranderen.
+            await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, currentPassword));
+            await updatePassword(user, newPassword);
+            setCurrentPassword('');
+            setNewPassword('');
+            setConfirmPassword('');
+            setShowPasswords(false);
+            toast.success(t('account.passwordChanged'));
+        } catch (err: any) {
+            setPasswordError(authErrorKey(err?.code, 'account'));
+        } finally {
+            setSavingPassword(false);
+        }
+    };
+
+    const handleLogout = async () => {
+        try {
+            await logOut();
+            navigate('/', { replace: true });
+        } catch (err) {
+            console.error('Fout bij uitloggen:', err);
+            toast.error(t('login.error.generic'));
+        }
+    };
+
+    const visibilityToggle = (
+        <InputAdornment position="end">
+            <IconButton
+                onClick={() => setShowPasswords((v) => !v)}
+                edge="end"
+                aria-label={t(showPasswords ? 'login.hidePassword' : 'login.showPassword')}
+            >
+                {showPasswords ? <VisibilityOff /> : <Visibility />}
+            </IconButton>
+        </InputAdornment>
     );
-  }
 
-  if (!user) {
-    return null; // Redirect handled in useEffect
-  }
+    return (
+        <div className="account-page">
+            <header className="account-header">
+                <div className="account-avatar" aria-hidden="true">{initial}</div>
+                <div className="account-header-text">
+                    <h1>{username ? `@${username}` : t('account.unnamed')}</h1>
+                    <span className="account-email">{user.email}</span>
+                </div>
+                <div className="account-header-actions">
+                    {username && (
+                        <Button
+                            component={Link}
+                            to={profilePath(username)}
+                            variant="outlined"
+                            startIcon={<Person />}
+                            sx={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)', flexDirection: 'row' }}
+                        >
+                            {t('account.viewProfile')}
+                        </Button>
+                    )}
+                    <Button
+                        variant="contained"
+                        startIcon={<Logout />}
+                        onClick={handleLogout}
+                        sx={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-bg)', flexDirection: 'row' }}
+                    >
+                        {t('account.logOut')}
+                    </Button>
+                </div>
+            </header>
 
-  return (
-    <div className="pattern">
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          mt: 8,
-        }}
-        className="new-pattern-form"
-      >
-        <Card sx={{ padding: 3, backgroundColor: 'var(--color-bg-card)' }}>
-          <Typography component="h1" variant="h5" sx={{ textAlign: 'center', color: 'var(--color-text)' }}>
-            {t('account.title')}
-          </Typography>
-          <CardContent sx={{ textAlign: 'center' }}>
-            <Avatar
-              src={user.photoURL || "../img/avatar.jpg"}
-              alt={user.displayName || t('nav.account')}
-              sx={{ width: 100, height: 100, mx: 'auto', mb: 2 }}
-            />
-            <Typography variant="body1" sx={{ color: 'var(--color-text)' }} gutterBottom>
-              {t('account.name')}: {user.displayName || 'Vivian Vlaanderen'}
-            </Typography>
-            <Typography variant="body1" sx={{ color: 'var(--color-text)' }} gutterBottom>
-              {t('account.email')}: {user.email || t('account.notAvailable')}
-            </Typography>
-            <Typography variant="body2" sx={{ color: 'var(--color-text)' }} gutterBottom>
-              UID: {user.uid}
-            </Typography>
-            <Box sx={{ mt: 3 }}>
-              {user.email && (
-                <Button
-                  component={Link}
-                  to={profilePath(user.email)}
-                  variant="outlined"
-                  sx={{ mt: 3, mb: 2, mr: 1, borderColor: "var(--color-primary)", color: "var(--color-primary)" }}
-                >
-                  {t('account.viewProfile')}
-                </Button>
-              )}
-              <Button
-                variant="contained"
-                sx={{ mt: 3, mb: 2, backgroundColor: "var(--color-primary)", color: "var(--color-bg)" }}
-                onClick={handleLogout}
-              >
-                {t('account.logOut')}
-              </Button>
-            </Box>
-          </CardContent>
-        </Card>
-      </Box>
-    </div>
-  );
+            <section className="account-section">
+                <h2>{t('account.profile')}</h2>
+                <p className="account-note">{t('account.usernameNote')}</p>
+                <form onSubmit={handleSaveUsername} className="account-form">
+                    <UsernameField
+                        value={newUsername}
+                        onChange={setNewUsername}
+                        onStatusChange={handleUsernameStatus}
+                        current={username}
+                    />
+                    <Button
+                        type="submit"
+                        variant="contained"
+                        disabled={!usernameChanged || savingUsername || usernameStatus === 'taken' || usernameStatus === 'invalid'}
+                        sx={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-bg)', alignSelf: 'flex-start', mt: '16px' }}
+                    >
+                        {savingUsername ? <CircularProgress size={20} sx={{ color: 'var(--color-bg)' }} /> : t('account.save')}
+                    </Button>
+                </form>
+                {usernameSaveError && <Alert severity="error" sx={{ mt: 1.5 }}>{t(usernameSaveError)}</Alert>}
+
+                <div className="account-email-row">
+                    <div>
+                        <div className="account-label">{t('account.email')}</div>
+                        <div>{user.email}</div>
+                    </div>
+                    {user.emailVerified ? (
+                        <Chip icon={<CheckCircle />} label={t('account.emailVerified')} color="success" variant="outlined" size="small" />
+                    ) : (
+                        <div className="account-unverified">
+                            <Chip icon={<ErrorOutline />} label={t('account.emailNotVerified')} color="warning" variant="outlined" size="small" />
+                            <Button size="small" onClick={handleResendVerification} disabled={sendingVerification} sx={{ color: 'var(--color-primary)' }}>
+                                {t('account.resendVerification')}
+                            </Button>
+                        </div>
+                    )}
+                </div>
+            </section>
+
+            <section className="account-section">
+                <h2>{t('account.changePassword')}</h2>
+                <form onSubmit={handleChangePassword} className="account-form account-form--stacked">
+                    {/* Verborgen gebruikersnaamveld: helpt wachtwoordmanagers het juiste account te kiezen. */}
+                    <input type="email" name="username" autoComplete="username" value={user.email ?? ''} readOnly hidden />
+                    <TextField
+                        label={t('account.currentPassword')}
+                        type={showPasswords ? 'text' : 'password'}
+                        autoComplete="current-password"
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        required
+                        fullWidth
+                        InputProps={{ endAdornment: visibilityToggle }}
+                    />
+                    <TextField
+                        label={t('account.newPassword')}
+                        type={showPasswords ? 'text' : 'password'}
+                        autoComplete="new-password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        helperText={t('login.passwordHint', { min: MIN_PASSWORD_LENGTH })}
+                        required
+                        fullWidth
+                    />
+                    <TextField
+                        label={t('login.confirmPassword')}
+                        type={showPasswords ? 'text' : 'password'}
+                        autoComplete="new-password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        error={confirmPassword.length > 0 && confirmPassword !== newPassword}
+                        required
+                        fullWidth
+                    />
+                    {passwordError && <Alert severity="error">{t(passwordError, { min: MIN_PASSWORD_LENGTH })}</Alert>}
+                    <Button
+                        type="submit"
+                        variant="contained"
+                        disabled={savingPassword || !currentPassword || !newPassword}
+                        sx={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-bg)', alignSelf: 'flex-start' }}
+                    >
+                        {savingPassword ? <CircularProgress size={20} sx={{ color: 'var(--color-bg)' }} /> : t('account.changePassword')}
+                    </Button>
+                </form>
+            </section>
+        </div>
+    );
 };
 
 export default Account;

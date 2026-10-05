@@ -30,7 +30,8 @@ import {
     ViewInAr,
 } from '@mui/icons-material';
 import { collection, deleteDoc, doc, getCountFromServer, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore';
-import { auth, db } from '../firebase-config.js';
+import { db } from '../firebase-config.js';
+import { useAuth } from './auth/AuthProvider';
 import AppDialog from './AppDialog.tsx';
 import { computePatternHeightCm, computePatternWidthCm } from './geometry/patternBounds';
 import { estimateYarnByColor } from './patterns/estimateYarn';
@@ -64,6 +65,7 @@ const PatternDetail = ({
     onClose: () => void;
 }) => {
     const navigate = useNavigate();
+    const { user } = useAuth();
     const intl = useIntl();
     const t = useT();
 
@@ -204,8 +206,8 @@ const PatternDetail = ({
         return null;
     }
 
-    const isOwner = amigurumi.user_id === auth.currentUser?.email;
-    const isLoggedIn = !!auth.currentUser;
+    const isOwner = !!user?.email && amigurumi.user_id === user.email;
+    const isLoggedIn = !!user;
     const [directSource, ...olderSources] = amigurumi.copiedFrom ?? [];
     const previous = trail[trail.length - 1];
 
