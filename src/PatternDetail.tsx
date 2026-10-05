@@ -29,7 +29,7 @@ import {
     FavoriteBorder,
     ViewInAr,
 } from '@mui/icons-material';
-import { collection, deleteDoc, doc, getCountFromServer, getDoc, getDocs, query, where } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getCountFromServer, getDoc, getDocs, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '../firebase-config.js';
 import { useAuth } from './auth/AuthProvider';
 import AppDialog from './AppDialog.tsx';
@@ -79,6 +79,8 @@ const PatternDetail = ({
     const [yarnLoading, setYarnLoading] = useState(false);
     const { favoriteIds, toggleFavorite } = useFavorites();
     const favorite = !!amigurumi && favoriteIds.has(amigurumi.id);
+    // Live teller: `amigurumi` is een momentopname van het moment van openen.
+    const [favoriteCount, setFavoriteCount] = useState(0);
     const [isHeartBouncing, setIsHeartBouncing] = useState(false);
     const [copyCount, setCopyCount] = useState(0);
     const [makesCount, setMakesCount] = useState(0);
@@ -164,11 +166,21 @@ const PatternDetail = ({
         setTrail(trail.slice(0, -1));
     }, [trail]);
 
+    useEffect(() => {
+        if (!amigurumi) return;
+        setFavoriteCount(amigurumi.favoriteCount ?? 0);
+        return onSnapshot(
+            doc(db, 'amigurumi', amigurumi.id),
+            (snap) => setFavoriteCount((snap.data()?.favoriteCount as number | undefined) ?? 0),
+            (error) => console.error('Fout bij volgen van favorieten-teller:', error)
+        );
+    }, [amigurumi]);
+
     const handleFavoriteChange = useCallback(() => {
         if (!amigurumi) return;
         setIsHeartBouncing(true);
-        toggleFavorite(amigurumi.id);
-    }, [amigurumi, toggleFavorite]);
+        toggleFavorite(amigurumi.id, favoriteCount);
+    }, [amigurumi, toggleFavorite, favoriteCount]);
 
     const handlePatternClick = useCallback(() => {
         if (!amigurumi || !shapes) return;
@@ -323,6 +335,7 @@ const PatternDetail = ({
                                 onClick={handleFavoriteChange}
                                 aria-label={t(favorite ? 'card.unfavorite' : 'card.favorite')}
                                 aria-pressed={favorite}
+                                title={t('card.favoriteCount', { count: favoriteCount })}
                                 className="detail-favorite"
                             >
                                 {favorite ? (
@@ -330,6 +343,7 @@ const PatternDetail = ({
                                 ) : (
                                     <FavoriteBorder className={isHeartBouncing ? 'heart-bounce' : ''} onAnimationEnd={() => setIsHeartBouncing(false)} sx={{ color: 'var(--color-text)' }} />
                                 )}
+                                {favoriteCount > 0 && <span className="favorite-count">{favoriteCount}</span>}
                             </IconButton>
                         </div>
                     </div>

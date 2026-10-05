@@ -132,7 +132,7 @@ export const MakeGrid = ({
                                         onPatternClick?.(design);
                                     }}
                                 />
-                                <FavoriteButton amigurumiId={design.id} />
+                                <FavoriteButton amigurumiId={design.id} count={design.favoriteCount} />
                             </Box>
                         )}
                         {design === null && <p className="make-note">{t('makes.designGone')}</p>}

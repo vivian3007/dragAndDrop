@@ -6,6 +6,7 @@ import { useT } from './i18n/LanguageProvider';
 const sortLabelIds: Record<SortOption, string> = {
     newest: 'filters.sort.newest',
     oldest: 'filters.sort.oldest',
+    popular: 'filters.sort.popular',
     favorite: 'filters.sort.favorite',
     name: 'filters.sort.name',
 };

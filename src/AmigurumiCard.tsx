@@ -86,7 +86,7 @@ export const AmigurumiCardButtons = React.memo(({ onPatternClick }: AmigurumiCar
 // Hartje met stuiter-animatie; ook gebruikt op de kaarten van gemaakte amigurumi (Makes.tsx).
 // Leest en zet zelf je persoonlijke favoriet, zodat alleen dit knopje opnieuw rendert als
 // je favorieten veranderen — niet de hele kaart.
-export const FavoriteButton = ({ amigurumiId }: { amigurumiId: string }) => {
+export const FavoriteButton = ({ amigurumiId, count = 0 }: { amigurumiId: string; count?: number }) => {
     const [isHeartBouncing, setIsHeartBouncing] = useState(false);
     const { favoriteIds, toggleFavorite } = useFavorites();
     const favorite = favoriteIds.has(amigurumiId);
@@ -101,16 +101,19 @@ export const FavoriteButton = ({ amigurumiId }: { amigurumiId: string }) => {
             onClick={(e) => {
                 e.stopPropagation();
                 setIsHeartBouncing(true);
-                toggleFavorite(amigurumiId);
+                toggleFavorite(amigurumiId, count);
             }}
             aria-label={t(favorite ? 'card.unfavorite' : 'card.favorite')}
-            sx={actionIconButtonSx}
+            aria-pressed={favorite}
+            title={t('card.favoriteCount', { count })}
+            sx={{ ...actionIconButtonSx, ...(count > 0 ? { width: 'auto', minWidth: ACTION_HEIGHT, px: 1.25, borderRadius: `${ACTION_HEIGHT / 2}px`, gap: 0.5 } : {}) }}
         >
             {favorite ? (
                 <Favorite {...iconProps} sx={{color: 'var(--color-favorite)', fontSize: '1.25rem'}} />
             ) : (
                 <FavoriteBorder {...iconProps} sx={{color: 'var(--color-text)', fontSize: '1.25rem'}} />
             )}
+            {count > 0 && <span className="favorite-count">{count}</span>}
         </IconButton>
     );
 };
@@ -149,7 +152,7 @@ const AmigurumiCard = ({
             />
             <Box sx={{display: 'flex', alignItems: 'center', gap: 1, marginTop: '20px'}}>
                 <AmigurumiCardButtons onPatternClick={handlePatternClick} />
-                <FavoriteButton amigurumiId={amigurumi.id} />
+                <FavoriteButton amigurumiId={amigurumi.id} count={amigurumi.favoriteCount} />
             </Box>
         </Card>
     );
@@ -161,6 +164,7 @@ const arePropsEqual = (prev: AmigurumiCardProps, next: AmigurumiCardProps) =>
     prev.amigurumi.id === next.amigurumi.id &&
     prev.amigurumi.name === next.amigurumi.name &&
     prev.amigurumi.imageUrl === next.amigurumi.imageUrl &&
+    prev.amigurumi.favoriteCount === next.amigurumi.favoriteCount &&
     (prev.amigurumi.tags ?? []).length === (next.amigurumi.tags ?? []).length &&
     (prev.amigurumi.tags ?? []).every((tag, i) => tag === next.amigurumi.tags[i]) &&
     prev.onPatternClick === next.onPatternClick &&

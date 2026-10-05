@@ -1,4 +1,4 @@
-export type SortOption = 'newest' | 'oldest' | 'favorite' | 'name';
+export type SortOption = 'newest' | 'oldest' | 'popular' | 'favorite' | 'name';
 
 const getTime = (amigurumi: Amigurumi) =>
     amigurumi.createdAt?.toDate ? amigurumi.createdAt.toDate().getTime() : 0;
@@ -65,6 +65,8 @@ export const filterAndSortAmigurumis = (
         switch (sortBy) {
             case 'oldest':
                 return getTime(a) - getTime(b);
+            case 'popular':
+                return (b.favoriteCount ?? 0) - (a.favoriteCount ?? 0) || getTime(b) - getTime(a);
             case 'favorite':
                 return Number(favoriteIds.has(b.id)) - Number(favoriteIds.has(a.id)) || getTime(b) - getTime(a);
             case 'name':

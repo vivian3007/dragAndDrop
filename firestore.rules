@@ -68,23 +68,94 @@ service cloud.firestore {
         && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.username != name;
     }
 
+    function designPath(amigurumiId) {
+      return /databases/$(database)/documents/amigurumi/$(amigurumiId);
+    }
+
+    function favoritePath(uid, amigurumiId) {
+      return /databases/$(database)/documents/users/$(uid)/favorites/$(amigurumiId);
+    }
+
+    // Teller van een ontwerp vóór en ná deze batch (ontbreekt = 0).
+    function favoriteCountBefore(amigurumiId) {
+      return get(designPath(amigurumiId)).data.get('favoriteCount', 0);
+    }
+
+    function favoriteCountAfter(amigurumiId) {
+      return getAfter(designPath(amigurumiId)).data.get('favoriteCount', 0);
+    }
+
     // Persoonlijke favorieten: users/{uid}/favorites/{amigurumiId}. Alleen van jezelf, en
-    // alleen lezen, aanmaken (met enkel een tijdstempel) en weer weghalen.
+    // alleen aanmaken (met enkel een tijdstempel) en weer weghalen. De teller `favoriteCount`
+    // op het ontwerp moet in dezelfde batch precies 1 omhoog of omlaag gaan. Uitzonderingen
+    // bij weghalen: het ontwerp bestaat niet meer, of de teller staat al op 0 (favoriet van
+    // vóór de teller bestond).
     match /users/{uid}/favorites/{amigurumiId} {
-      allow read, delete: if signedIn() && request.auth.uid == uid;
+      allow read: if signedIn() && request.auth.uid == uid;
       allow create: if signedIn() && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['createdAt']);
+        && request.resource.data.keys().hasOnly(['createdAt'])
+        && exists(designPath(amigurumiId))
+        && favoriteCountAfter(amigurumiId) == favoriteCountBefore(amigurumiId) + 1;
+      allow delete: if signedIn() && request.auth.uid == uid
+        && (!exists(designPath(amigurumiId))
+            || favoriteCountAfter(amigurumiId) == favoriteCountBefore(amigurumiId) - 1
+            || (favoriteCountBefore(amigurumiId) == 0 && favoriteCountAfter(amigurumiId) == 0));
+      allow update: if false;
+    }
+
+    // Volgen: users/{ik}/following/{ander} en users/{ander}/followers/{ik} bestaan altijd
+    // samen (in één batch geschreven en weer weggehaald). Alleen jijzelf mag jou laten volgen
+    // of ontvolgen, en jezelf volgen kan niet. Wie wie volgt is zichtbaar voor ingelogde
+    // gebruikers (om volgers te tellen).
+    function followingPath(uid, targetUid) {
+      return /databases/$(database)/documents/users/$(uid)/following/$(targetUid);
+    }
+
+    function followerPath(targetUid, uid) {
+      return /databases/$(database)/documents/users/$(targetUid)/followers/$(uid);
+    }
+
+    match /users/{uid}/following/{targetUid} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.auth.uid == uid && targetUid != uid
+        && request.resource.data.keys().hasOnly(['createdAt'])
+        && existsAfter(followerPath(targetUid, uid));
+      allow delete: if signedIn() && request.auth.uid == uid
+        && !existsAfter(followerPath(targetUid, uid));
+      allow update: if false;
+    }
+
+    match /users/{targetUid}/followers/{uid} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.auth.uid == uid && targetUid != uid
+        && request.resource.data.keys().hasOnly(['createdAt'])
+        && existsAfter(followingPath(uid, targetUid));
+      allow delete: if signedIn() && request.auth.uid == uid
+        && !existsAfter(followingPath(uid, targetUid));
       allow update: if false;
     }
 
     // Ontwerpen: iedereen die is ingelogd mag ze bekijken (Home, profielen, kopiëren).
-    // Alleen de eigenaar mag ze wijzigen of verwijderen. (Favorieten staan per gebruiker
-    // hierboven; het oude gedeelde `favorite`-veld mag niemand anders meer omzetten.)
+    // Alleen de eigenaar mag ze wijzigen of verwijderen — maar de teller `favoriteCount` mag
+    // ook de eigenaar niet zelf aanpassen. Die verandert alleen samen met een favoriet (zie
+    // hierboven): +1 als jij er nu een aanmaakt, -1 als je hem weghaalt. Het oude gedeelde
+    // `favorite`-veld mag niemand anders meer omzetten.
     match /amigurumi/{amigurumiId} {
       allow read: if signedIn();
-      allow create: if signedIn() && request.resource.data.user_id == myUid();
-      allow update: if signedIn()
-        && resource.data.user_id == myUid() && request.resource.data.user_id == myUid();
+      allow create: if signedIn() && request.resource.data.user_id == myUid()
+        && request.resource.data.get('favoriteCount', 0) == 0;
+      allow update: if signedIn() && (
+        (resource.data.user_id == myUid() && request.resource.data.user_id == myUid()
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['favoriteCount']))
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['favoriteCount'])
+          && ((request.resource.data.favoriteCount == resource.data.get('favoriteCount', 0) + 1
+                && !exists(favoritePath(myUid(), amigurumiId))
+                && existsAfter(favoritePath(myUid(), amigurumiId)))
+            || (request.resource.data.favoriteCount == resource.data.get('favoriteCount', 0) - 1
+                && resource.data.get('favoriteCount', 0) > 0
+                && exists(favoritePath(myUid(), amigurumiId))
+                && !existsAfter(favoritePath(myUid(), amigurumiId)))))
+      );
       allow delete: if signedIn() && resource.data.user_id == myUid();
     }
 

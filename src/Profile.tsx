@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Avatar, Box, Button, Skeleton, Typography } from '@mui/material';
-import { Settings } from '@mui/icons-material';
+import { Check, PersonAdd, PersonRemove, Settings } from '@mui/icons-material';
 import { collection, doc, getDocs, onSnapshot, query, where } from 'firebase/firestore';
 import { useCollection } from 'react-firebase-hooks/firestore';
 import { db } from '../firebase-config.js';
@@ -14,6 +14,7 @@ import { CardGridSkeleton, ProfileHeaderSkeleton } from './Skeletons.tsx';
 import { useResponsiveMinColumns } from './useResponsiveMinColumns.ts';
 import { lookupUidByUsername } from './users/usernames';
 import { useT } from './i18n/LanguageProvider';
+import { useFollowCounts, useFollowing } from './follows/FollowingProvider';
 
 // Openbaar profiel, op gebruikersnaam (/profile/:username). Ontwerpen en foto's slaan hun
 // eigenaar op als uid; dat zoeken we hier bij de naam op.
@@ -47,6 +48,38 @@ const Profile = () => {
     return <ProfileContent key={uid} userId={uid} username={username} />;
 };
 
+// Volgen/ontvolgen. "Volgend" wordt bij hover "Ontvolgen", zodat duidelijk is wat een klik doet.
+const FollowButton = ({ userId }: { userId: string }) => {
+    const t = useT();
+    const { followingIds, loaded, toggleFollow } = useFollowing();
+    const [hover, setHover] = useState(false);
+    const [busy, setBusy] = useState(false);
+    const following = followingIds.has(userId);
+
+    const handleClick = async () => {
+        setBusy(true);
+        await toggleFollow(userId);
+        setBusy(false);
+    };
+
+    return (
+        <Button
+            variant={following ? 'outlined' : 'contained'}
+            startIcon={following ? (hover ? <PersonRemove /> : <Check />) : <PersonAdd />}
+            onClick={handleClick}
+            onMouseEnter={() => setHover(true)}
+            onMouseLeave={() => setHover(false)}
+            disabled={!loaded || busy}
+            aria-pressed={following}
+            sx={following
+                ? { borderColor: 'var(--color-primary)', color: 'var(--color-primary)', minWidth: 130 }
+                : { backgroundColor: 'var(--color-primary)', color: 'var(--color-bg)', minWidth: 130 }}
+        >
+            {following ? t(hover ? 'follow.unfollow' : 'follow.following') : t('follow.follow')}
+        </Button>
+    );
+};
+
 // Inhoud van het profiel. `userId` is het uid waarmee ontwerpen/foto's zijn opgeslagen.
 const ProfileContent = ({ userId, username }: { userId: string; username: string }) => {
     const navigate = useNavigate();
@@ -56,6 +89,7 @@ const ProfileContent = ({ userId, username }: { userId: string; username: string
 
     const [selectedAmigurumi, setSelectedAmigurumi] = useState<Amigurumi | null>(null);
     const { makes, loading: makesLoading } = useMakes('user_id', userId);
+    const followCounts = useFollowCounts(userId);
 
     const [snapshot, loading, error] = useCollection(
         query(collection(db, 'amigurumi'), where('user_id', '==', userId))
@@ -108,15 +142,21 @@ const ProfileContent = ({ userId, username }: { userId: string; username: string
                 </Avatar>
                 <div>
                     <h1 className="profile-name">@{username}</h1>
-                    {loading || makesLoading ? (
-                        <Skeleton variant="text" width={220} sx={{ bgcolor: 'var(--color-accent-soft)' }} />
+                    {loading || makesLoading || followCounts === undefined ? (
+                        <Skeleton variant="text" width={300} sx={{ bgcolor: 'var(--color-accent-soft)' }} />
                     ) : (
                         <Typography sx={{ opacity: 0.8 }}>
+                            {followCounts && `${t('profile.followStats', followCounts)} · `}
                             {t('profile.stats', { designs: amigurumis.length, makes: makes.length })}
                             {isOwnProfile ? ` · ${t('profile.yours')}` : ''}
                         </Typography>
                     )}
                 </div>
+                {!isOwnProfile && (
+                    <div className="profile-header-actions">
+                        <FollowButton userId={userId} />
+                    </div>
+                )}
                 {isOwnProfile && (
                     <div className="profile-header-actions">
                         <Button

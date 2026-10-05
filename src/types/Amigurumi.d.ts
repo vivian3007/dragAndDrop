@@ -14,6 +14,8 @@ interface Amigurumi {
     height: number | null;
     tags: string[];
     yarn_id: string | null;
+    // Hoe vaak het ontwerp favoriet is (zie FavoritesProvider). Ontbreekt = 0.
+    favoriteCount?: number;
     // Firebase-uid van de eigenaar. (Vroeger het e-mailadres; zie scripts/migrate-user-ids.mjs.)
     user_id: string;
     createdAt?: any;

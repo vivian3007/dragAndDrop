@@ -7,6 +7,7 @@ import "./styles.css";
 import { LanguageProvider } from "./i18n/LanguageProvider";
 import { AuthProvider } from "./auth/AuthProvider";
 import { FavoritesProvider } from "./favorites/FavoritesProvider";
+import { FollowingProvider } from "./follows/FollowingProvider";
 
 const container = document.getElementById("root");
 const root = createRoot(container!);
@@ -15,9 +16,11 @@ root.render(
         <LanguageProvider>
             <AuthProvider>
                 <FavoritesProvider>
-                    <BrowserRouter>
-                        <App />
-                    </BrowserRouter>
+                    <FollowingProvider>
+                        <BrowserRouter>
+                            <App />
+                        </BrowserRouter>
+                    </FollowingProvider>
                 </FavoritesProvider>
             </AuthProvider>
         </LanguageProvider>

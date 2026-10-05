@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { collection, deleteDoc, doc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore';
+import { collection, doc, increment, onSnapshot, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import { db } from '../../firebase-config.js';
 import { useAuth } from '../auth/AuthProvider';
@@ -11,12 +11,18 @@ import { useT } from '../i18n/LanguageProvider';
 //
 // Eén listener voor de hele app; kaarten, detailweergave en de Favorieten-pagina lezen
 // hieruit, zodat een hartje overal tegelijk omslaat.
+//
+// Hoe vaak een ontwerp favoriet is, staat als teller `favoriteCount` op het ontwerp zelf
+// (wie het favoriet maakte blijft privé). De teller gaat in dezelfde batch mee als de
+// favoriet, en firestore.rules eist dat hij precies met +1/-1 meeloopt.
 
 type FavoritesContextValue = {
     favoriteIds: ReadonlySet<string>;
     // `false` zolang de eerste snapshot nog niet binnen is.
     loaded: boolean;
-    toggleFavorite: (amigurumiId: string) => Promise<void>;
+    // `currentCount`: de teller zoals de aanroeper hem nu ziet. Alleen nodig om niet onder
+    // nul te zakken bij een favoriet van vóór de teller bestond.
+    toggleFavorite: (amigurumiId: string, currentCount?: number) => Promise<void>;
 };
 
 const EMPTY: ReadonlySet<string> = new Set();
@@ -50,15 +56,20 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
         );
     }, [uid]);
 
-    const toggleFavorite = useCallback(async (amigurumiId: string) => {
+    const toggleFavorite = useCallback(async (amigurumiId: string, currentCount = 0) => {
         if (!uid) return;
-        const ref = doc(db, 'users', uid, 'favorites', amigurumiId);
+        const favoriteRef = doc(db, 'users', uid, 'favorites', amigurumiId);
+        const designRef = doc(db, 'amigurumi', amigurumiId);
+        const batch = writeBatch(db);
+        if (favoriteIds.has(amigurumiId)) {
+            batch.delete(favoriteRef);
+            if (currentCount > 0) batch.update(designRef, { favoriteCount: increment(-1) });
+        } else {
+            batch.set(favoriteRef, { createdAt: serverTimestamp() });
+            batch.update(designRef, { favoriteCount: increment(1) });
+        }
         try {
-            if (favoriteIds.has(amigurumiId)) {
-                await deleteDoc(ref);
-            } else {
-                await setDoc(ref, { createdAt: serverTimestamp() });
-            }
+            await batch.commit();
         } catch (error) {
             console.error('Fout bij bijwerken van favoriet:', error);
             toast.error(t('favorites.error'));

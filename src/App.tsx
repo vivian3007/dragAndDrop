@@ -3,6 +3,7 @@ import Pattern from "./Pattern";
 import MyPatterns from "./MyPatterns";
 import Account from "./Account";
 import Favorites from "./Favorites";
+import Following from "./Following";
 import TopNavBar from "./TopNavBar.tsx";
 import {useState, useRef, useEffect, useCallback, lazy, Suspense} from "react";
 import Homepage from "./Homepage.tsx";
@@ -41,7 +42,7 @@ export default function App() {
 
     const [yarns, setYarns] = useState<Yarn[]>([]);
 
-    const [intersections, setIntersections] = useState([]);
+    const [intersections, setIntersections] = useState<Intersection[]>([]);
     const [meshes, setMeshes] = useState([]);
 
     const [setView, setSetView] = useState<(viewKey: string) => void>(() => () => {});
@@ -320,6 +321,7 @@ export default function App() {
                     <Route path="/home" element={<RequireAuth><Homepage yarnInfo={yarnInfo} intersections={intersections} /></RequireAuth>} />
                     <Route path="/myPatterns" element={<RequireAuth><MyPatterns yarnInfo={yarnInfo} intersections={intersections} setDroppedShapes={setDroppedShapes} /></RequireAuth>} />
                     <Route path="/favorites" element={<RequireAuth><Favorites yarnInfo={yarnInfo} intersections={intersections} /></RequireAuth>} />
+                    <Route path="/following" element={<RequireAuth><Following yarnInfo={yarnInfo} intersections={intersections} /></RequireAuth>} />
                     <Route path="/:amigurumi_id/editor" element={
                         <RequireAuth>
                         <Suspense fallback={

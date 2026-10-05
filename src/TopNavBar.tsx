@@ -30,6 +30,7 @@ const navLinks = [
     { to: "/home", labelId: "nav.home" },
     { to: "/myPatterns", labelId: "nav.myPatterns" },
     { to: "/favorites", labelId: "nav.favorites" },
+    { to: "/following", labelId: "nav.following" },
 ];
 
 function TopNavBar() {

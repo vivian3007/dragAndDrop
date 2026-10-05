@@ -916,6 +916,14 @@ body {
     100% { transform: scale(1); }
 }
 
+/* Aantal favorieten naast het hartje (FavoriteButton in AmigurumiCard.tsx). */
+.favorite-count {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-text);
+    font-variant-numeric: tabular-nums;
+}
+
 .heart-bounce {
     animation: heart-bounce 0.5s ease;
 }
@@ -1048,6 +1056,8 @@ body {
 }
 
 .detail-favorite {
+    gap: 4px;
+    border-radius: 999px !important;
     background-color: var(--color-accent-soft) !important;
 }
 
@@ -1466,6 +1476,16 @@ body {
 }
 
 .link-button:hover {
+    color: var(--color-primary-hover);
+}
+
+/* Gewone link midden in een zin (bv. "Ontdek mensen op Home"). */
+.inline-link {
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+.inline-link:hover {
     color: var(--color-primary-hover);
 }
 

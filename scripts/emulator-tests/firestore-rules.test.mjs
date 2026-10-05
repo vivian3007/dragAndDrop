@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { connectAuthEmulator, getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import {
-    collection, connectFirestoreEmulator, deleteDoc, doc, getDoc, getDocs, initializeFirestore, setDoc, setLogLevel, updateDoc, writeBatch,
+    collection, connectFirestoreEmulator, deleteDoc, doc, getDoc, getDocs, increment, initializeFirestore, setDoc, setLogLevel, updateDoc, writeBatch,
 } from 'firebase/firestore';
 
 // Geweigerde schrijfacties zijn hier juist de bedoeling; die hoeft de SDK niet te loggen.
@@ -67,13 +67,76 @@ await check('mag geen ontwerp op andermans naam aanmaken', () => denied(setDoc(d
 await check('mag eigen ontwerp aanmaken', () => allowed(setDoc(doc(bob.db, 'amigurumi/b2'), { name: 'Nieuw', user_id: 'bob' })));
 
 console.log('\nFavorieten');
-await check('Bob mag andermans ontwerp als eigen favoriet markeren', () => allowed(setDoc(doc(bob.db, 'users/bob/favorites/a1'), { createdAt: new Date() })));
+// Zoals FavoritesProvider het doet: favoriet + teller in één batch.
+const favorite = (who, uid, id, delta = 1) => {
+    const batch = writeBatch(who.db);
+    if (delta > 0) batch.set(doc(who.db, `users/${uid}/favorites/${id}`), { createdAt: new Date() });
+    else batch.delete(doc(who.db, `users/${uid}/favorites/${id}`));
+    if (delta !== 0) batch.update(doc(who.db, `amigurumi/${id}`), { favoriteCount: increment(delta) });
+    return batch.commit();
+};
+const countOf = async (id) => (await getDoc(doc(bob.db, `amigurumi/${id}`))).data().favoriteCount ?? 0;
+await check('Bob mag andermans ontwerp als eigen favoriet markeren (teller +1)', async () => {
+    await allowed(favorite(bob, 'bob', 'a1', 1));
+    assert.equal(await countOf('a1'), 1);
+});
+await check('Alice markeert het ook: teller 2', async () => {
+    await allowed(favorite(alice, 'alice', 'a1', 1));
+    assert.equal(await countOf('a1'), 2);
+});
+await check('favoriet zonder teller op te hogen: geweigerd', () => denied(setDoc(doc(bob.db, 'users/bob/favorites/b1'), { createdAt: new Date() })));
+await check('teller zonder favoriet ophogen: geweigerd', () => denied(updateDoc(doc(bob.db, 'amigurumi/b1'), { favoriteCount: increment(1) })));
+await check('teller met 2 tegelijk ophogen: geweigerd', () => {
+    const batch = writeBatch(bob.db);
+    batch.set(doc(bob.db, 'users/bob/favorites/b1'), { createdAt: new Date() });
+    batch.update(doc(bob.db, 'amigurumi/b1'), { favoriteCount: increment(2) });
+    return denied(batch.commit());
+});
+await check('dubbel favoriet (teller nog eens +1): geweigerd', () => denied(favorite(bob, 'bob', 'a1', 1)));
+await check('eigenaar mag de teller niet zelf aanpassen', () => denied(updateDoc(doc(alice.db, 'amigurumi/a1'), { favoriteCount: 99 })));
+await check('eigenaar mag naam én teller niet samen aanpassen', () => denied(updateDoc(doc(alice.db, 'amigurumi/a1'), { name: 'X', favoriteCount: 99 })));
+await check('nieuw ontwerp met een teller: geweigerd', () => denied(setDoc(doc(bob.db, 'amigurumi/nep2'), { name: 'Nep', user_id: 'bob', favoriteCount: 50 })));
 await check('Bob mag zijn eigen favorieten lezen', () => allowed(getDocs(collection(bob.db, 'users/bob/favorites'))));
 await check('Alice mag Bobs favorieten niet lezen', () => denied(getDocs(collection(alice.db, 'users/bob/favorites'))));
-await check('Alice mag geen favoriet voor Bob zetten', () => denied(setDoc(doc(alice.db, 'users/bob/favorites/b1'), { createdAt: new Date() })));
-await check('Alice mag Bobs favoriet niet weghalen', () => denied(deleteDoc(doc(alice.db, 'users/bob/favorites/a1'))));
-await check('favoriet met extra velden: geweigerd', () => denied(setDoc(doc(bob.db, 'users/bob/favorites/b1'), { createdAt: new Date(), stiekem: true })));
-await check('Bob mag zijn favoriet weer weghalen', () => allowed(deleteDoc(doc(bob.db, 'users/bob/favorites/a1'))));
+await check('Alice mag geen favoriet voor Bob zetten', () => denied(favorite(alice, 'bob', 'b1', 1)));
+await check('Alice mag Bobs favoriet niet weghalen', () => denied(favorite(alice, 'bob', 'a1', -1)));
+await check('favoriet met extra velden: geweigerd', () => {
+    const batch = writeBatch(bob.db);
+    batch.set(doc(bob.db, 'users/bob/favorites/b1'), { createdAt: new Date(), stiekem: true });
+    batch.update(doc(bob.db, 'amigurumi/b1'), { favoriteCount: increment(1) });
+    return denied(batch.commit());
+});
+await check('weghalen zonder teller te verlagen: geweigerd', () => denied(deleteDoc(doc(bob.db, 'users/bob/favorites/a1'))));
+await check('Bob mag zijn favoriet weer weghalen (teller -1)', async () => {
+    await allowed(favorite(bob, 'bob', 'a1', -1));
+    assert.equal(await countOf('a1'), 1);
+});
+await check('oude favoriet bij teller 0 mag weg zonder teller', async () => {
+    await adminDb.doc('users/bob/favorites/b1').set({ createdAt: new Date() });
+    await allowed(favorite(bob, 'bob', 'b1', 0));
+});
+
+console.log('\nVolgen');
+const follow = (who, uid, target, on = true) => {
+    const batch = writeBatch(who.db);
+    if (on) {
+        batch.set(doc(who.db, `users/${uid}/following/${target}`), { createdAt: new Date() });
+        batch.set(doc(who.db, `users/${target}/followers/${uid}`), { createdAt: new Date() });
+    } else {
+        batch.delete(doc(who.db, `users/${uid}/following/${target}`));
+        batch.delete(doc(who.db, `users/${target}/followers/${uid}`));
+    }
+    return batch.commit();
+};
+await check('Bob mag Alice volgen', () => allowed(follow(bob, 'bob', 'alice')));
+await check('volgers en gevolgden zijn leesbaar', () => allowed(getDocs(collection(alice.db, 'users/alice/followers'))));
+await check('alleen "following" zonder "followers": geweigerd', () => denied(setDoc(doc(alice.db, 'users/alice/following/bob'), { createdAt: new Date() })));
+await check('alleen "followers" zonder "following": geweigerd', () => denied(setDoc(doc(alice.db, 'users/bob/followers/alice'), { createdAt: new Date() })));
+await check('Alice mag Bob niet namens Bob iemand laten volgen', () => denied(follow(alice, 'bob', 'nobody')));
+await check('jezelf volgen: geweigerd', () => denied(follow(bob, 'bob', 'bob')));
+await check('half ontvolgen (één kant laten staan): geweigerd', () => denied(deleteDoc(doc(bob.db, 'users/bob/following/alice'))));
+await check('Alice mag Bobs volg-relatie niet weghalen', () => denied(follow(alice, 'bob', 'alice', false)));
+await check('Bob mag Alice weer ontvolgen', () => allowed(follow(bob, 'bob', 'alice', false)));
 
 console.log('\nVormen (als Bob)');
 await check('mag geen vorm aan andermans ontwerp toevoegen', () => denied(setDoc(doc(bob.db, 'shapes/s2'), { amigurumi_id: 'a1', type: 'Sphere' })));
