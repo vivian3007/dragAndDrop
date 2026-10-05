@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { ARM_TOTAL_LOCAL_LENGTH } from './geometry/armGeometry';
-import { computePatternBox } from './geometry/patternBounds';
+import { computePatternBox } from './geometry/patternBox';
 import { WORLD_SCALE_FACTOR } from './geometry/units';
 
 // Maakt een stilstaand plaatje van een ontwerp, als fallback voor kaarten zonder foto.

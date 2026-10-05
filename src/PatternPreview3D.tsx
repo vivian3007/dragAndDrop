@@ -3,7 +3,7 @@ import { Canvas, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import Sphere from './Sphere.tsx';
 import Arm from './Arm.tsx';
-import { computePatternBox } from './geometry/patternBounds';
+import { computePatternBox } from './geometry/patternBox';
 import calculateIntersections from './calculateIntersections';
 import { useT } from './i18n/LanguageProvider';
 

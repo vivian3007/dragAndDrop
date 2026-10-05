@@ -1,14 +1,16 @@
-import {useEffect, useState} from "react";
+import {lazy, Suspense, useEffect, useState} from "react";
 import {useLocation, useNavigate, useParams} from "react-router-dom";
-import {Button, Card} from "@mui/material";
+import {Button, Card, Skeleton} from "@mui/material";
 import {doc, getDoc} from "firebase/firestore";
 import {db} from "../firebase-config.js";
 import generateSpherePattern from "./patterns/generateSpherePattern";
 import generateArmPattern from "./patterns/generateArmPattern";
-import PatternPreview3D from "./PatternPreview3D.tsx";
 import { computePatternHeightCm, computePatternWidthCm } from "./geometry/patternBounds";
 import { useIntl } from "react-intl";
 import { useT } from "./i18n/LanguageProvider";
+
+// three.js pas laden als de preview echt in beeld komt.
+const PatternPreview3D = lazy(() => import("./PatternPreview3D.tsx"));
 import { usePatternTerms } from "./i18n/usePatternTerms";
 import { estimateYarnByColor, ROW_HEIGHTS, skeinsNeeded } from "./patterns/estimateYarn";
 
@@ -141,7 +143,9 @@ const Pattern = ({ shapes, yarnInfo, intersections } : {shapes: Shape[], yarnInf
                 <div className="pattern-preview-panel">
                     <h1 className="pattern-page-title">{amigurumi?.name ?? t("pattern.defaultTitle")}</h1>
                     <div className="pattern-preview-3d">
-                        <PatternPreview3D shapes={shapes} onIntersections={setComputedIntersections} />
+                        <Suspense fallback={<Skeleton variant="rounded" sx={{ width: "100%", height: "100%", bgcolor: "var(--color-accent-soft)" }} />}>
+                            <PatternPreview3D shapes={shapes} onIntersections={setComputedIntersections} />
+                        </Suspense>
                     </div>
                     <Button
                         variant="contained"

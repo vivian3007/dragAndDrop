@@ -1,5 +1,4 @@
 import "./styles.css";
-import Pattern from "./Pattern";
 import MyPatterns from "./MyPatterns";
 import Account from "./Account";
 import Favorites from "./Favorites";
@@ -10,7 +9,7 @@ import Homepage from "./Homepage.tsx";
 import {Route, Routes} from "react-router-dom";
 import {collection, getDocs, doc, updateDoc, getDoc, deleteDoc, where, query} from "firebase/firestore";
 import {db} from "../firebase-config.js";
-import {Box, CircularProgress} from "@mui/material";
+import {Box} from "@mui/material";
 import Login from "./Login.tsx";
 import Profile from "./Profile.tsx";
 import { toast, ToastContainer } from 'react-toastify';
@@ -21,7 +20,13 @@ import { useT } from './i18n/LanguageProvider';
 
 // Editor pulls in Three.js/drei/three-csg-ts (het grootste deel van de bundel) —
 // pas laden zodra de editor daadwerkelijk bezocht wordt.
+// Pagina's met three.js (editor, patroon met 3D-preview) pas laden als je ze opent: three.js
+// en react-three-fiber zijn samen het grootste deel van de bundel.
 const Editor = lazy(() => import("./Editor"));
+const Pattern = lazy(() => import("./Pattern"));
+
+// Even leeg (geen laadicoontje) zolang de code van een lazy pagina binnenkomt.
+const RouteFallback = () => <Box sx={{ minHeight: "92vh" }} aria-busy="true" />;
 
 export default function App() {
     const t = useT();
@@ -324,11 +329,7 @@ export default function App() {
                     <Route path="/following" element={<RequireAuth><Following yarnInfo={yarnInfo} intersections={intersections} /></RequireAuth>} />
                     <Route path="/:amigurumi_id/editor" element={
                         <RequireAuth>
-                        <Suspense fallback={
-                            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "92vh" }}>
-                                <CircularProgress sx={{ color: 'var(--color-primary)' }} />
-                            </Box>
-                        }>
+                        <Suspense fallback={<RouteFallback />}>
                             <Editor
                                 droppedShapes={droppedShapes}
                                 setDroppedShapes={setDroppedShapes}
@@ -366,7 +367,7 @@ export default function App() {
                         </RequireAuth>
                     }
                     />
-                    <Route path="/:amigurumi_id/pattern" element={<RequireAuth><Pattern shapes={droppedShapes} yarnInfo={yarnInfo} intersections={intersections} /></RequireAuth>} />
+                    <Route path="/:amigurumi_id/pattern" element={<RequireAuth><Suspense fallback={<RouteFallback />}><Pattern shapes={droppedShapes} yarnInfo={yarnInfo} intersections={intersections} /></Suspense></RequireAuth>} />
                     <Route path="/account" element={<RequireAuth><Account /></RequireAuth>} />
                     <Route path="/profile/:username" element={<RequireAuth><Profile /></RequireAuth>} />
                 </Routes>

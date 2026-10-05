@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { computePatternBox } from "./patternBounds";
+import { computePatternBox } from "./patternBox";
 
 // Spiegelt een vorm links↔rechts (wereld-X, de horizontale as in het vooraanzicht) in het
 // verticale vlak door het midden van de óverige vormen — een arm aan de rechterkant van
