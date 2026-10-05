@@ -48,7 +48,10 @@ const PatternFilters = ({
     // wrapper-Boxen nodig, dus geen kans op dubbel-gemonteerde inputs):
     // - xs: zoekbalk groot bovenaan (volle breedte), tags+sorteren eronder 50/50, knop onderaan.
     // - sm: zoekbalk naast de knop op de eerste rij, tags+sorteren eronder 50/50 — alles breed.
-    // - md+: de oorspronkelijke desktop-rij (zoek, tags, sorteren, knop helemaal rechts).
+    // - md+: één rij met vaste kolommen: zoeken vult de ruimte links, tags en sorteren hebben
+    //   een vaste breedte rechts, de knop (als die er is) komt daarachter. Voorheen een flex-rij
+    //   met space-between, waardoor het tagfilter per pagina ergens anders terechtkwam
+    //   afhankelijk van of er een knop was.
     const gridTemplateAreasXs = hasActions
         ? '"search search" "tags sort" "actions actions"'
         : '"search search" "tags sort"';
@@ -59,12 +62,18 @@ const PatternFilters = ({
     return (
         <Box
             sx={{
-                display: { xs: 'grid', sm: 'grid', md: 'flex' },
-                gridTemplateColumns: { xs: '1fr 1fr', sm: hasActions ? '1fr auto' : '1fr 1fr' },
-                gridTemplateAreas: { xs: gridTemplateAreasXs, sm: gridTemplateAreasSm },
-                flexWrap: { md: 'wrap' },
+                display: 'grid',
+                gridTemplateColumns: {
+                    xs: '1fr 1fr',
+                    sm: hasActions ? '1fr auto' : '1fr 1fr',
+                    md: hasActions ? 'minmax(220px, 1fr) 300px 200px auto' : 'minmax(220px, 1fr) 300px 200px',
+                },
+                gridTemplateAreas: {
+                    xs: gridTemplateAreasXs,
+                    sm: gridTemplateAreasSm,
+                    md: hasActions ? '"search tags sort actions"' : '"search tags sort"',
+                },
                 alignItems: { xs: 'stretch', sm: 'stretch', md: 'center' },
-                justifyContent: { md: 'space-between' },
                 gap: { xs: 1.5, sm: 2, md: 2 },
                 mb: 3,
                 mx: { xs: '8px', sm: '24px', md: '40px' },
@@ -83,7 +92,8 @@ const PatternFilters = ({
                 sx={{
                     ...fieldSx,
                     gridArea: 'search',
-                    width: { xs: '100%', sm: '100%', md: 'auto' },
+                    width: '100%',
+                    maxWidth: { md: 520 },
                     '& .MuiOutlinedInput-input': { fontSize: { xs: '1.1rem', sm: '1rem', md: '0.95rem' } },
                     '& .MuiOutlinedInput-root': { ...fieldSx['& .MuiOutlinedInput-root'], height: { xs: 52, sm: 52, md: 'auto' } },
                 }}
@@ -98,9 +108,7 @@ const PatternFilters = ({
                     ...fieldSx,
                     gridArea: 'tags',
                     minWidth: 0,
-                    width: { xs: '100%', sm: '100%', md: 'auto' },
-                    flex: { md: 1 },
-                    maxWidth: { xs: 'none', sm: 'none', md: 420 },
+                    width: '100%',
                 }}
                 renderTags={(value, getTagProps) =>
                     value.map((tag, index) => (
@@ -122,7 +130,7 @@ const PatternFilters = ({
                 value={sortBy}
                 onChange={(e) => onSortChange(e.target.value as SortOption)}
                 size="small"
-                sx={{ ...fieldSx, gridArea: 'sort', minWidth: 0, width: { xs: '100%', sm: '100%', md: 200 } }}
+                sx={{ ...fieldSx, gridArea: 'sort', minWidth: 0, width: '100%' }}
             >
                 {Object.entries(sortLabelIds).map(([value, labelId]) => (
                     <MenuItem key={value} value={value}>{t(labelId)}</MenuItem>

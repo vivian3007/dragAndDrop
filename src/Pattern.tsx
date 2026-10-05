@@ -10,7 +10,7 @@ import { computePatternHeightCm, computePatternWidthCm } from "./geometry/patter
 import { useIntl } from "react-intl";
 import { useT } from "./i18n/LanguageProvider";
 import { usePatternTerms } from "./i18n/usePatternTerms";
-import { estimateYarnMeters, skeinsNeeded } from "./patterns/estimateYarn";
+import { estimateYarnMeters, ROW_HEIGHTS, skeinsNeeded } from "./patterns/estimateYarn";
 
 // Splitst "Row 3: [1inc, 2sc] * 6 (24)" in een label- en tekst-kolom, zodat de
 // dubbele punten van alle rijen in de lijst netjes onder elkaar uitlijnen
@@ -53,16 +53,7 @@ const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[],
     const navigate = useNavigate();
     const { amigurumi_id } = useParams();
 
-    const rowHeights: Record<string, number> = {
-        Lace: 0.25,
-        SuperFine: 0.3,
-        Fine: 0.35,
-        Light: 0.4,
-        Medium: 0.45,
-        Bulky: 0.55,
-        SuperBulky: 0.7,
-        Jumbo: 1.0,
-    };
+    const rowHeights = ROW_HEIGHTS;
 
     shapes = location.state?.shapes ?? NO_SHAPES;
     const amigurumi = location.state?.amigurumi ?? null;

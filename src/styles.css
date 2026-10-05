@@ -890,6 +890,19 @@ body {
     border-radius: 4px;
 }
 
+/* Snapshot van het 3D-ontwerp als fallback voor een ontbrekende foto (DesignSnapshot.tsx):
+   transparant plaatje op de vertrouwde placeholder-achtergrond, en `contain` zodat er
+   niets van het ontwerp wordt afgesneden. */
+.design-snapshot {
+    display: block;
+}
+
+.design-snapshot-image {
+    display: block;
+    background-color: var(--color-accent-soft);
+    object-fit: contain;
+}
+
 /* border-style:dashed couples dash length to border-width, which isn't enough control for
    "much longer" dashes — four tiled linear-gradient backgrounds (one per edge) give the
    dash/gap length independently of thickness. --dash-color is overridden on hover/drag. */
@@ -932,16 +945,27 @@ body {
     object-fit: cover;
 }
 
-.detail-card {
+/* ===== Detailweergave van een ontwerp (PatternDetail.tsx) ===== */
+
+.MuiDialogContent-root.detail-dialog {
+    padding: 32px 36px 28px;
+}
+
+.detail-back {
+    margin: -12px 0 12px -8px !important;
+}
+
+/* Kop: afbeelding links, naam/ontwerper/tags/samenvatting/acties rechts. Rechts ruimte
+   laten voor de sluitknop van AppDialog, die absoluut rechtsboven staat. */
+.detail-header {
     display: flex;
-    gap: 40px;
-    padding: 40px;
-    width: 100%;
-    box-sizing: border-box;
+    align-items: flex-start;
+    gap: 28px;
+    padding-right: 36px;
 }
 
 .detail-image {
-    width: 380px;
+    width: 300px;
     max-width: 100%;
     aspect-ratio: 4 / 3;
     object-fit: cover;
@@ -949,28 +973,143 @@ body {
     flex-shrink: 0;
 }
 
-.detail-info {
+.detail-heading {
     flex: 1;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
 }
 
-/* Was ooit een @container-query op .detail-card zelf, maar een element kan niet zijn eigen
-   container-query-ancestor zijn (container-type moet op een voorouder staan, niet op het
-   bevraagde element zelf) — die query matchte daardoor NOOIT, dus de kaart bleef altijd in
-   rij-modus staan en .detail-info klapte op smalle dialogen in tot 0px breedte (onzichtbare
-   tekst). Een gewone viewport-media-query — gelijk aan onze sm-grens, want daaronder is er
-   simpelweg niet genoeg ruimte voor een vaste 380px-afbeelding naast leesbare tekst — lost
-   dat betrouwbaar op. */
+.detail-title {
+    margin: 0;
+    font-size: clamp(1.4rem, 3vw + 0.5rem, 2rem);
+    line-height: 1.15;
+}
+
+.detail-byline {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 100%;
+    font-size: 0.95rem;
+}
+
+.detail-summary {
+    margin: 0;
+    font-size: 0.95rem;
+    opacity: 0.8;
+}
+
+.detail-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 6px;
+}
+
+.detail-favorite {
+    background-color: var(--color-accent-soft) !important;
+}
+
+.detail-favorite:hover {
+    background-color: var(--color-accent-soft-hover) !important;
+}
+
+/* Tabbladen in dezelfde stijl als die in de editor (.settings-bar-tabs). */
+.detail-tabs {
+    margin-top: 24px;
+    min-height: 40px !important;
+    border-bottom: 2px solid var(--color-accent-soft);
+}
+
+.detail-tabs .MuiTabs-indicator {
+    background-color: var(--color-primary);
+    height: 3px;
+    border-radius: 3px;
+}
+
+.detail-tabs .MuiTab-root {
+    min-height: 40px;
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: none;
+    color: var(--color-secondary);
+}
+
+.detail-tabs .MuiTab-root.Mui-selected {
+    color: var(--color-primary);
+}
+
+/* Vaste minimumhoogte (± de garentabel, het hoogste tabblad): de dialoog staat verticaal
+   gecentreerd en versprong anders bij elke tabwissel, waardoor de tabs onder je muis wegliepen. */
+.detail-tab-panel {
+    padding-top: 18px;
+    min-height: 210px;
+}
+
+.detail-meta {
+    margin-top: 12px !important;
+    font-size: 0.9rem !important;
+    opacity: 0.75;
+}
+
+/* Herkomst: omlijnd blok, zodat de profiel-chips (zelf al accent-soft) erin zichtbaar blijven. */
+.detail-origin {
+    margin-top: 18px;
+    padding: 12px 14px;
+    border: 2px solid var(--color-accent-soft);
+    border-radius: 14px;
+}
+
+.detail-origin-label {
+    margin-bottom: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-secondary);
+}
+
+.detail-origin-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.detail-origin-row + .detail-origin-label {
+    margin-top: 12px;
+}
+
+.detail-origin-row--older {
+    font-size: 0.9rem;
+    opacity: 0.85;
+}
+
+/* Onder de sm-grens past een afbeelding naast leesbare tekst niet meer: kop onder elkaar,
+   met een lagere afbeelding zodat de acties zonder scrollen in beeld blijven. */
 @media (max-width: 899px) {
-    .detail-card {
-        flex-direction: column;
+    .MuiDialogContent-root.detail-dialog {
+        padding: 20px 18px;
     }
 
-    /* In kolom-modus loopt de afbeelding anders mee met de volle dialoogbreedte, en wordt
-       hij bij de 4:3-ratio al snel veel te hoog — een max-height met object-fit:cover
-       houdt 'm compact terwijl de aspect-ratio verder gewoon de breedte blijft sturen. */
+    .detail-header {
+        flex-direction: column;
+        gap: 16px;
+        padding-right: 0;
+    }
+
+    .detail-header > .design-snapshot,
     .detail-image {
         width: 100%;
+    }
+
+    .detail-image {
         max-height: 220px;
     }
 }
@@ -1019,16 +1158,52 @@ body {
     cursor: pointer;
 }
 
-.user-link {
-    color: var(--color-primary);
-    font-weight: 500;
-    overflow-wrap: anywhere;
+.link-button:hover,
+.make-design-link:hover {
+    color: var(--color-primary-hover);
 }
 
-.link-button:hover,
-.make-design-link:hover,
-.user-link:hover {
-    color: var(--color-primary-hover);
+/* Gebruiker als chip (UserLink.tsx). */
+.user-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 100%;
+    padding: 2px 10px 2px 2px;
+    border-radius: 999px;
+    background-color: var(--color-accent-soft);
+    color: var(--color-text);
+    font-size: 0.9rem;
+    font-weight: 500;
+    line-height: 1.6;
+    text-decoration: none;
+    vertical-align: middle;
+    transition: background-color 0.15s;
+}
+
+.user-chip:hover {
+    background-color: var(--color-accent-soft-hover);
+}
+
+.user-chip-avatar {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background-color: var(--color-primary);
+    color: var(--color-bg);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.user-chip-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .make-grid {
@@ -1349,10 +1524,6 @@ body {
         height: 30px !important;
     }
 
-    .detail-card {
-        padding: 15px;
-    }
-
     /*.my-pattern-container {*/
     /*    width: 80%;*/
     /*    column-count: 1;*/
@@ -1430,9 +1601,8 @@ body {
         font-size: 0.95rem;
     }
 
-    .detail-card {
-        padding: 8px;
-        gap: 12px;
+    .MuiDialogContent-root.detail-dialog {
+        padding: 16px 12px;
     }
 
     .detail-image {

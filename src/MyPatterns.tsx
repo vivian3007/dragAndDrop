@@ -1,7 +1,7 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {Typography, CircularProgress, Box, Button} from '@mui/material';
 import {Add} from '@mui/icons-material';
-import { doc, updateDoc, getDocs, deleteDoc } from 'firebase/firestore';
+import { doc, updateDoc, getDocs } from 'firebase/firestore';
 import { db, auth } from '../firebase-config.js';
 import { useCollection } from 'react-firebase-hooks/firestore';
 import { query, collection, where } from 'firebase/firestore';
@@ -101,17 +101,6 @@ const MyPatterns = ({yarnInfo, intersections, setDroppedShapes} : {yarnInfo: Yar
         setSelectedAmigurumi(amigurumi);
     }, []);
 
-    const handleDeleteAmigurumi = useCallback(async (amigurumi: Amigurumi) => {
-        if (window.confirm(t('patterns.deleteConfirm', { name: amigurumi.name }))) {
-            try {
-                await deleteDoc(doc(db, 'amigurumi', amigurumi.id));
-                // Optioneel: feedback/toast of refresh
-            } catch (error) {
-                console.error('Fout bij verwijderen van amigurumi:', error);
-                alert(t('patterns.deleteError'));
-            }
-        }
-    },[t]);
 
     const filterActions = useMemo(() => (
         <Button
@@ -168,7 +157,6 @@ const MyPatterns = ({yarnInfo, intersections, setDroppedShapes} : {yarnInfo: Yar
                             amigurumi={amigurumi}
                             onFavoriteChange={handleFavoriteChange}
                             onPatternClick={handlePatternClick}
-                            onDeleteClick={handleDeleteAmigurumi}
                             onCardClick={handleCardClick}
                         />
                     )}

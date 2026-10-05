@@ -1,7 +1,7 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {CircularProgress, Typography} from '@mui/material';
-import {doc, deleteDoc, getDocs, updateDoc, where} from 'firebase/firestore';
-import { db, auth } from '../firebase-config.js';
+import {doc, getDocs, updateDoc, where} from 'firebase/firestore';
+import { db } from '../firebase-config.js';
 import { useCollection } from 'react-firebase-hooks/firestore';
 import { query, collection } from 'firebase/firestore';
 import {useNavigate} from "react-router-dom";
@@ -18,7 +18,6 @@ import { useT } from "./i18n/LanguageProvider";
 
 const Favorites = ({yarnInfo, intersections} : {yarnInfo: Yarn, intersections: any}) => {
     const navigate = useNavigate();
-    const loggedInUser = auth.currentUser?.email;
     const minColumns = useResponsiveMinColumns();
     const t = useT();
     const [selectedAmigurumi, setSelectedAmigurumi] = useState<Amigurumi | null>(null);
@@ -92,16 +91,6 @@ const Favorites = ({yarnInfo, intersections} : {yarnInfo: Yarn, intersections: a
         setSelectedAmigurumi(amigurumi);
     }, []);
 
-    const handleDeleteAmigurumi = useCallback(async (amigurumi: Amigurumi) => {
-        if (window.confirm(t('patterns.deleteConfirm', { name: amigurumi.name }))) {
-            try {
-                await deleteDoc(doc(db, 'amigurumi', amigurumi.id));
-            } catch (error) {
-                console.error('Fout bij verwijderen van amigurumi:', error);
-                alert(t('patterns.deleteError'));
-            }
-        }
-    },[t]);
 
     if (loading) {
         return <CircularProgress />;
@@ -138,7 +127,6 @@ const Favorites = ({yarnInfo, intersections} : {yarnInfo: Yarn, intersections: a
                             amigurumi={amigurumi}
                             onFavoriteChange={handleFavoriteChange}
                             onPatternClick={handlePatternClick}
-                            onDeleteClick={amigurumi.user_id === loggedInUser ? handleDeleteAmigurumi : undefined}
                             onCardClick={handleCardClick}
                         />
                     )}

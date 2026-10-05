@@ -72,8 +72,19 @@ export const MakeGrid = ({
 };
 
 // "Gemaakt door anderen"-sectie in de patroon-details: foto's van afgewerkte knuffels en
-// een knop om er zelf een toe te voegen.
-const Makes = ({ amigurumi, onNavigate }: { amigurumi: Amigurumi; onNavigate?: () => void }) => {
+// een knop om er zelf een toe te voegen. `onCountChange` houdt bv. een tabblad-label met
+// het aantal foto's bij, ook na toevoegen of verwijderen.
+const Makes = ({
+    amigurumi,
+    onNavigate,
+    onCountChange,
+    showTitle = true,
+}: {
+    amigurumi: Amigurumi;
+    onNavigate?: () => void;
+    onCountChange?: (count: number) => void;
+    showTitle?: boolean;
+}) => {
     const t = useT();
     const loggedInUser = auth.currentUser?.email;
     const [makes, setMakes] = useState<Make[]>([]);
@@ -91,6 +102,10 @@ const Makes = ({ amigurumi, onNavigate }: { amigurumi: Amigurumi; onNavigate?: (
             .catch((err) => console.error('Fout bij ophalen van gemaakte knuffels:', err))
             .finally(() => setLoading(false));
     }, [amigurumi.id]);
+
+    useEffect(() => {
+        if (!loading) onCountChange?.(makes.length);
+    }, [makes, loading, onCountChange]);
 
     const openForm = () => {
         setImageFile(null);
@@ -142,9 +157,9 @@ const Makes = ({ amigurumi, onNavigate }: { amigurumi: Amigurumi; onNavigate?: (
     const previewSrc = imageFile ? URL.createObjectURL(imageFile) : null;
 
     return (
-        <Box sx={{ mt: 3 }}>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 1, mb: 1 }}>
-                <h3 style={{ margin: 0 }}>{t('makes.title')}</h3>
+        <Box sx={{ mt: showTitle ? 3 : 0 }}>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 1, mb: 1.5 }}>
+                {showTitle ? <h3 style={{ margin: 0 }}>{t('makes.title')}</h3> : <span />}
                 {loggedInUser && (
                     <Button
                         size="small"
