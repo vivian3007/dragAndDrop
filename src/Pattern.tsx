@@ -10,7 +10,7 @@ import { computePatternHeightCm, computePatternWidthCm } from "./geometry/patter
 import { useIntl } from "react-intl";
 import { useT } from "./i18n/LanguageProvider";
 import { usePatternTerms } from "./i18n/usePatternTerms";
-import { estimateYarnMeters, ROW_HEIGHTS, skeinsNeeded } from "./patterns/estimateYarn";
+import { estimateYarnByColor, ROW_HEIGHTS, skeinsNeeded } from "./patterns/estimateYarn";
 
 // Splitst "Row 3: [1inc, 2sc] * 6 (24)" in een label- en tekst-kolom, zodat de
 // dubbele punten van alle rijen in de lijst netjes onder elkaar uitlijnen
@@ -38,7 +38,6 @@ const RowLine = ({ text }: { text: string }) => {
 const NO_SHAPES: Shape[] = [];
 
 const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[], yarn: Yarn, intersections: any, meshes: any}) => {
-    const PIXELS_PER_CM = 37.8; // 10 pixels = 1 cm
     const [patterns, setPatterns] = useState<any[]>([]);
     // Door PatternPreview3D uit de 3D-scene berekend; null zolang de preview nog laadt.
     const [computedIntersections, setComputedIntersections] = useState<any[] | null>(null);
@@ -91,9 +90,9 @@ const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[],
                 // singleShape.length *= singleShape.zoom;
                 switch (singleShape.type) {
                     case "Sphere":
-                        return generateSpherePattern(singleShape, yarnWeight, PIXELS_PER_CM, rowHeights, intersections, shapes, terms);
+                        return generateSpherePattern(singleShape, yarnWeight, rowHeights, intersections, shapes, terms);
                     case "Arm":
-                        return generateArmPattern(singleShape, yarnWeight, PIXELS_PER_CM, rowHeights, intersections, shapes, terms);
+                        return generateArmPattern(singleShape, yarnWeight, rowHeights, intersections, shapes, terms);
                     default:
                         return null;
                 }
@@ -120,20 +119,14 @@ const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[],
     }, {});
 
     // Geschatte hoeveelheid garen per kleur, op basis van het aantal steken per onderdeel.
-    const metersByColor = patterns.reduce<Record<string, number>>((acc, pattern) => {
-        const color = pattern.color ?? "#cccccc";
-        acc[color] = (acc[color] ?? 0) + estimateYarnMeters(pattern.stitchCount ?? 0, rowHeights[yarnWeight]);
-        return acc;
-    }, {});
-    const totalMeters = Object.values(metersByColor).reduce((sum, meters) => sum + meters, 0);
+    const { byColor: metersByColor, total: totalMeters } = estimateYarnByColor(shapes, yarnInfo?.weight);
     const metersPerSkein = yarnInfo?.mPerSkein ? Number(yarnInfo.mPerSkein) : null;
 
     const yarnAmountLabel = (meters: number) => {
         const skeins = skeinsNeeded(meters, metersPerSkein);
-        const rounded = Math.max(1, Math.ceil(meters));
         return skeins
-            ? t("pattern.yarnAmountWithSkeins", { meters: rounded, skeins })
-            : t("pattern.yarnAmount", { meters: rounded });
+            ? t("pattern.yarnAmountWithSkeins", { meters, skeins })
+            : t("pattern.yarnAmount", { meters });
     };
 
     console.log(patterns);
@@ -307,7 +300,7 @@ const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[],
                                     <div className="pattern-card-body">
                                         <ul className="pattern-row-list">
                                             <RowLine text={`${terms.row(1)}: ${t("pattern.magicRingStart", { stitches: terms.sc(6) })} (6)`} />
-                                            {pattern.incArray.length > 0 ? (
+                                            {pattern.incRows >= 2 ? (
                                                 <RowLine text={`${terms.row(2)}: ${terms.inc(6)} (12)`} />
                                             ) : null}
                                             {pattern.incArray.map((row, idx) => (
@@ -324,7 +317,7 @@ const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[],
                                             ))}
                                             {pattern.type !== "Arm" ? (
                                                 <>
-                                                    <RowLine text={`${terms.row(pattern.rowArray.length - 1)}: ${terms.dec(6)} (6)`} />
+                                                    <RowLine text={`${terms.row(pattern.lastRow)}: ${terms.dec(6)} (6)`} />
                                                     <RowLine text={t("pattern.sewClosed")} />
                                                 </>
                                             ) : (

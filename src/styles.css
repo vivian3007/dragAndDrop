@@ -1185,6 +1185,12 @@ body {
     background-color: var(--color-accent-soft-hover);
 }
 
+.user-chip--unknown,
+.user-chip--unknown:hover {
+    background-color: var(--color-accent-soft);
+    opacity: 0.75;
+}
+
 .user-chip-avatar {
     flex-shrink: 0;
     display: inline-flex;

@@ -33,7 +33,7 @@ import { collection, deleteDoc, doc, getCountFromServer, getDoc, getDocs, query,
 import { auth, db } from '../firebase-config.js';
 import AppDialog from './AppDialog.tsx';
 import { computePatternHeightCm, computePatternWidthCm } from './geometry/patternBounds';
-import { estimateDesignYarnMeters } from './patterns/estimateYarn';
+import { estimateYarnByColor } from './patterns/estimateYarn';
 import NewPattern from './NewPattern.tsx';
 import DesignSnapshot from './DesignSnapshot.tsx';
 import { FormattedMessage, useIntl } from 'react-intl';
@@ -134,7 +134,7 @@ const PatternDetail = ({
     }, [shapes]);
 
     const yarnMeters = useMemo(
-        () => (shapes?.length ? Math.ceil(estimateDesignYarnMeters(shapes, yarn?.weight)) : null),
+        () => (shapes?.length ? estimateYarnByColor(shapes, yarn?.weight).total : null),
         [shapes, yarn?.weight],
     );
 

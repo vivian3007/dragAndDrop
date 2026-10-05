@@ -1,22 +1,38 @@
 import {englishPatternTerms, PatternTerms} from "./patternTerms";
+import { shapeDimensionCm } from "../geometry/units";
+import { maxStitchesForDiameter, STITCH_WIDTH_PER_ROW_HEIGHT } from "./stitchGeometry";
 
-const generateSpherePattern = (singleShape: Shape, yarnWeight: string, PIXELS_PER_CM: number, rowHeights: Record<string, number>, intersections, shapes: Shape[], t: PatternTerms = englishPatternTerms) => {
-    const rowHeight = rowHeights[yarnWeight] * PIXELS_PER_CM ?? 4;
-    const shapeHeight = singleShape.width > singleShape.height ? singleShape.width : singleShape.height;
-    const shapeWidth = singleShape.width > singleShape.height ? singleShape.height : singleShape.width;
+const generateSpherePattern = (singleShape: Shape, yarnWeight: string, rowHeights: Record<string, number>, intersections, shapes: Shape[], t: PatternTerms = englishPatternTerms) => {
+    const rowHeightCm = rowHeights[yarnWeight] ?? rowHeights.Medium;
+    const stitchWidthCm = rowHeightCm * STITCH_WIDTH_PER_ROW_HEIGHT;
 
-    console.log(singleShape.name, shapeHeight, shapeWidth)
+    // Echte maten in cm (zoom meegerekend, en een bol is 2× z'n width — zie pixelsPerCm).
+    // Er wordt gehaakt langs de langste as (ook als dat de diepte is); de doorsnede daar
+    // loodrecht op is het gemiddelde van de twee andere assen (een "cirkel met
+    // gelijkwaardige omtrek").
+    const [crossA, crossB, axisCm] = [
+        shapeDimensionCm(singleShape, "width"),
+        shapeDimensionCm(singleShape, "height"),
+        shapeDimensionCm(singleShape, "length"),
+    ].sort((a, b) => a - b);
+    const crossCm = (crossA + crossB) / 2;
 
-    const rows = shapeHeight ? shapeHeight / rowHeight + 1 : 0;
-    const extraScRows = shapeHeight && shapeWidth ? (shapeHeight - shapeWidth) / rowHeight : 0;
-    const incRows = Math.floor((rows - extraScRows) / 3);
-    const decRows = Math.floor(incRows);
-    const scRows = Math.floor(rows - incRows - decRows);
+    // Steken: de omtrek op het breedste punt. Toeren: de gangbare opbouw van een
+    // amigurumi-bal — meerderen tot M (M/6 toeren), ongeveer evenveel vaste toeren, en
+    // terug minderen (M/6 - 1 toeren). De meertoeren liggen bijna plat, dus puur rekenen
+    // met de halve omtrek gaf te veel vaste toeren (een capsule i.p.v. een bal). Is de vorm
+    // langer dan breed, dan komen er vaste toeren bij voor het verschil; is hij platter,
+    // dan gaan er af.
+    const maxStitches = maxStitchesForDiameter(crossCm, stitchWidthCm);
+    const incRows = maxStitches / 6; // toer 1 (6) t/m toer M/6 (M)
+    const decRows = maxStitches / 6 - 1; // M-6 t/m 6
+    const scRows = Math.max(0, maxStitches / 6 + Math.round((axisCm - crossCm) / rowHeightCm));
+    const rows = incRows + scRows + decRows;
 
-    const rowArray = [];
-    const incArray = [];
-    const scArray = [];
-    const decArray = [];
+    const rowArray: number[] = [];
+    const incArray: string[] = [];
+    const scArray: string[] = [];
+    const decArray: string[] = [];
     const intersectionRows = [];
 
     // Camera-onafhankelijk: de meegegeven fractie ligt op de schaal [-1 (onderpool) ..
@@ -37,7 +53,7 @@ const generateSpherePattern = (singleShape: Shape, yarnWeight: string, PIXELS_PE
         // ruimer bij de evenaar, zoals bij een echte bol.
         const theta = Math.acos(clamped);
         const rowFractionFromTop = theta / Math.PI; // 0 = boven, 1 = onder
-        return Math.min(Math.floor(rows) || 1, Math.max(1, Math.round(rowFractionFromTop * (rows - 1)) + 1));
+        return Math.min(rows, Math.max(1, Math.round(rowFractionFromTop * (rows - 1)) + 1));
     };
 
     intersections.forEach((intersection) => {
@@ -75,55 +91,34 @@ const generateSpherePattern = (singleShape: Shape, yarnWeight: string, PIXELS_PE
         }
     });
 
-    // const topRow = Math.floor(intersections[1].topToHighestPoint / (intersectionShapes[1].height / rows));
-    // const bottomRow = Math.floor(intersections[1].pixelDistanceHeight / rows);
-
-    // intersectionShapes.map((intersectionShape) => intersectionShape.height)
-    // console.log(topRow, bottomRow)
-    console.log(intersectionRows);
-
-    for (let i = 1; i < rows + 1; i++) {
+    for (let i = 1; i <= rows; i++) {
         rowArray.push(i);
     }
 
-    console.log(rowArray)
-
-    for (let i = 1; i < incRows; i++) {
-        incArray.push(`${t.row(rowArray[i + 1])}: [${t.inc(1)}, ${t.sc(i)}] * 6 (${12 + i * 6})`);
+    // Toer 1 (6) en toer 2 (12) schrijft Pattern.tsx zelf; vanaf toer 3 komen ze hier vandaan.
+    for (let row = 3; row <= incRows; row++) {
+        incArray.push(`${t.row(row)}: [${t.inc(1)}, ${t.sc(row - 2)}] * 6 (${row * 6})`);
     }
 
-    console.log(singleShape.name, incRows);
-
-    const maxStitches = incRows * 6 + 6;
-
     if (scRows > 0) {
-        const startRow = incRows > 1 ? incRows + 2 : incRows + 1;
+        const startRow = incRows + 1;
         const endRow = incRows + scRows;
         const rowText = scRows === 1 ? t.row(startRow) : t.row(`${startRow}-${endRow}`);
         scArray.push(`${rowText}: ${t.sc(maxStitches)} (${maxStitches})`);
     }
 
-    let currentStitches = maxStitches;
-    let decStitches = 0;
-
-    for (let i = 0; i < decRows - 1; i++) {
-        currentStitches -= 6;
-        decStitches += currentStitches;
-        const rowIndex = incRows + scRows + i;
-        decArray.push(`${t.row(rowArray[rowIndex])}: [${t.dec(1)}, ${t.sc(decRows - i - 1)}] * 6 (${currentStitches})`);
+    // Minderen tot 12; de slottoer "6 min (6)" op `lastRow` schrijft Pattern.tsx zelf.
+    for (let stitches = maxStitches - 6, row = incRows + scRows + 1; stitches >= 12; stitches -= 6, row++) {
+        decArray.push(`${t.row(row)}: [${t.dec(1)}, ${t.sc(stitches / 6 - 1)}] * 6 (${stitches})`);
     }
+    const lastRow = rows;
 
-    // Totaal aantal steken over alle rijen zoals ze hierboven en in Pattern.tsx getoond
-    // worden: magische ring (6), rij 2 (12), meerderrijen, vaste rijen, minderrijen en de
-    // slotrij van 6. Gebruikt voor de garenschatting.
-    const shownScRows = scRows > 0 ? (scRows === 1 ? 1 : incRows + scRows - (incRows > 1 ? incRows + 2 : incRows + 1) + 1) : 0;
-    const stitchCount =
-        6 +
-        (incArray.length > 0 ? 12 : 0) +
-        incArray.reduce((sum, _row, i) => sum + 12 + (i + 1) * 6, 0) +
-        Math.max(0, shownScRows) * maxStitches +
-        decStitches +
-        6;
+    // Totaal aantal steken over alle toeren, voor de garenschatting: 6, 12, …, M, dan
+    // scRows × M, en terug M-6, …, 6.
+    let stitchCount = 0;
+    for (let row = 1; row <= incRows; row++) stitchCount += row * 6;
+    stitchCount += scRows * maxStitches;
+    for (let stitches = maxStitches - 6; stitches >= 6; stitches -= 6) stitchCount += stitches;
 
     return {
         type: singleShape.type,
@@ -135,6 +130,8 @@ const generateSpherePattern = (singleShape: Shape, yarnWeight: string, PIXELS_PE
         rotation_y: singleShape.rotation_y,
         rotation_z: singleShape.rotation_z,
         rows,
+        incRows,
+        lastRow,
         stitchCount,
         incArray,
         scArray,

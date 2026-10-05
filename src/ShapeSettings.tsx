@@ -3,7 +3,7 @@ import {FormControlLabel, Checkbox} from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import Trashcan from "./Trashcan.tsx";
 import { HexColorPicker } from "react-colorful";
-import { PIXELS_PER_CM } from "./geometry/units";
+import { pixelsPerCm } from "./geometry/units";
 import { useT } from "./i18n/LanguageProvider";
 
 const ColorPicker = memo(function ColorPicker({ color, onColorChange }: { color: string; onColorChange: (newColor: string) => void }) {
@@ -47,6 +47,8 @@ function ShapeSettings({
 
     const activeShapeRef = useRef(activeShape);
     activeShapeRef.current = activeShape;
+    // Bollen zijn in 3D 2× zo groot als hun width (straal vs diameter), zie pixelsPerCm.
+    const pxPerCm = pixelsPerCm(activeShape?.type);
 
     const handleUpdate = (updates: Partial<any>) => {
         if (activeShape) {
@@ -62,9 +64,9 @@ function ShapeSettings({
         setX(activeShape?.x);
         setY(activeShape?.y);
         setZ(activeShape?.z);
-        setWidth(activeShape ? activeShape.width / PIXELS_PER_CM * activeShape.zoom : 50);
-        setHeight(activeShape ? activeShape.height / PIXELS_PER_CM * activeShape.zoom : 50);
-        setLength(activeShape ? activeShape.length / PIXELS_PER_CM * activeShape.zoom : 50);
+        setWidth(activeShape ? activeShape.width / pxPerCm * activeShape.zoom : 50);
+        setHeight(activeShape ? activeShape.height / pxPerCm * activeShape.zoom : 50);
+        setLength(activeShape ? activeShape.length / pxPerCm * activeShape.zoom : 50);
         setName(activeShape?.name || null);
         setShapeColor(activeShape?.color || '#FFFFFF');
         setRotateX(activeShape?.rotation_x || 0);
@@ -77,21 +79,21 @@ function ShapeSettings({
     const handleXChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newScaledX = Number(e.target.value);
         setX(newScaledX);
-        // const newBaseWidth = newScaledWidth * PIXELS_PER_CM / (activeShape?.zoom || 1);
+        // const newBaseWidth = newScaledWidth * pxPerCm / (activeShape?.zoom || 1);
         handleUpdate({ x: newScaledX});
     };
 
     const handleYChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newScaledY = Number(e.target.value);
         setY(newScaledY);
-        // const newBaseWidth = newScaledWidth * PIXELS_PER_CM / (activeShape?.zoom || 1);
+        // const newBaseWidth = newScaledWidth * pxPerCm / (activeShape?.zoom || 1);
         handleUpdate({ y: newScaledY });
     };
 
     const handleZChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newScaledZ = Number(e.target.value);
         setZ(newScaledZ);
-        // const newBaseWidth = newScaledWidth * PIXELS_PER_CM / (activeShape?.zoom || 1);
+        // const newBaseWidth = newScaledWidth * pxPerCm / (activeShape?.zoom || 1);
         handleUpdate({ z: newScaledZ });
     };
 
@@ -108,12 +110,12 @@ function ShapeSettings({
             setHeight(newHeight);
             setLength(newLength);
             handleUpdate({
-                width: newScaledWidth * PIXELS_PER_CM / zoomFactor,
-                height: newHeight * PIXELS_PER_CM / zoomFactor,
-                length: newLength * PIXELS_PER_CM / zoomFactor,
+                width: newScaledWidth * pxPerCm / zoomFactor,
+                height: newHeight * pxPerCm / zoomFactor,
+                length: newLength * pxPerCm / zoomFactor,
             });
         } else {
-            handleUpdate({ width: newScaledWidth * PIXELS_PER_CM / zoomFactor });
+            handleUpdate({ width: newScaledWidth * pxPerCm / zoomFactor });
         }
     };
 
@@ -130,12 +132,12 @@ function ShapeSettings({
             setWidth(newWidth);
             setLength(newLength);
             handleUpdate({
-                height: newScaledHeight * PIXELS_PER_CM / zoomFactor,
-                width: newWidth * PIXELS_PER_CM / zoomFactor,
-                length: newLength * PIXELS_PER_CM / zoomFactor,
+                height: newScaledHeight * pxPerCm / zoomFactor,
+                width: newWidth * pxPerCm / zoomFactor,
+                length: newLength * pxPerCm / zoomFactor,
             });
         } else {
-            handleUpdate({ height: newScaledHeight * PIXELS_PER_CM / zoomFactor });
+            handleUpdate({ height: newScaledHeight * pxPerCm / zoomFactor });
         }
     };
 
@@ -152,12 +154,12 @@ function ShapeSettings({
             setWidth(newWidth);
             setHeight(newHeight);
             handleUpdate({
-                length: newScaledLength * PIXELS_PER_CM / zoomFactor,
-                width: newWidth * PIXELS_PER_CM / zoomFactor,
-                height: newHeight * PIXELS_PER_CM / zoomFactor,
+                length: newScaledLength * pxPerCm / zoomFactor,
+                width: newWidth * pxPerCm / zoomFactor,
+                height: newHeight * pxPerCm / zoomFactor,
             });
         } else {
-            handleUpdate({ length: newScaledLength * PIXELS_PER_CM / zoomFactor });
+            handleUpdate({ length: newScaledLength * pxPerCm / zoomFactor });
         }
     };
 

@@ -1,23 +1,35 @@
 import {englishPatternTerms, PatternTerms} from "./patternTerms";
+import { shapeDimensionCm } from "../geometry/units";
+import { halfEllipsePerimeter, maxStitchesForDiameter, STITCH_WIDTH_PER_ROW_HEIGHT } from "./stitchGeometry";
 
-const generateArmPattern = (singleShape: Shape, yarnWeight: string, PIXELS_PER_CM: number, rowHeights: Record<string, number>, intersections, shapes, t: PatternTerms = englishPatternTerms) => {
-    const rowHeight = rowHeights[yarnWeight] * PIXELS_PER_CM ?? 4;
-    const shapeHeight = singleShape.height;
-    // Doorsnede-basis voor omtrek-/stekenwiskunde: width (X) en length (Z) zijn onafhankelijk
-    // instelbaar (zie ShapeSettings.tsx) en kunnen de Arm in 3D een ovale doorsnede geven,
-    // terwijl het haakpatroon maar één omtrek-getal per rij kent. Gemiddelde van beide als
-    // effectieve diameter — komt overeen met "cirkel met gelijkwaardige omtrek".
-    const shapeWidth = (singleShape.width + singleShape.length) / 2;
+const generateArmPattern = (singleShape: Shape, yarnWeight: string, rowHeights: Record<string, number>, intersections, shapes, t: PatternTerms = englishPatternTerms) => {
+    const rowHeightCm = rowHeights[yarnWeight] ?? rowHeights.Medium;
+    const stitchWidthCm = rowHeightCm * STITCH_WIDTH_PER_ROW_HEIGHT;
 
-    const rows = shapeHeight ? shapeHeight / rowHeight + 1 : 0;
-    const extraScRows = shapeHeight && shapeWidth ? (shapeHeight - shapeWidth) / rowHeight : 0;
-    const incRows = Math.floor((rows - extraScRows) / 3);
-    const scRows = Math.floor(rows - incRows);
+    // Echte maten in cm (zoom meegerekend). `height` is de totale armlengte; de doorsnede is
+    // het gemiddelde van width (X) en length (Z) — die zijn los instelbaar en kunnen de Arm in
+    // 3D ovaal maken, terwijl het haakpatroon maar één omtrek per toer kent.
+    const lengthCm = shapeDimensionCm(singleShape, "height");
+    const diameterCm = (shapeDimensionCm(singleShape, "width") + shapeDimensionCm(singleShape, "length")) / 2;
 
-    const rowArray = [];
-    const incArray = [];
-    const scArray = [];
-    const decArray = [];
+    // Opbouw zoals in Arm.tsx: een bolvormig kapje (een derde van de totale lengte, zie
+    // ARM_TOTAL_LOCAL_LENGTH) op een open cilinder. Het kapje haak je over een kwart-ellips
+    // van de top tot de rand; daarin moeten de meerderingstoeren passen.
+    const capCm = lengthCm / 3;
+    const capRows = Math.max(2, Math.round(halfEllipsePerimeter(diameterCm / 2, capCm) / 2 / rowHeightCm));
+    let maxStitches = maxStitchesForDiameter(diameterCm, stitchWidthCm);
+    while (maxStitches > 12 && maxStitches / 6 > capRows) {
+        maxStitches -= 6;
+    }
+    const incRows = maxStitches / 6; // toer 1 (6) t/m toer M/6 (M)
+    const straightRows = Math.round((lengthCm - capCm) / rowHeightCm);
+    const scRows = Math.max(0, capRows - incRows) + straightRows;
+    const rows = incRows + scRows;
+
+    const rowArray: number[] = [];
+    const incArray: string[] = [];
+    const scArray: string[] = [];
+    const decArray: string[] = [];
     const intersectionRows = [];
 
     // Een cilinder heeft geen polen-compressie zoals een bol — rijen liggen al gelijkmatig
@@ -28,7 +40,7 @@ const generateArmPattern = (singleShape: Shape, yarnWeight: string, PIXELS_PER_C
     const toArmRow = (fractionOfLength) => {
         const clamped = Math.min(1, Math.max(0, fractionOfLength)); // 0=open onderkant, 1=kapje
         const rowFractionFromCap = 1 - clamped;
-        return Math.min(Math.floor(rows) || 1, Math.max(1, Math.round(rowFractionFromCap * (rows - 1)) + 1));
+        return Math.min(rows, Math.max(1, Math.round(rowFractionFromCap * (rows - 1)) + 1));
     };
 
     intersections.forEach((intersection) => {
@@ -50,31 +62,26 @@ const generateArmPattern = (singleShape: Shape, yarnWeight: string, PIXELS_PER_C
         });
     });
 
-    for (let i = 1; i < rows + 1; i++) {
+    for (let i = 1; i <= rows; i++) {
         rowArray.push(i);
     }
 
-    for (let i = 1; i < incRows; i++) {
-        incArray.push(`${t.row(rowArray[i + 1])}: [${t.inc(1)}, ${t.sc(i)}] * 6 (${12 + i * 6})`);
+    // Toer 1 (6) en toer 2 (12) schrijft Pattern.tsx zelf; vanaf toer 3 komen ze hier vandaan.
+    for (let row = 3; row <= incRows; row++) {
+        incArray.push(`${t.row(row)}: [${t.inc(1)}, ${t.sc(row - 2)}] * 6 (${row * 6})`);
     }
 
-    const maxStitches = incRows * 6 + 6;
-
     if (scRows > 0) {
-        const startRow = incRows + 2;
+        const startRow = incRows + 1;
         const endRow = incRows + scRows;
         const rowText = scRows === 1 ? t.row(startRow) : t.row(`${startRow}-${endRow}`);
         scArray.push(`${rowText}: ${t.sc(maxStitches)} (${maxStitches})`);
     }
 
-    // Totaal aantal steken, zelfde opbouw als de getoonde rijen (zie generateSpherePattern):
-    // magische ring, rij 2, meerderrijen en de vaste rijen. Een arm is aan de onderkant open.
-    const shownScRows = scRows > 0 ? (scRows === 1 ? 1 : scRows - 1) : 0;
-    const stitchCount =
-        6 +
-        (incArray.length > 0 ? 12 : 0) +
-        incArray.reduce((sum, _row, i) => sum + 12 + (i + 1) * 6, 0) +
-        Math.max(0, shownScRows) * maxStitches;
+    // Totaal aantal steken, voor de garenschatting: 6, 12, …, M en dan scRows × M. Een arm
+    // is aan de onderkant open, dus geen minderingstoeren.
+    let stitchCount = scRows * maxStitches;
+    for (let row = 1; row <= incRows; row++) stitchCount += row * 6;
 
     return {
         type: singleShape.type,
@@ -86,6 +93,8 @@ const generateArmPattern = (singleShape: Shape, yarnWeight: string, PIXELS_PER_C
         rotation_y: singleShape.rotation_y,
         rotation_z: singleShape.rotation_z,
         rows,
+        incRows,
+        lastRow: rows,
         stitchCount,
         incArray,
         scArray,

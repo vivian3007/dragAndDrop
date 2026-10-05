@@ -1,6 +1,5 @@
 import generateSpherePattern from "./generateSpherePattern";
 import generateArmPattern from "./generateArmPattern";
-import { PIXELS_PER_CM } from "../geometry/units";
 
 // Rijhoogte in cm per garendikte. Gedeeld door de patroonpagina (rij-aantallen) en de
 // garenschatting hieronder.
@@ -41,14 +40,26 @@ export function skeinsNeeded(meters: number, metersPerSkein: number | null | und
     return Math.max(1, Math.ceil(meters / metersPerSkein));
 }
 
-// Totale geschatte hoeveelheid garen voor een heel ontwerp, voor plekken zonder het
-// volledige patroon (zoals de detailweergave). Zelfde generators als de patroonpagina.
-export function estimateDesignYarnMeters(shapes: Shape[], weight: string | null | undefined): number {
+// Geschatte hoeveelheid garen per kleur (hele meters, naar boven afgerond) en het totaal.
+// Het totaal is de som van de afgeronde kleuren, zodat de getallen die naast elkaar op de
+// patroonpagina staan ook echt optellen. Gebruikt door de patroonpagina én de
+// detailweergave, zodat die altijd hetzelfde zeggen.
+export function estimateYarnByColor(
+    shapes: Shape[],
+    weight: string | null | undefined,
+): { byColor: Record<string, number>; total: number } {
     const weightKey = yarnWeightKey(weight);
-    return shapes.reduce((total, shape) => {
+    const rawByColor: Record<string, number> = {};
+    shapes.forEach((shape) => {
         const generate = shape.type === "Arm" ? generateArmPattern : shape.type === "Sphere" ? generateSpherePattern : null;
-        if (!generate) return total;
-        const pattern = generate(shape, weightKey, PIXELS_PER_CM, ROW_HEIGHTS, [], shapes);
-        return total + estimateYarnMeters(pattern.stitchCount ?? 0, ROW_HEIGHTS[weightKey]);
-    }, 0);
+        if (!generate) return;
+        const pattern = generate(shape, weightKey, ROW_HEIGHTS, [], shapes);
+        const color = shape.color ?? "#cccccc";
+        rawByColor[color] = (rawByColor[color] ?? 0) + estimateYarnMeters(pattern.stitchCount, ROW_HEIGHTS[weightKey]);
+    });
+    const byColor = Object.fromEntries(
+        Object.entries(rawByColor).map(([color, meters]) => [color, Math.max(1, Math.ceil(meters))]),
+    );
+    const total = Object.values(byColor).reduce((sum, meters) => sum + meters, 0);
+    return { byColor, total };
 }
