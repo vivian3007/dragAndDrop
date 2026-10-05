@@ -2,13 +2,16 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Button, Chip, CircularProgress, DialogContent, Table, TableBody, TableCell, TableRow, Typography } from '@mui/material';
 import { ContentCopy, Favorite, FavoriteBorder } from '@mui/icons-material';
-import { collection, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore';
+import { collection, doc, getCountFromServer, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore';
 import { auth, db } from '../firebase-config.js';
 import AppDialog from './AppDialog.tsx';
 import { computePatternHeightCm, computePatternWidthCm } from './geometry/patternBounds';
 import NewPattern from './NewPattern.tsx';
 import ImagePlaceholder from './ImagePlaceholder.tsx';
-import { useIntl } from 'react-intl';
+import { FormattedMessage, useIntl } from 'react-intl';
+import { toast } from 'react-toastify';
+import UserLink from './UserLink.tsx';
+import Makes from './Makes.tsx';
 import { useT } from './i18n/LanguageProvider';
 
 const PatternDetail = ({
@@ -34,6 +37,7 @@ const PatternDetail = ({
     const [sizeLoading, setSizeLoading] = useState(false);
     const [editOpen, setEditOpen] = useState(false);
     const [copyOpen, setCopyOpen] = useState(false);
+    const [copyCount, setCopyCount] = useState(0);
 
     useEffect(() => {
         setAmigurumi(amigurumiProp);
@@ -42,6 +46,31 @@ const PatternDetail = ({
     useEffect(() => {
         setFavorite(amigurumi?.favorite ?? false);
     }, [amigurumi]);
+
+    // Hoe vaak dit ontwerp direct als template gebruikt is. Een count-query haalt de
+    // documenten zelf niet op, dus dit blijft goedkoop ook bij veel kopieën.
+    useEffect(() => {
+        setCopyCount(0);
+        if (!amigurumi?.id) return;
+        getCountFromServer(query(collection(db, 'amigurumi'), where('copiedFromId', '==', amigurumi.id)))
+            .then((snapshot) => setCopyCount(snapshot.data().count))
+            .catch((error) => console.error('Fout bij tellen van kopieën:', error));
+    }, [amigurumi?.id]);
+
+    // Opent een bron uit de herkomstketen in deze zelfde dialoog. De naam in de keten is
+    // vastgelegd bij het kopiëren; het origineel kan inmiddels verwijderd zijn.
+    const openSource = useCallback(async (source: AmigurumiSource) => {
+        try {
+            const snap = await getDoc(doc(db, 'amigurumi', source.id));
+            if (snap.exists()) {
+                setAmigurumi({ id: snap.id, ...snap.data() } as Amigurumi);
+            } else {
+                toast.info(t('detail.sourceDeleted', { name: source.name }));
+            }
+        } catch (error) {
+            console.error('Fout bij ophalen van origineel:', error);
+        }
+    }, [t]);
 
     useEffect(() => {
         if (!amigurumi?.id) {
@@ -128,6 +157,20 @@ const PatternDetail = ({
     const isLoggedIn = !!auth.currentUser;
     const [directSource, ...olderSources] = amigurumi.copiedFrom ?? [];
 
+    const sourceRef = (source: AmigurumiSource) => (
+        <FormattedMessage
+            id="detail.sourceBy"
+            values={{
+                name: (
+                    <button type="button" className="link-button" onClick={() => openSource(source)}>
+                        {source.name}
+                    </button>
+                ),
+                user: <UserLink userId={source.user_id} onNavigate={onClose} />,
+            }}
+        />
+    );
+
     const createdDate = amigurumi.createdAt?.toDate
         ? intl.formatDate(amigurumi.createdAt.toDate(), { day: 'numeric', month: 'long', year: 'numeric' })
         : null;
@@ -180,20 +223,26 @@ const PatternDetail = ({
                         <Box className="detail-lineage" sx={{ mb: 2 }}>
                             <Typography>
                                 <strong>{t('detail.copiedFrom')}:</strong>{' '}
-                                {t('detail.sourceBy', { name: directSource.name, user: directSource.user_id })}
+                                {sourceRef(directSource)}
                             </Typography>
                             {olderSources.length > 0 && (
                                 <Box component="ol" sx={{ m: 0, mt: 0.5, pl: 3, fontSize: '0.9rem', opacity: 0.8 }}>
                                     {olderSources.map((source) => (
-                                        <li key={source.id}>
-                                            {t('detail.sourceBy', { name: source.name, user: source.user_id })}
-                                        </li>
+                                        <li key={source.id}>{sourceRef(source)}</li>
                                     ))}
                                 </Box>
                             )}
                         </Box>
                     )}
 
+                    <Typography sx={{ mb: 1 }}>
+                        <strong>{t('detail.designer')}:</strong> <UserLink userId={amigurumi.user_id} onNavigate={onClose} />
+                    </Typography>
+                    {copyCount > 0 && (
+                        <Typography sx={{ mb: 1 }}>
+                            <strong>{t('detail.copies')}:</strong> {t('detail.copyCount', { count: copyCount })}
+                        </Typography>
+                    )}
                     <Typography sx={{ mb: 1 }}><strong>{t('detail.created')}:</strong> {createdDate ?? t('detail.unknown')}</Typography>
                     {sizeLoading ? (
                         <CircularProgress size={16} sx={{ mb: 1 }} />
@@ -286,13 +335,15 @@ const PatternDetail = ({
                                 type="button"
                                 variant="outlined"
                                 startIcon={<ContentCopy />}
-                                sx={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)', width: { xs: '100%', sm: 'auto' } }}
+                                sx={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)', width: { xs: '100%', sm: 'auto' }, flexDirection: 'row' }}
                                 onClick={() => setCopyOpen(true)}
                             >
                                 {t('detail.useAsTemplate')}
                             </Button>
                         )}
                     </Box>
+
+                    <Makes amigurumi={amigurumi} onNavigate={onClose} />
                 </div>
             </DialogContent>
             <NewPattern

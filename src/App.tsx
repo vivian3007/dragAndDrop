@@ -12,6 +12,7 @@ import {collection, getDocs, doc, updateDoc, getDoc, deleteDoc, where, query} fr
 import {db, auth} from "../firebase-config.js";
 import {Box, Button, CircularProgress} from "@mui/material";
 import Login from "./Login.tsx";
+import Profile from "./Profile.tsx";
 import { signOut } from 'firebase/auth';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -362,6 +363,7 @@ export default function App() {
                     />
                     <Route path="/:amigurumi_id/pattern" element={<Pattern shapes={droppedShapes} yarnInfo={yarnInfo} intersections={intersections} meshes={meshes} />} />
                     <Route path="/account" element={<Account />} />
+                    <Route path="/profile/:userId" element={<Profile />} />
                 </Routes>
             </Box>
             <ToastContainer position="top-right" autoClose={3000} />

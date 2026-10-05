@@ -1,12 +1,18 @@
 import React from "react";
 import {Button} from "@mui/material";
+import {Redo, Undo} from "@mui/icons-material";
 import { useT } from "./i18n/LanguageProvider";
 
-function Toolbar({ setView, setTransformMode, showGrid, setShowGrid }: { setView: (viewKey: string) => void, setTransformMode: any, showGrid: boolean, setShowGrid: any }) {
+function Toolbar({ setView, setTransformMode, showGrid, setShowGrid, onUndo, onRedo, canUndo, canRedo }: { setView: (viewKey: string) => void, setTransformMode: any, showGrid: boolean, setShowGrid: any, onUndo: () => void, onRedo: () => void, canUndo: boolean, canRedo: boolean }) {
     const t = useT();
 
     return (
         <div className="toolbar">
+            <h1 className="shapes-text">{t("toolbar.history")}</h1>
+            <div className="toolbar-category">
+                <Button size="small" variant="contained" onClick={onUndo} disabled={!canUndo} startIcon={<Undo />} sx={{ flexDirection: 'row' }}>{t("toolbar.undo")}</Button>
+                <Button size="small" variant="contained" onClick={onRedo} disabled={!canRedo} startIcon={<Redo />} sx={{ flexDirection: 'row' }}>{t("toolbar.redo")}</Button>
+            </div>
             <h1 className="shapes-text">{t("toolbar.view")}</h1>
             <div className="toolbar-category">
                 <Button size="small" variant="contained" onClick={() => setView('front')}>{t("toolbar.front")}</Button>

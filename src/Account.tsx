@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
 import { Box, Typography, CircularProgress, Card, CardContent, Avatar, Button } from '@mui/material';
 import { auth } from '../firebase-config.js';
 import { useT } from './i18n/LanguageProvider';
+import { profilePath } from './UserLink.tsx';
 
 const Account: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -90,6 +91,16 @@ const Account: React.FC = () => {
               UID: {user.uid}
             </Typography>
             <Box sx={{ mt: 3 }}>
+              {user.email && (
+                <Button
+                  component={Link}
+                  to={profilePath(user.email)}
+                  variant="outlined"
+                  sx={{ mt: 3, mb: 2, mr: 1, borderColor: "var(--color-primary)", color: "var(--color-primary)" }}
+                >
+                  {t('account.viewProfile')}
+                </Button>
+              )}
               <Button
                 variant="contained"
                 sx={{ mt: 3, mb: 2, backgroundColor: "var(--color-primary)", color: "var(--color-bg)" }}

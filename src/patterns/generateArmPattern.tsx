@@ -67,6 +67,15 @@ const generateArmPattern = (singleShape: Shape, yarnWeight: string, PIXELS_PER_C
         scArray.push(`${rowText}: ${t.sc(maxStitches)} (${maxStitches})`);
     }
 
+    // Totaal aantal steken, zelfde opbouw als de getoonde rijen (zie generateSpherePattern):
+    // magische ring, rij 2, meerderrijen en de vaste rijen. Een arm is aan de onderkant open.
+    const shownScRows = scRows > 0 ? (scRows === 1 ? 1 : scRows - 1) : 0;
+    const stitchCount =
+        6 +
+        (incArray.length > 0 ? 12 : 0) +
+        incArray.reduce((sum, _row, i) => sum + 12 + (i + 1) * 6, 0) +
+        Math.max(0, shownScRows) * maxStitches;
+
     return {
         type: singleShape.type,
         color: singleShape.color,
@@ -77,6 +86,7 @@ const generateArmPattern = (singleShape: Shape, yarnWeight: string, PIXELS_PER_C
         rotation_y: singleShape.rotation_y,
         rotation_z: singleShape.rotation_z,
         rows,
+        stitchCount,
         incArray,
         scArray,
         decArray,

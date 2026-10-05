@@ -104,12 +104,26 @@ const generateSpherePattern = (singleShape: Shape, yarnWeight: string, PIXELS_PE
     }
 
     let currentStitches = maxStitches;
+    let decStitches = 0;
 
     for (let i = 0; i < decRows - 1; i++) {
         currentStitches -= 6;
+        decStitches += currentStitches;
         const rowIndex = incRows + scRows + i;
         decArray.push(`${t.row(rowArray[rowIndex])}: [${t.dec(1)}, ${t.sc(decRows - i - 1)}] * 6 (${currentStitches})`);
     }
+
+    // Totaal aantal steken over alle rijen zoals ze hierboven en in Pattern.tsx getoond
+    // worden: magische ring (6), rij 2 (12), meerderrijen, vaste rijen, minderrijen en de
+    // slotrij van 6. Gebruikt voor de garenschatting.
+    const shownScRows = scRows > 0 ? (scRows === 1 ? 1 : incRows + scRows - (incRows > 1 ? incRows + 2 : incRows + 1) + 1) : 0;
+    const stitchCount =
+        6 +
+        (incArray.length > 0 ? 12 : 0) +
+        incArray.reduce((sum, _row, i) => sum + 12 + (i + 1) * 6, 0) +
+        Math.max(0, shownScRows) * maxStitches +
+        decStitches +
+        6;
 
     return {
         type: singleShape.type,
@@ -121,6 +135,7 @@ const generateSpherePattern = (singleShape: Shape, yarnWeight: string, PIXELS_PE
         rotation_y: singleShape.rotation_y,
         rotation_z: singleShape.rotation_z,
         rows,
+        stitchCount,
         incArray,
         scArray,
         decArray,

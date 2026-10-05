@@ -14,6 +14,7 @@ function Settingsbar({
                                         activeShape,
                                         onUpdateShape,
                                         onDeleteShape,
+                                        onMirrorShape,
                                         shapeColor,
                                         setShapeColor,
                                         droppedShapes,
@@ -24,6 +25,7 @@ function Settingsbar({
     activeShape: any,
     onUpdateShape: any,
     onDeleteShape: any,
+    onMirrorShape: (id: string) => void,
     shapeColor: string,
     setShapeColor: any,
     droppedShapes: [],
@@ -103,6 +105,17 @@ function Settingsbar({
                 ) : <ShapeSettings shapeColor={shapeColor} setShapeColor={setShapeColor} droppedShapes={droppedShapes} activeShape={activeShape} onUpdateShape={onUpdateShape}/>}
             </div>
             <div className="settings-bar-footer" style={{marginBottom: 20, alignItems: "center", display: "flex", flexDirection: "column"}}>
+                {!showYarnSettings && activeShape && (
+                    <Button
+                        type="button"
+                        variant="outlined"
+                        color="inherit"
+                        sx={{width: 1, borderColor: "var(--color-primary)", color: "var(--color-primary)", marginBottom: "10px"}}
+                        onClick={() => onMirrorShape(activeShape.id)}
+                    >
+                        {t("editor.mirrorShape")}
+                    </Button>
+                )}
                 {!showYarnSettings && activeShape && (
                     <Button
                         type="button"
@@ -191,6 +204,8 @@ function Settingsbar({
                         <div className="shortcut-row"><kbd>R</kbd><span>{t("editor.shortcut.rotate")}</span></div>
                         <div className="shortcut-row"><kbd>S</kbd><span>{t("editor.shortcut.scale")}</span></div>
                         <div className="shortcut-row"><kbd>Delete</kbd><span>{t("editor.shortcut.delete")}</span></div>
+                        <div className="shortcut-row"><kbd>Ctrl+Z</kbd><span>{t("editor.shortcut.undo")}</span></div>
+                        <div className="shortcut-row"><kbd>Ctrl+Y</kbd><span>{t("editor.shortcut.redo")}</span></div>
                     </div>
                 </div>
             </AppDialog>

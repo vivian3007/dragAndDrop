@@ -147,6 +147,7 @@ const NewPattern = ({
                     const copy = await saveAmigurumiCopy(copySource, {
                         ...amigurumiData,
                         copiedFrom: buildCopiedFrom(copySource),
+                        copiedFromId: copySource.id,
                     });
                     setDroppedShapes?.(copy.shapes);
                     onClose();

@@ -10,6 +10,7 @@ import { computePatternHeightCm, computePatternWidthCm } from "./geometry/patter
 import { useIntl } from "react-intl";
 import { useT } from "./i18n/LanguageProvider";
 import { usePatternTerms } from "./i18n/usePatternTerms";
+import { estimateYarnMeters, skeinsNeeded } from "./patterns/estimateYarn";
 
 // Splitst "Row 3: [1inc, 2sc] * 6 (24)" in een label- en tekst-kolom, zodat de
 // dubbele punten van alle rijen in de lijst netjes onder elkaar uitlijnen
@@ -127,6 +128,23 @@ const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[],
         return acc;
     }, {});
 
+    // Geschatte hoeveelheid garen per kleur, op basis van het aantal steken per onderdeel.
+    const metersByColor = patterns.reduce<Record<string, number>>((acc, pattern) => {
+        const color = pattern.color ?? "#cccccc";
+        acc[color] = (acc[color] ?? 0) + estimateYarnMeters(pattern.stitchCount ?? 0, rowHeights[yarnWeight]);
+        return acc;
+    }, {});
+    const totalMeters = Object.values(metersByColor).reduce((sum, meters) => sum + meters, 0);
+    const metersPerSkein = yarnInfo?.mPerSkein ? Number(yarnInfo.mPerSkein) : null;
+
+    const yarnAmountLabel = (meters: number) => {
+        const skeins = skeinsNeeded(meters, metersPerSkein);
+        const rounded = Math.max(1, Math.ceil(meters));
+        return skeins
+            ? t("pattern.yarnAmountWithSkeins", { meters: rounded, skeins })
+            : t("pattern.yarnAmount", { meters: rounded });
+    };
+
     console.log(patterns);
     console.log(intersections);
 
@@ -205,9 +223,24 @@ const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[],
                                                     <li key={color}>
                                                         <span className="pattern-color-swatch" style={{ backgroundColor: color }} />
                                                         {parts.join(", ")}
+                                                        {metersByColor[color] ? (
+                                                            <span className="pattern-color-amount"> · {yarnAmountLabel(metersByColor[color])}</span>
+                                                        ) : null}
                                                     </li>
                                                 ))}
                                             </ul>
+                                        </dd>
+                                    </>
+                                ) : null}
+
+                                {totalMeters > 0 ? (
+                                    <>
+                                        <dt>{t("pattern.yarnNeeded")}</dt>
+                                        <dd>
+                                            <span className="pattern-info-strong">{yarnAmountLabel(totalMeters)}</span>
+                                            <span className="pattern-info-muted">
+                                                {metersPerSkein ? t("pattern.yarnEstimateNote") : t("pattern.yarnEstimateNoSkein")}
+                                            </span>
                                         </dd>
                                     </>
                                 ) : null}

@@ -20,4 +20,7 @@ interface Amigurumi {
     imageUrl?: string | null;
     // Herkomstketen, dichtstbijzijnde bron eerst: [direct origineel, origineel daarvan, ...].
     copiedFrom?: AmigurumiSource[] | null;
+    // Id van de directe bron, los opgeslagen zodat Firestore kan tellen hoe vaak een
+    // ontwerp gekopieerd is (op een veld binnen een array van objecten kan dat niet).
+    copiedFromId?: string | null;
 }
