@@ -1,12 +1,10 @@
-import React, {createContext, Ref, useCallback, useEffect, useRef, useState} from 'react';
-import {Canvas, useThree} from '@react-three/fiber';
+import React, {Ref, useCallback, useEffect, useRef, useState} from 'react';
+import {Canvas} from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { GridHelper } from 'three';
 import Sphere from './Sphere';
 import Arm from './Arm';
 import SceneController from "./SceneController.tsx";
-import RenderProvider from "./RenderProvider.tsx";
-import calculateIntersections from "./calculateIntersections.tsx";
 
 const shapeComponents: { [key: string]: React.ComponentType<any> } = {
     Sphere,
@@ -15,7 +13,6 @@ const shapeComponents: { [key: string]: React.ComponentType<any> } = {
 
 export default function ThreeJsField({
                                          droppedShapes,
-                                        setDroppedShapes,
                                          threeJsContainerRef,
                                          activeId,
                                          setActiveId,
@@ -26,13 +23,11 @@ export default function ThreeJsField({
                                          setTransformMode,
                                          showGrid,
                                          setShowGrid,
-                                        camera,
                                          setCamera,
                                          setIntersections,
                                          intersections,
                                         meshes,
                                         setMeshes,
-                                        scene,
                                         setScene,
                                      }: {
     droppedShapes: any[];

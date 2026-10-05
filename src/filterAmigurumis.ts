@@ -50,7 +50,9 @@ export const filterAndSortAmigurumis = (
     amigurumis: Amigurumi[],
     searchTerm: string,
     selectedTags: string[],
-    sortBy: SortOption
+    sortBy: SortOption,
+    // Persoonlijke favorieten (FavoritesProvider), voor sorteren op 'favorite'.
+    favoriteIds: ReadonlySet<string> = new Set()
 ): Amigurumi[] => {
     const term = searchTerm.trim().toLowerCase();
 
@@ -64,7 +66,7 @@ export const filterAndSortAmigurumis = (
             case 'oldest':
                 return getTime(a) - getTime(b);
             case 'favorite':
-                return Number(!!b.favorite) - Number(!!a.favorite) || getTime(b) - getTime(a);
+                return Number(favoriteIds.has(b.id)) - Number(favoriteIds.has(a.id)) || getTime(b) - getTime(a);
             case 'name':
                 return (a.name ?? '').localeCompare(b.name ?? '');
             case 'newest':

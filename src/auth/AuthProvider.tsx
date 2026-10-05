@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { Navigate, useLocation } from 'react-router-dom';
-import { Box, CircularProgress } from '@mui/material';
-import { auth } from '../../firebase-config.js';
+import { Box } from '@mui/material';
+import { clearIndexedDbPersistence, terminate } from 'firebase/firestore';
+import { auth, db } from '../../firebase-config.js';
 import { fetchOwnUsername } from '../users/usernames';
 
 // Eén centrale bron voor "wie is er ingelogd". Componenten lazen voorheen zelf
@@ -84,13 +85,21 @@ export async function logOut() {
     } catch {
         // Geen opslag beschikbaar: niets op te ruimen.
     }
+    // Ook de Firestore-cache (IndexedDB, zie firebase-config.js) bevat gegevens van deze
+    // gebruiker, zoals favorieten. Wissen kan alleen met een gestopte Firestore-instantie,
+    // dus daarna de pagina vers laden.
+    try {
+        await terminate(db);
+        await clearIndexedDbPersistence(db);
+    } catch (error) {
+        console.error('Fout bij wissen van de lokale cache:', error);
+    }
+    window.location.replace('/');
 }
 
-export const FullPageSpinner = () => (
-    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-        <CircularProgress sx={{ color: 'var(--color-primary)' }} />
-    </Box>
-);
+// Zolang Firebase de sessie herstelt (meestal een fractie van een seconde): bewust leeg i.p.v.
+// een laadicoontje. Daarna toont de pagina zelf skeletons in z'n eigen indeling.
+const AuthPending = () => <Box sx={{ minHeight: '60vh' }} aria-busy="true" />;
 
 // Laat de pagina alleen zien als er iemand is ingelogd; anders naar de inlogpagina, met de
 // oorspronkelijke bestemming erbij zodat je na het inloggen daar weer uitkomt.
@@ -98,7 +107,7 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
     const { user, loading } = useAuth();
     const location = useLocation();
 
-    if (loading) return <FullPageSpinner />;
+    if (loading) return <AuthPending />;
     if (!user) return <Navigate to="/" replace state={{ from: location.pathname + location.search }} />;
     return <>{children}</>;
 }

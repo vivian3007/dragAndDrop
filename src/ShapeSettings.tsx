@@ -1,7 +1,5 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
-import {FormControlLabel, Checkbox} from "@mui/material";
-import { Link, useNavigate } from "react-router-dom";
-import Trashcan from "./Trashcan.tsx";
+import {Checkbox} from "@mui/material";
 import { HexColorPicker } from "react-colorful";
 import { pixelsPerCm } from "./geometry/units";
 import { useT } from "./i18n/LanguageProvider";
@@ -21,13 +19,11 @@ function ShapeSettings({
                                         onUpdateShape,
                                         shapeColor,
                                         setShapeColor,
-                                        droppedShapes,
                                     }: {
     activeShape: any,
     onUpdateShape: any,
     shapeColor: string,
     setShapeColor: any,
-    droppedShapes: [],
 }) {
     const t = useT();
     const [width, setWidth] = useState<number | null>(null);
@@ -37,8 +33,6 @@ function ShapeSettings({
     const [rotateX, setRotateX] = useState<number | null>(null);
     const [rotateY, setRotateY] = useState<number | null>(null);
     const [rotateZ, setRotateZ] = useState<number | null>(null);
-    const [zIndex, setZIndex] = useState(10);
-    const [zoom, setZoom] = useState(1);
     const [x, setX] = useState<number | null>(null);
     const [y, setY] = useState<number | null>(null);
     const [z, setZ] = useState<number | null>(null);
@@ -72,8 +66,6 @@ function ShapeSettings({
         setRotateX(activeShape?.rotation_x || 0);
         setRotateY(activeShape?.rotation_y || 0)
         setRotateZ(activeShape?.rotation_z || 0)
-        setZIndex(activeShape?.zIndex || 10);
-        setZoom(activeShape?.zoom || 1);
     }, [activeShape]);
 
     const handleXChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -199,14 +191,6 @@ function ShapeSettings({
         }
     }, [onUpdateShape, setShapeColor]);
 
-    const handleZoomChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newZoom = Number(e.target.value);
-        setZoom(newZoom);
-        handleUpdate({ zoom: newZoom });
-        setWidth(activeShape ? Math.round(activeShape.width * newZoom) : 50);
-        setHeight(activeShape ? Math.round(activeShape.height * newZoom) : 50);
-        setLength(activeShape ? Math.round(activeShape.length * newZoom) : 50);
-    };
 
     const displayName = name !== null ? name : activeShape?.name ?? "";
 

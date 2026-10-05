@@ -1,6 +1,6 @@
 import {forwardRef, memo, useEffect, useImperativeHandle, useState} from "react";
 import { auth, db } from "../firebase-config.js";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, setDoc } from "firebase/firestore";
 import {v4 as uuidv4} from "uuid";
 import {toast} from "react-toastify";
 import { useT } from "./i18n/LanguageProvider";
@@ -9,7 +9,7 @@ export type YarnSettingsHandle = {
     save: () => void;
 };
 
-const YarnSettings = forwardRef<YarnSettingsHandle, {onUpdateYarnInfo: any,  yarnInfo: {id: number, name: string, weight: string, mPerSkein: number, hooksize: number, material: string, color: string}, onDirtyChange?: (dirty: boolean) => void}>(
+const YarnSettings = forwardRef<YarnSettingsHandle, {onUpdateYarnInfo: any,  yarnInfo: Yarn, onDirtyChange?: (dirty: boolean) => void}>(
     function YarnSettings({onUpdateYarnInfo, yarnInfo, onDirtyChange}, ref) {
     const [name, setName] = useState<string | null>(null);
     const [weight, setWeight] = useState<string | null>(null);
@@ -44,9 +44,10 @@ const YarnSettings = forwardRef<YarnSettingsHandle, {onUpdateYarnInfo: any,  yar
                 material: material ?? null,
                 color: color ?? null,
                 // Eigenaar, zodat de Firestore-regels kunnen controleren wie dit garen mag wijzigen.
-                user_id: auth.currentUser?.email ?? null,
+                user_id: auth.currentUser?.uid ?? null,
             };
 
+            if (!storedAmigurumi) throw new Error("Geen geopend ontwerp om het garen aan te koppelen");
             const docId = yarnInfo.id ? yarnInfo.id.toString() : uuidv4();
             const yarnRef = doc(db, "yarn", docId);
             await setDoc(yarnRef, yarnData, { merge: true });
@@ -54,8 +55,10 @@ const YarnSettings = forwardRef<YarnSettingsHandle, {onUpdateYarnInfo: any,  yar
             const amigurumiRef = doc(db, "amigurumi", storedAmigurumi);
             await setDoc(amigurumiRef, { yarn_id: docId }, { merge: true });
 
+            // Het (eventueel net aangemaakte) id meegeven: anders maakt de volgende keer
+            // opslaan weer een nieuw garendocument aan.
             onUpdateYarnInfo({
-                id: yarnInfo.id,
+                id: docId,
                 name: name ?? yarnInfo.name,
                 weight: weight ?? yarnInfo.weight,
                 mPerSkein: mPerSkein ?? yarnInfo.mPerSkein,

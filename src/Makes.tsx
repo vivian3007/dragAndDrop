@@ -1,12 +1,16 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Box, Button, CircularProgress, DialogContent, IconButton, TextField, Typography } from '@mui/material';
+import { Box, Button, Card, CircularProgress, DialogContent, IconButton, TextField, Typography } from '@mui/material';
 import { CameraAlt, Delete } from '@mui/icons-material';
-import { collection, deleteDoc, doc, getDocs, query, serverTimestamp, setDoc, where } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDocs, onSnapshot, query, serverTimestamp, setDoc, where } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '../firebase-config.js';
 import { useAuth } from './auth/AuthProvider';
 import AppDialog from './AppDialog.tsx';
+import { AmigurumiCardButtons, FavoriteButton } from './AmigurumiCard.tsx';
 import ImageDropzone from './ImageDropzone.tsx';
+import MasonryGrid from './MasonryGrid.tsx';
+import { useResponsiveMinColumns } from './useResponsiveMinColumns.ts';
+import { CardGridSkeleton } from './Skeletons.tsx';
 import UserLink from './UserLink.tsx';
 import { uploadPatternImage } from './uploadImage.ts';
 import { useT } from './i18n/LanguageProvider';
@@ -23,56 +27,123 @@ export async function fetchMakes(field: 'amigurumi_id' | 'user_id', value: strin
         .sort((a, b) => createdAtMillis(b) - createdAtMillis(a));
 }
 
-// Fotoraster van afgewerkte knuffels. Toont per foto de maker (in een patroon) of het
-// patroon (op een profiel), afhankelijk van `caption`.
+// Live variant van fetchMakes: geeft eerst wat er in de lokale Firestore-cache staat (dus
+// direct bij een eerder bezochte pagina) en werkt daarna bij. `loading` alleen tot de
+// eerste snapshot.
+export function useMakes(field: 'amigurumi_id' | 'user_id', value: string): { makes: Make[]; loading: boolean } {
+    const [state, setState] = useState<{ makes: Make[]; loading: boolean }>({ makes: [], loading: true });
+    useEffect(() => {
+        setState({ makes: [], loading: true });
+        return onSnapshot(
+            query(collection(db, 'makes'), where(field, '==', value)),
+            (snapshot) => setState({
+                makes: snapshot.docs
+                    .map((d) => ({ id: d.id, ...d.data() } as Make))
+                    .sort((a, b) => createdAtMillis(b) - createdAtMillis(a)),
+                loading: false,
+            }),
+            (error) => {
+                console.error('Fout bij ophalen van gemaakte amigurumi:', error);
+                setState((prev) => ({ ...prev, loading: false }));
+            }
+        );
+    }, [field, value]);
+    return state;
+}
+
+// Fotoraster van afgewerkte amigurumi, in dezelfde kaartstijl en masonry-indeling als de
+// ontwerpen op Home/Favorieten. Toont per foto de maker (in een patroon) of het patroon
+// (op een profiel), afhankelijk van `caption`. Op een profiel krijgt elke kaart ook de
+// Patroon- en hartjesknop van het bijbehorende ontwerp, uit `designs` (op amigurumi_id;
+// `null` = verwijderd, ontbreekt = nog aan het laden).
 export const MakeGrid = ({
     makes,
     caption,
+    designs,
     onDesignClick,
+    onPatternClick,
     onDelete,
     onNavigate,
+    columnWidth = 300,
 }: {
     makes: Make[];
     caption: 'maker' | 'design';
-    onDesignClick?: (make: Make) => void;
+    designs?: Record<string, Amigurumi | null>;
+    onDesignClick?: (design: Amigurumi) => void;
+    onPatternClick?: (design: Amigurumi) => void;
     onDelete?: (make: Make) => void;
     onNavigate?: () => void;
+    columnWidth?: number;
 }) => {
     const t = useT();
-    const loggedInUser = useAuth().user?.email;
+    const loggedInUser = useAuth().user?.uid;
+    const minColumns = useResponsiveMinColumns();
 
     return (
-        <div className="make-grid">
-            {makes.map((make) => (
-                <figure key={make.id} className="make-item">
-                    <img src={make.imageUrl} alt={t('makes.photoAlt', { name: make.amigurumi_name })} />
-                    {onDelete && make.user_id === loggedInUser && (
-                        <IconButton
-                            size="small"
-                            className="make-delete"
-                            aria-label={t('makes.delete')}
-                            onClick={() => onDelete(make)}
-                        >
-                            <Delete fontSize="small" />
-                        </IconButton>
-                    )}
-                    <figcaption>
+        <MasonryGrid
+            className="make-grid"
+            items={makes}
+            columnWidth={columnWidth}
+            minColumns={minColumns}
+            compactGap={10}
+            gap={20}
+            renderItem={(make) => {
+                const design = caption === 'design' ? designs?.[make.amigurumi_id] : undefined;
+                return (
+                    <Card
+                        key={make.id}
+                        className="my-pattern-text-container make-card"
+                        onClick={design ? () => onDesignClick?.(design) : undefined}
+                        sx={design ? undefined : { cursor: 'default' }}
+                    >
+                        <div className="make-card-media">
+                            <img
+                                src={make.imageUrl}
+                                alt={t('makes.photoAlt', { name: make.amigurumi_name })}
+                                className="amigurumi-image"
+                            />
+                            {onDelete && make.user_id === loggedInUser && (
+                                <IconButton
+                                    size="small"
+                                    className="make-delete"
+                                    aria-label={t('makes.delete')}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onDelete(make);
+                                    }}
+                                >
+                                    <Delete fontSize="small" />
+                                </IconButton>
+                            )}
+                        </div>
                         {caption === 'maker' ? (
-                            <UserLink userId={make.user_id} onNavigate={onNavigate} />
+                            <div className="make-card-maker">
+                                <UserLink userId={make.user_id} onNavigate={onNavigate} />
+                            </div>
                         ) : (
-                            <button type="button" className="make-design-link" onClick={() => onDesignClick?.(make)}>
-                                {make.amigurumi_name}
-                            </button>
+                            <h1 style={{ marginTop: 20, marginBottom: 0 }}>{design?.name ?? make.amigurumi_name}</h1>
                         )}
-                        {make.note && <span className="make-note">{make.note}</span>}
-                    </figcaption>
-                </figure>
-            ))}
-        </div>
+                        {make.note && <p className="make-note">{make.note}</p>}
+                        {design && (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, marginTop: '20px' }}>
+                                <AmigurumiCardButtons
+                                    onPatternClick={(e) => {
+                                        e.stopPropagation();
+                                        onPatternClick?.(design);
+                                    }}
+                                />
+                                <FavoriteButton amigurumiId={design.id} />
+                            </Box>
+                        )}
+                        {design === null && <p className="make-note">{t('makes.designGone')}</p>}
+                    </Card>
+                );
+            }}
+        />
     );
 };
 
-// "Gemaakt door anderen"-sectie in de patroon-details: foto's van afgewerkte knuffels en
+// "Gemaakt door anderen"-sectie in de patroon-details: foto's van afgewerkte amigurumi en
 // een knop om er zelf een toe te voegen. `onCountChange` houdt bv. een tabblad-label met
 // het aantal foto's bij, ook na toevoegen of verwijderen.
 const Makes = ({
@@ -87,7 +158,7 @@ const Makes = ({
     showTitle?: boolean;
 }) => {
     const t = useT();
-    const loggedInUser = useAuth().user?.email;
+    const loggedInUser = useAuth().user?.uid;
     const [makes, setMakes] = useState<Make[]>([]);
     const [loading, setLoading] = useState(true);
     const [formOpen, setFormOpen] = useState(false);
@@ -100,7 +171,7 @@ const Makes = ({
         setLoading(true);
         fetchMakes('amigurumi_id', amigurumi.id)
             .then(setMakes)
-            .catch((err) => console.error('Fout bij ophalen van gemaakte knuffels:', err))
+            .catch((err) => console.error('Fout bij ophalen van gemaakte amigurumi:', err))
             .finally(() => setLoading(false));
     }, [amigurumi.id]);
 
@@ -138,7 +209,7 @@ const Makes = ({
             setMakes((prev) => [{ id, ...make, createdAt: new Date() }, ...prev]);
             setFormOpen(false);
         } catch (err) {
-            console.error('Fout bij opslaan van gemaakte knuffel:', err);
+            console.error('Fout bij opslaan van gemaakte amigurumi:', err);
             setError('makes.error.saveFailed');
         } finally {
             setSaving(false);
@@ -151,7 +222,7 @@ const Makes = ({
             await deleteDoc(doc(db, 'makes', make.id));
             setMakes((prev) => prev.filter((m) => m.id !== make.id));
         } catch (err) {
-            console.error('Fout bij verwijderen van gemaakte knuffel:', err);
+            console.error('Fout bij verwijderen van gemaakte amigurumi:', err);
         }
     }, [t]);
 
@@ -174,11 +245,11 @@ const Makes = ({
                 )}
             </Box>
             {loading ? (
-                <CircularProgress size={20} />
+                <CardGridSkeleton count={2} columnWidth={240} withTags={false} withActions={false} />
             ) : makes.length === 0 ? (
                 <Typography sx={{ opacity: 0.8 }}>{t('makes.empty')}</Typography>
             ) : (
-                <MakeGrid makes={makes} caption="maker" onDelete={handleDelete} onNavigate={onNavigate} />
+                <MakeGrid makes={makes} caption="maker" onDelete={handleDelete} onNavigate={onNavigate} columnWidth={240} />
             )}
 
             <AppDialog open={formOpen} onClose={() => setFormOpen(false)} maxWidth="sm">

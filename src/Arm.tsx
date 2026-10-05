@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {useLoader, useThree} from '@react-three/fiber';
 import * as THREE from 'three';
-import { TransformControls } from '@react-three/drei';
 import TransformControlsThree from "./TransformControlsThree.tsx";
 import { ARM_TOTAL_LOCAL_LENGTH } from "./geometry/armGeometry";
 import { WORLD_SCALE_FACTOR } from "./geometry/units";
@@ -98,11 +97,11 @@ function Arm({
                 <mesh position={[0, 0.5, 0]} ref={meshRef}>
                     <mesh position={[0, 0.5, 0]}>
                         <cylinderGeometry args={[0.5, 0.5, 1, 32, 1, true]} />
-                        <meshBasicMaterial map={texture} color={color} metalness={0} roughness={0.8} side={THREE.DoubleSide} />
+                        <meshBasicMaterial map={texture} color={color} side={THREE.DoubleSide} />
                     </mesh>
                     <mesh position={[0, 1, 0]}>
                         <sphereGeometry args={[0.5, 32, 16]} />
-                        <meshBasicMaterial map={texture} color={color} metalness={0} roughness={0.8} side={THREE.DoubleSide} />
+                        <meshBasicMaterial map={texture} color={color} side={THREE.DoubleSide} />
                     </mesh>
                 </mesh>
             </group>

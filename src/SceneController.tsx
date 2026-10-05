@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import { CSG } from "three-csg-ts";
 import calculateIntersections from "./calculateIntersections.tsx";
 
 // Camera-offsets t.o.v. het midden van het patroon (zie patternCenterRef hieronder).
@@ -18,9 +17,6 @@ export default function SceneController({
                                             onSetView,
                                             droppedShapes,
                                             setCamera,
-                                            setScene,
-                                            threeJsContainerRef,
-                                            intersections,
                                             setIntersections,
                                             meshes,
                                             setMeshes,
@@ -64,7 +60,7 @@ export default function SceneController({
                 orbitControlsRef.current.update();
             }
             setCamera(camera);
-            setCurrentView(viewKey);
+            setCurrentView(viewKey as keyof typeof views);
         }
     };
 

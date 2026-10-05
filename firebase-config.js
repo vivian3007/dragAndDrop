@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
-import { getFirestore } from "firebase/firestore";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
@@ -17,6 +17,12 @@ const app = initializeApp(firebaseConfig);
 
 const auth = getAuth(app);
 
-const db = getFirestore(app);
+// Lokale cache in IndexedDB: listeners (useCollection, onSnapshot) geven eerst meteen wat er
+// al in de cache staat en werken daarna bij vanaf de server. Een eerder bezochte pagina staat
+// er zo direct, ook na herladen. Gedeeld tussen tabbladen. Bij uitloggen wordt hij gewist
+// (zie logOut in src/auth/AuthProvider.tsx).
+const db = initializeFirestore(app, {
+    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+});
 
 export { app, db, auth };

@@ -1,13 +1,12 @@
 import { v4 as uuidv4 } from "uuid";
 import { useT } from "./i18n/LanguageProvider";
-import React, {Ref, useEffect, useRef, useState} from "react";
-import Trashcan from "./Trashcan.tsx";
+import React, {useEffect, useRef, useState} from "react";
 import * as THREE from "three";
 import {Camera} from "three";
 import {setDoc, doc} from "firebase/firestore";
 import {db} from "../firebase-config.js";
 
-function Shapebar({ setDroppedShapes, setActiveId, threeJsContainerRef, dragging, setDragging, camera, navBarRef }: { setDroppedShapes: any, setActiveId: any, containerRef: Ref<HTMLDivElement>, threeJsContainerRef: Ref<HTMLCanvasElement>, dragging: boolean, setDragging: any, camera: Camera, navBarRef: Ref<HTMLDivElement> }) {
+function Shapebar({ setDroppedShapes, setActiveId, threeJsContainerRef, dragging, setDragging, camera, navBarRef }: { setDroppedShapes: any, setActiveId: any, containerRef: React.RefObject<HTMLDivElement | null>, threeJsContainerRef: React.RefObject<HTMLElement | null>, dragging: boolean, setDragging: any, camera: Camera, navBarRef: React.RefObject<HTMLDivElement | null> }) {
     const shapes = [
         { type: "Sphere", label: "Head" },
         { type: "Arm", label: "body" },
@@ -39,21 +38,26 @@ function Shapebar({ setDroppedShapes, setActiveId, threeJsContainerRef, dragging
         setPosition(coords);
     }
 
-    const handleMouseMove = (e) => {
+    const handleMouseMove = (e: any) => {
         if (dragging) {
             const coords = getEventCoordinates(e);
             setPosition(coords);
         }
     }
 
-    const handleMouseUp = async (e) => {
+    const handleMouseUp = async (e: any) => {
         if (dragging && currentShape) {
             const width = dragItemRef.current?.offsetWidth;
             const height = dragItemRef.current?.offsetHeight;
             const containerRect = threeJsContainerRef.current?.getBoundingClientRect();
+            const navBarWidth = navBarRef.current?.clientWidth;
+            if (width === undefined || height === undefined || !containerRect || navBarWidth === undefined) {
+                setDragging(false);
+                return;
+            }
             const isOutOfBounds =
-                e?.clientX - navBarRef.current.clientWidth - width / 2 < 0 ||
-                e?.clientX - navBarRef.current.clientWidth + width / 2 > containerRect.width ||
+                e?.clientX - navBarWidth - width / 2 < 0 ||
+                e?.clientX - navBarWidth + width / 2 > containerRect.width ||
                 e?.clientY - height / 2 < 0 ||
                 e?.clientY + height / 2 > containerRect.height;
 

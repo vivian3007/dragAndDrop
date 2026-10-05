@@ -1,7 +1,7 @@
 // Haaktermen waarmee generateSpherePattern/generateArmPattern hun rijen opbouwen. Ze komen
 // uit de vertaalbestanden (zie usePatternTerms in i18n/usePatternTerms.ts), want elke taal
 // heeft eigen afkortingen en schrijfwijze: Engels "Row 3: [1inc, 2sc]", Nederlands
-// "Toer 3: [1 meer, 2 v]". `row` krijgt ook reeksen als "5-6" mee.
+// "Ronde 3: [1 meer, 2 v]". `row` krijgt ook reeksen als "5-6" mee.
 export type PatternTerms = {
     row: (row: number | string) => string;
     sc: (count: number) => string;

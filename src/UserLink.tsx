@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useUsernameForEmail } from './users/usernames';
+import { useUsernameForUid } from './users/usernames';
 import { useT } from './i18n/LanguageProvider';
 
 export const profilePath = (username: string) => `/profile/${encodeURIComponent(username)}`;
@@ -10,12 +10,12 @@ export const profilePath = (username: string) => `/profile/${encodeURIComponent(
 // `onNavigate` laat een omringende dialoog zich sluiten, anders blijft die over de
 // profielpagina heen open staan.
 //
-// `userId` is het e-mailadres waarmee ontwerpen en foto's hun eigenaar opslaan. Dat tonen
-// we nooit: we zoeken de gebruikersnaam erbij. Zonder gebruikersnaam (oude accounts die
-// nog niet opnieuw hebben ingelogd, of ontwerpen zonder eigenaar) een niet-klikbare chip.
+// `userId` is het Firebase-uid waarmee ontwerpen en foto's hun eigenaar opslaan; we zoeken
+// de gebruikersnaam erbij. Zonder gebruikersnaam (accounts die er nog geen gekozen hebben,
+// of ontwerpen zonder eigenaar) een niet-klikbare chip.
 const UserLink = ({ userId, onNavigate }: { userId?: string | null; onNavigate?: () => void }) => {
     const t = useT();
-    const username = useUsernameForEmail(userId);
+    const username = useUsernameForUid(userId);
 
     if (username === undefined) {
         return (

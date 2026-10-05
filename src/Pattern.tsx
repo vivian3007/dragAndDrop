@@ -1,7 +1,7 @@
-import React, {useEffect, useState} from "react";
-import {Link, useLocation, useNavigate, useParams} from "react-router-dom";
-import {AppBar, Button, Card, Container, Toolbar} from "@mui/material";
-import {collection, doc, getDoc, getDocs} from "firebase/firestore";
+import {useEffect, useState} from "react";
+import {useLocation, useNavigate, useParams} from "react-router-dom";
+import {Button, Card} from "@mui/material";
+import {doc, getDoc} from "firebase/firestore";
 import {db} from "../firebase-config.js";
 import generateSpherePattern from "./patterns/generateSpherePattern";
 import generateArmPattern from "./patterns/generateArmPattern";
@@ -37,8 +37,11 @@ const RowLine = ({ text }: { text: string }) => {
 // [shapes] eindeloos opnieuw liep (en de pagina bevroor) als er geen navigatie-state was.
 const NO_SHAPES: Shape[] = [];
 
-const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[], yarn: Yarn, intersections: any, meshes: any}) => {
-    const [patterns, setPatterns] = useState<any[]>([]);
+// Uitgewerkt patroon van één vorm.
+type PatternPart = ReturnType<typeof generateSpherePattern> | ReturnType<typeof generateArmPattern>;
+
+const Pattern = ({ shapes, yarnInfo, intersections } : {shapes: Shape[], yarnInfo: Yarn | null, intersections: any}) => {
+    const [patterns, setPatterns] = useState<PatternPart[]>([]);
     // Door PatternPreview3D uit de 3D-scene berekend; null zolang de preview nog laadt.
     const [computedIntersections, setComputedIntersections] = useState<any[] | null>(null);
     // Het garen van dít amigurumi. De yarnInfo in de navigatie-state komt vanuit Home/My
@@ -80,7 +83,7 @@ const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[],
 
     const yarnWeight = isValidYarnWeight ? yarnWeightKey : "Medium";
     // Voor het label de waarde zoals hij in Firestore staat, want daar zijn de vertalingen op gesleuteld.
-    const yarnWeightDisplay = isValidYarnWeight ? yarnInfo.weight : "Medium";
+    const yarnWeightDisplay = (isValidYarnWeight && yarnInfo?.weight) || "Medium";
 
     useEffect(() => {
         if (shapes && shapes.length > 0) {
@@ -90,13 +93,13 @@ const Pattern = ({ shapes, yarnInfo, intersections, meshes } : {shapes: Shape[],
                 // singleShape.length *= singleShape.zoom;
                 switch (singleShape.type) {
                     case "Sphere":
-                        return generateSpherePattern(singleShape, yarnWeight, rowHeights, intersections, shapes, terms);
+                        return generateSpherePattern(singleShape, yarnWeight, rowHeights, intersections, terms);
                     case "Arm":
-                        return generateArmPattern(singleShape, yarnWeight, rowHeights, intersections, shapes, terms);
+                        return generateArmPattern(singleShape, yarnWeight, rowHeights, intersections, terms);
                     default:
                         return null;
                 }
-            }).filter(pattern => pattern !== null);
+            }).filter((pattern): pattern is PatternPart => pattern !== null);
             setPatterns(newPatterns);
         } else {
             setPatterns([]);

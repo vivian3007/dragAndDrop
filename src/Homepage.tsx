@@ -1,12 +1,13 @@
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
-import {CircularProgress, Typography} from '@mui/material';
-import {doc, getDocs, updateDoc, where} from 'firebase/firestore';
+import {useCallback, useEffect, useMemo, useState} from 'react';
+import {Typography} from '@mui/material';
+import {getDocs, where} from 'firebase/firestore';
 import { db } from '../firebase-config.js';
 import { useCollection } from 'react-firebase-hooks/firestore';
 import { query, collection } from 'firebase/firestore';
 import {useNavigate} from "react-router-dom";
 import AmigurumiCard from "./AmigurumiCard.tsx";
 import MasonryGrid from "./MasonryGrid.tsx";
+import { CardGridSkeleton } from "./Skeletons.tsx";
 import PatternDetail from "./PatternDetail.tsx";
 import PatternFilters from "./PatternFilters.tsx";
 import PatternPagination, { PAGE_SIZE } from "./PatternPagination.tsx";
@@ -15,11 +16,13 @@ import { useDebouncedValue } from "./useDebouncedValue.ts";
 import { useStableArray } from "./useStableArray.ts";
 import { useResponsiveMinColumns } from "./useResponsiveMinColumns.ts";
 import { useT } from "./i18n/LanguageProvider";
+import { useFavorites } from "./favorites/FavoritesProvider";
 
 const Homepage = ({yarnInfo, intersections} : {yarnInfo: Yarn, intersections: any}) => {
     const navigate = useNavigate();
     const minColumns = useResponsiveMinColumns();
     const t = useT();
+    const { favoriteIds } = useFavorites();
     const [selectedAmigurumi, setSelectedAmigurumi] = useState<Amigurumi | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -40,8 +43,8 @@ const Homepage = ({yarnInfo, intersections} : {yarnInfo: Yarn, intersections: an
     const debouncedSearchTerm = useDebouncedValue(searchTerm, 250);
 
     const filteredAmigurumis = useMemo(
-        () => filterAndSortAmigurumis(amigurumis, debouncedSearchTerm, selectedTags, sortBy),
-        [amigurumis, debouncedSearchTerm, selectedTags, sortBy]
+        () => filterAndSortAmigurumis(amigurumis, debouncedSearchTerm, selectedTags, sortBy, favoriteIds),
+        [amigurumis, debouncedSearchTerm, selectedTags, sortBy, favoriteIds]
     );
 
     const [page, setPage] = useState(1);
@@ -56,19 +59,6 @@ const Homepage = ({yarnInfo, intersections} : {yarnInfo: Yarn, intersections: an
         () => filteredAmigurumis.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
         [filteredAmigurumis, page]
     );
-
-    const handleFavoriteChange = useCallback(async (amigurumi: Amigurumi) => {
-        try {
-            console.log(`Updating favorite for ${amigurumi.id}: ${!amigurumi.favorite}`);
-            const newFavoriteStatus = !amigurumi.favorite;
-            await updateDoc(doc(db, 'amigurumi', amigurumi.id), {
-                favorite: newFavoriteStatus,
-            });
-            console.log(`Updated favorite for ${amigurumi.id} successfully`);
-        } catch (error) {
-            console.error('Error updating favorite:', error);
-        }
-    }, []);
 
     const handlePatternClick = useCallback(async (amigurumi: Amigurumi) => {
         try {
@@ -92,10 +82,6 @@ const Homepage = ({yarnInfo, intersections} : {yarnInfo: Yarn, intersections: an
     }, []);
 
 
-    if (loading) {
-        return <CircularProgress />;
-    }
-
     if (error) {
         return <Typography color="error">{t('patterns.loadError', { message: error.message })}</Typography>;
     }
@@ -111,7 +97,9 @@ const Homepage = ({yarnInfo, intersections} : {yarnInfo: Yarn, intersections: an
                 sortBy={sortBy}
                 onSortChange={setSortBy}
             />
-            {filteredAmigurumis.length === 0 ? (
+            {loading ? (
+                <CardGridSkeleton className="my-pattern-container" />
+            ) : filteredAmigurumis.length === 0 ? (
                 <Typography sx={{ px: { xs: '8px', sm: '24px', md: '40px' } }}>{t('patterns.noResults')}</Typography>
             ) : (
                 <MasonryGrid
@@ -125,7 +113,6 @@ const Homepage = ({yarnInfo, intersections} : {yarnInfo: Yarn, intersections: an
                         <AmigurumiCard
                             key={amigurumi.id}
                             amigurumi={amigurumi}
-                            onFavoriteChange={handleFavoriteChange}
                             onPatternClick={handlePatternClick}
                             onCardClick={handleCardClick}
                         />

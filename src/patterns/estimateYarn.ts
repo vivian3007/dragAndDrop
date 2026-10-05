@@ -53,7 +53,7 @@ export function estimateYarnByColor(
     shapes.forEach((shape) => {
         const generate = shape.type === "Arm" ? generateArmPattern : shape.type === "Sphere" ? generateSpherePattern : null;
         if (!generate) return;
-        const pattern = generate(shape, weightKey, ROW_HEIGHTS, [], shapes);
+        const pattern = generate(shape, weightKey, ROW_HEIGHTS, []);
         const color = shape.color ?? "#cccccc";
         rawByColor[color] = (rawByColor[color] ?? 0) + estimateYarnMeters(pattern.stitchCount, ROW_HEIGHTS[weightKey]);
     });

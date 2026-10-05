@@ -1,54 +1,61 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { Avatar, Box, CircularProgress, Typography } from '@mui/material';
-import { collection, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Avatar, Box, Button, Skeleton, Typography } from '@mui/material';
+import { Settings } from '@mui/icons-material';
+import { collection, doc, getDocs, onSnapshot, query, where } from 'firebase/firestore';
 import { useCollection } from 'react-firebase-hooks/firestore';
 import { db } from '../firebase-config.js';
 import { useAuth } from './auth/AuthProvider';
 import AmigurumiCard from './AmigurumiCard.tsx';
 import MasonryGrid from './MasonryGrid.tsx';
 import PatternDetail from './PatternDetail.tsx';
-import { fetchMakes, MakeGrid } from './Makes.tsx';
+import { MakeGrid, useMakes } from './Makes.tsx';
+import { CardGridSkeleton, ProfileHeaderSkeleton } from './Skeletons.tsx';
 import { useResponsiveMinColumns } from './useResponsiveMinColumns.ts';
-import { lookupUserByUsername } from './users/usernames';
+import { lookupUidByUsername } from './users/usernames';
 import { useT } from './i18n/LanguageProvider';
 
 // Openbaar profiel, op gebruikersnaam (/profile/:username). Ontwerpen en foto's slaan hun
-// eigenaar op als e-mailadres; dat zoeken we hier op, maar tonen het nergens.
+// eigenaar op als uid; dat zoeken we hier bij de naam op.
 const Profile = () => {
     const { username = '' } = useParams();
     const t = useT();
-    const [profile, setProfile] = useState<{ email: string; username: string } | null | undefined>(undefined);
+    const [uid, setUid] = useState<string | null | undefined>(undefined);
 
     useEffect(() => {
-        setProfile(undefined);
-        lookupUserByUsername(username)
-            .then((found) => setProfile(found ? { email: found.email, username: found.username } : null))
+        setUid(undefined);
+        lookupUidByUsername(username)
+            .then(setUid)
             .catch((err) => {
                 console.error('Fout bij ophalen van profiel:', err);
-                setProfile(null);
+                setUid(null);
             });
     }, [username]);
 
-    if (profile === undefined) {
-        return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6 }}><CircularProgress /></Box>;
+    if (uid === undefined) {
+        return (
+            <div className="my-pattern profile-page">
+                <ProfileHeaderSkeleton />
+                <h2 className="profile-section-title">{t('profile.designs')}</h2>
+                <CardGridSkeleton className="my-pattern-container" count={3} />
+            </div>
+        );
     }
-    if (!profile) {
+    if (!uid) {
         return <Typography sx={{ m: 5 }}>{t('profile.notFound', { username })}</Typography>;
     }
-    return <ProfileContent key={profile.email} userId={profile.email} username={profile.username} />;
+    return <ProfileContent key={uid} userId={uid} username={username} />;
 };
 
-// Inhoud van het profiel. `userId` is het e-mailadres waarmee ontwerpen/foto's zijn opgeslagen.
+// Inhoud van het profiel. `userId` is het uid waarmee ontwerpen/foto's zijn opgeslagen.
 const ProfileContent = ({ userId, username }: { userId: string; username: string }) => {
     const navigate = useNavigate();
     const t = useT();
     const minColumns = useResponsiveMinColumns();
-    const isOwnProfile = useAuth().user?.email === userId;
+    const isOwnProfile = useAuth().user?.uid === userId;
 
     const [selectedAmigurumi, setSelectedAmigurumi] = useState<Amigurumi | null>(null);
-    const [makes, setMakes] = useState<Make[]>([]);
-    const [makesLoading, setMakesLoading] = useState(true);
+    const { makes, loading: makesLoading } = useMakes('user_id', userId);
 
     const [snapshot, loading, error] = useCollection(
         query(collection(db, 'amigurumi'), where('user_id', '==', userId))
@@ -58,22 +65,29 @@ const ProfileContent = ({ userId, username }: { userId: string; username: string
             .sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0))
         : [];
 
-    useEffect(() => {
-        setMakesLoading(true);
-        setSelectedAmigurumi(null);
-        fetchMakes('user_id', userId)
-            .then(setMakes)
-            .catch((err) => console.error('Fout bij ophalen van gemaakte knuffels:', err))
-            .finally(() => setMakesLoading(false));
-    }, [userId]);
+    // Een gemaakte amigurumi hoort bij een patroon van (meestal) iemand anders. Die ontwerpen
+    // luisteren we live, zodat de Patroon- en hartjesknop op de kaarten actueel blijven.
+    // `null` betekent dat het ontwerp verwijderd is.
+    const [makeDesigns, setMakeDesigns] = useState<Record<string, Amigurumi | null>>({});
 
-    const handleFavoriteChange = useCallback(async (amigurumi: Amigurumi) => {
-        try {
-            await updateDoc(doc(db, 'amigurumi', amigurumi.id), { favorite: !amigurumi.favorite });
-        } catch (err) {
-            console.error('Error updating favorite:', err);
-        }
-    }, []);
+    // Op de (gesorteerde) ids, zodat een nieuwe snapshot van dezelfde foto's niet alle
+    // listeners opnieuw opzet.
+    const makeDesignIds = Array.from(new Set(makes.map((m) => m.amigurumi_id))).sort().join(',');
+
+    useEffect(() => {
+        const ids = makeDesignIds ? makeDesignIds.split(',') : [];
+        const unsubscribes = ids.map((id) =>
+            onSnapshot(
+                doc(db, 'amigurumi', id),
+                (snap) => setMakeDesigns((prev) => ({
+                    ...prev,
+                    [id]: snap.exists() ? ({ id: snap.id, ...snap.data() } as Amigurumi) : null,
+                })),
+                (err) => console.error('Fout bij ophalen van patroon:', err)
+            )
+        );
+        return () => unsubscribes.forEach((unsubscribe) => unsubscribe());
+    }, [makeDesignIds]);
 
     const handlePatternClick = useCallback(async (amigurumi: Amigurumi) => {
         try {
@@ -85,18 +99,6 @@ const ProfileContent = ({ userId, username }: { userId: string; username: string
         }
     }, [navigate]);
 
-    // Een gemaakte knuffel hoort bij een patroon van (meestal) iemand anders; dat patroon
-    // wordt pas bij een klik opgehaald. Bestaat het niet meer, dan gebeurt er niets.
-    const handleMakeDesignClick = useCallback(async (make: Make) => {
-        try {
-            const snap = await getDoc(doc(db, 'amigurumi', make.amigurumi_id));
-            if (snap.exists()) {
-                setSelectedAmigurumi({ id: snap.id, ...snap.data() } as Amigurumi);
-            }
-        } catch (err) {
-            console.error('Fout bij ophalen van patroon:', err);
-        }
-    }, []);
 
     return (
         <div className="my-pattern profile-page">
@@ -106,16 +108,33 @@ const ProfileContent = ({ userId, username }: { userId: string; username: string
                 </Avatar>
                 <div>
                     <h1 className="profile-name">@{username}</h1>
-                    <Typography sx={{ opacity: 0.8 }}>
-                        {t('profile.stats', { designs: amigurumis.length, makes: makes.length })}
-                        {isOwnProfile ? ` · ${t('profile.yours')}` : ''}
-                    </Typography>
+                    {loading || makesLoading ? (
+                        <Skeleton variant="text" width={220} sx={{ bgcolor: 'var(--color-accent-soft)' }} />
+                    ) : (
+                        <Typography sx={{ opacity: 0.8 }}>
+                            {t('profile.stats', { designs: amigurumis.length, makes: makes.length })}
+                            {isOwnProfile ? ` · ${t('profile.yours')}` : ''}
+                        </Typography>
+                    )}
                 </div>
+                {isOwnProfile && (
+                    <div className="profile-header-actions">
+                        <Button
+                            component={Link}
+                            to="/account"
+                            variant="outlined"
+                            startIcon={<Settings />}
+                            sx={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}
+                        >
+                            {t('nav.settings')}
+                        </Button>
+                    </div>
+                )}
             </Box>
 
             <h2 className="profile-section-title">{t('profile.designs')}</h2>
             {loading ? (
-                <CircularProgress />
+                <CardGridSkeleton className="my-pattern-container" count={3} />
             ) : error ? (
                 <Typography color="error">{t('patterns.loadError', { message: error.message })}</Typography>
             ) : amigurumis.length === 0 ? (
@@ -132,7 +151,6 @@ const ProfileContent = ({ userId, username }: { userId: string; username: string
                         <AmigurumiCard
                             key={amigurumi.id}
                             amigurumi={amigurumi}
-                            onFavoriteChange={handleFavoriteChange}
                             onPatternClick={handlePatternClick}
                             onCardClick={setSelectedAmigurumi}
                         />
@@ -143,11 +161,17 @@ const ProfileContent = ({ userId, username }: { userId: string; username: string
             <h2 className="profile-section-title">{t('profile.makes')}</h2>
             <div className="profile-makes">
                 {makesLoading ? (
-                    <CircularProgress />
+                    <CardGridSkeleton count={3} withTags={false} />
                 ) : makes.length === 0 ? (
                     <Typography>{t('profile.noMakes')}</Typography>
                 ) : (
-                    <MakeGrid makes={makes} caption="design" onDesignClick={handleMakeDesignClick} />
+                    <MakeGrid
+                        makes={makes}
+                        caption="design"
+                        designs={makeDesigns}
+                        onDesignClick={setSelectedAmigurumi}
+                        onPatternClick={handlePatternClick}
+                    />
                 )}
             </div>
 

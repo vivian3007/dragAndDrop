@@ -1,5 +1,5 @@
 import {TransformControls} from "@react-three/drei";
-import React, {useEffect} from "react";
+import {useEffect} from "react";
 
 export default function TransformControlsThree ({transformRef, object, transformMode, setTransformMode, setIsDragging, orbitControlsRef, meshRef, shape, size, width, onUpdateShape, isSelected, activeTransformControlsRef} : {transformRef: any, object: any, transformMode: any, setTransformMode: any, setIsDragging: any, orbitControlsRef: any, meshRef: any, shape: any, size: any, width: any, onUpdateShape: any, isSelected: boolean, activeTransformControlsRef?: any}) {
 

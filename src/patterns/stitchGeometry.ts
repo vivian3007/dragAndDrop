@@ -3,8 +3,8 @@
 // Een vaste losse is iets breder dan hoog (bij medium garen ±0,5 × 0,45 cm).
 export const STITCH_WIDTH_PER_ROW_HEIGHT = 1.1;
 
-// Aantal steken in de breedste toer: de omtrek gedeeld door de steekbreedte, afgerond op
-// een veelvoud van 6 (er wordt in zes gelijke delen gemeerderd). Minimaal 12: de toer na
+// Aantal steken in de breedste ronde: de omtrek gedeeld door de steekbreedte, afgerond op
+// een veelvoud van 6 (er wordt in zes gelijke delen gemeerderd). Minimaal 12: de ronde na
 // de magische ring.
 export function maxStitchesForDiameter(diameterCm: number, stitchWidthCm: number): number {
     return Math.max(12, Math.round((Math.PI * diameterCm) / stitchWidthCm / 6) * 6);

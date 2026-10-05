@@ -4,7 +4,7 @@ import { Typography, CircularProgress, TextField, Button, Chip, Box, DialogConte
 import { setDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase-config.js';
 import { useAuth } from './auth/AuthProvider';
-import { useUsernameForEmail } from './users/usernames';
+import { useUsernameForUid } from './users/usernames';
 import { useNavigate } from 'react-router-dom';
 import AppDialog from './AppDialog.tsx';
 import ImageDropzone from './ImageDropzone.tsx';
@@ -33,9 +33,9 @@ const NewPattern = ({
 }) => {
     const navigate = useNavigate();
     const t = useT();
-    const loggedInUser = useAuth().user?.email;
-    // Eigenaar van het origineel als gebruikersnaam, nooit als e-mailadres.
-    const copySourceUsername = useUsernameForEmail(copySource?.user_id);
+    const loggedInUser = useAuth().user?.uid;
+    // Eigenaar van het origineel als gebruikersnaam.
+    const copySourceUsername = useUsernameForUid(copySource?.user_id);
     const isEditing = !!editingAmigurumi;
     const isCopying = !isEditing && !!copySource;
 
@@ -43,7 +43,6 @@ const NewPattern = ({
         name: '',
         height: '',
         tags: [] as string[],
-        favorite: false,
         yarn_id: '',
         notes: '',
     });
@@ -60,8 +59,6 @@ const NewPattern = ({
                 name: isCopying ? t('newPattern.copyName', { name: copySource!.name }) : prefill?.name ?? '',
                 height: prefill?.height ? String(prefill.height) : '',
                 tags: prefill?.tags ?? [],
-                // Een kopie begint als eigen, niet-favoriet ontwerp.
-                favorite: editingAmigurumi?.favorite ?? false,
                 yarn_id: editingAmigurumi?.yarn_id ?? '',
                 notes: prefill?.notes ?? '',
             });
@@ -139,7 +136,6 @@ const NewPattern = ({
                     name: formData.name.trim(),
                     height: formData.height ? Number(formData.height) : null,
                     tags: formData.tags,
-                    favorite: formData.favorite,
                     yarn_id: formData.yarn_id.trim() || null,
                     user_id: loggedInUser,
                     createdAt: serverTimestamp(),

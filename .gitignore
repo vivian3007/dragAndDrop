@@ -1,3 +1,10 @@
 node_modules
 .idea
 .vscode
+# Service-account-sleutels en back-ups van de uid-migratie (scripts/migrate-user-ids.mjs):
+# geven volledige toegang tot het project / bevatten persoonsgegevens. Nooit committen.
+*firebase-adminsdk*.json
+serviceAccount*.json
+service-account*.json
+backups/
+*-debug.log

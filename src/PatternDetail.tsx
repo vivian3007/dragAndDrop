@@ -29,7 +29,7 @@ import {
     FavoriteBorder,
     ViewInAr,
 } from '@mui/icons-material';
-import { collection, deleteDoc, doc, getCountFromServer, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getCountFromServer, getDoc, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase-config.js';
 import { useAuth } from './auth/AuthProvider';
 import AppDialog from './AppDialog.tsx';
@@ -42,6 +42,7 @@ import { toast } from 'react-toastify';
 import UserLink from './UserLink.tsx';
 import Makes from './Makes.tsx';
 import { useT } from './i18n/LanguageProvider';
+import { useFavorites } from './favorites/FavoritesProvider';
 
 type DetailTab = 'about' | 'yarn' | 'makes';
 
@@ -76,7 +77,8 @@ const PatternDetail = ({
     const [shapes, setShapes] = useState<Shape[] | null>(null);
     const [yarn, setYarn] = useState<Yarn | null>(null);
     const [yarnLoading, setYarnLoading] = useState(false);
-    const [favorite, setFavorite] = useState(false);
+    const { favoriteIds, toggleFavorite } = useFavorites();
+    const favorite = !!amigurumi && favoriteIds.has(amigurumi.id);
     const [isHeartBouncing, setIsHeartBouncing] = useState(false);
     const [copyCount, setCopyCount] = useState(0);
     const [makesCount, setMakesCount] = useState(0);
@@ -90,7 +92,6 @@ const PatternDetail = ({
     }, [amigurumiProp]);
 
     useEffect(() => {
-        setFavorite(amigurumi?.favorite ?? false);
         setTab('about');
     }, [amigurumi]);
 
@@ -125,7 +126,7 @@ const PatternDetail = ({
             .catch((error) => console.error('Fout bij tellen van kopieën:', error));
         getCountFromServer(query(collection(db, 'makes'), where('amigurumi_id', '==', amigurumi.id)))
             .then((snapshot) => setMakesCount(snapshot.data().count))
-            .catch((error) => console.error('Fout bij tellen van gemaakte knuffels:', error));
+            .catch((error) => console.error('Fout bij tellen van gemaakte amigurumi:', error));
     }, [amigurumi?.id]);
 
     const sizeCm = useMemo(() => {
@@ -163,17 +164,11 @@ const PatternDetail = ({
         setTrail(trail.slice(0, -1));
     }, [trail]);
 
-    const handleFavoriteChange = useCallback(async () => {
+    const handleFavoriteChange = useCallback(() => {
         if (!amigurumi) return;
         setIsHeartBouncing(true);
-        try {
-            const newFavoriteStatus = !favorite;
-            await updateDoc(doc(db, 'amigurumi', amigurumi.id), { favorite: newFavoriteStatus });
-            setFavorite(newFavoriteStatus);
-        } catch (error) {
-            console.error('Error updating favorite:', error);
-        }
-    }, [amigurumi, favorite]);
+        toggleFavorite(amigurumi.id);
+    }, [amigurumi, toggleFavorite]);
 
     const handlePatternClick = useCallback(() => {
         if (!amigurumi || !shapes) return;
@@ -206,7 +201,7 @@ const PatternDetail = ({
         return null;
     }
 
-    const isOwner = !!user?.email && amigurumi.user_id === user.email;
+    const isOwner = !!user && amigurumi.user_id === user.uid;
     const isLoggedIn = !!user;
     const [directSource, ...olderSources] = amigurumi.copiedFrom ?? [];
     const previous = trail[trail.length - 1];

@@ -2,7 +2,7 @@ import {englishPatternTerms, PatternTerms} from "./patternTerms";
 import { shapeDimensionCm } from "../geometry/units";
 import { maxStitchesForDiameter, STITCH_WIDTH_PER_ROW_HEIGHT } from "./stitchGeometry";
 
-const generateSpherePattern = (singleShape: Shape, yarnWeight: string, rowHeights: Record<string, number>, intersections, shapes: Shape[], t: PatternTerms = englishPatternTerms) => {
+const generateSpherePattern = (singleShape: Shape, yarnWeight: string, rowHeights: Record<string, number>, intersections: Intersection[], t: PatternTerms = englishPatternTerms) => {
     const rowHeightCm = rowHeights[yarnWeight] ?? rowHeights.Medium;
     const stitchWidthCm = rowHeightCm * STITCH_WIDTH_PER_ROW_HEIGHT;
 
@@ -17,14 +17,14 @@ const generateSpherePattern = (singleShape: Shape, yarnWeight: string, rowHeight
     ].sort((a, b) => a - b);
     const crossCm = (crossA + crossB) / 2;
 
-    // Steken: de omtrek op het breedste punt. Toeren: de gangbare opbouw van een
-    // amigurumi-bal — meerderen tot M (M/6 toeren), ongeveer evenveel vaste toeren, en
-    // terug minderen (M/6 - 1 toeren). De meertoeren liggen bijna plat, dus puur rekenen
-    // met de halve omtrek gaf te veel vaste toeren (een capsule i.p.v. een bal). Is de vorm
-    // langer dan breed, dan komen er vaste toeren bij voor het verschil; is hij platter,
+    // Steken: de omtrek op het breedste punt. Rondes: de gangbare opbouw van een
+    // amigurumi-bal — meerderen tot M (M/6 rondes), ongeveer evenveel vaste rondes, en
+    // terug minderen (M/6 - 1 rondes). De meerrondes liggen bijna plat, dus puur rekenen
+    // met de halve omtrek gaf te veel vaste rondes (een capsule i.p.v. een bal). Is de vorm
+    // langer dan breed, dan komen er vaste rondes bij voor het verschil; is hij platter,
     // dan gaan er af.
     const maxStitches = maxStitchesForDiameter(crossCm, stitchWidthCm);
-    const incRows = maxStitches / 6; // toer 1 (6) t/m toer M/6 (M)
+    const incRows = maxStitches / 6; // ronde 1 (6) t/m ronde M/6 (M)
     const decRows = maxStitches / 6 - 1; // M-6 t/m 6
     const scRows = Math.max(0, maxStitches / 6 + Math.round((axisCm - crossCm) / rowHeightCm));
     const rows = incRows + scRows + decRows;
@@ -33,14 +33,14 @@ const generateSpherePattern = (singleShape: Shape, yarnWeight: string, rowHeight
     const incArray: string[] = [];
     const scArray: string[] = [];
     const decArray: string[] = [];
-    const intersectionRows = [];
+    const intersectionRows: IntersectionRow[] = [];
 
     // Camera-onafhankelijk: de meegegeven fractie ligt op de schaal [-1 (onderpool) ..
     // +1 (bovenpool)] van de vorm z'n eigen radius en is exact cos(θ) t.o.v. de bovenpool
     // (zie calculateIntersections.tsx). Conventie: rij 1 is de bovenkant van de vorm, de
     // rijen tellen naar onderen. Gedeeld tussen de analytische Sphere-Sphere route en de
     // CSG-afgeleide route (Sphere-Arm) — voor beide is de vorm zelf hier gewoon een bol.
-    const toRow = (fractionOfRadius) => {
+    const toRow = (fractionOfRadius: number) => {
         // Clamp naar het domein van acos: de fractie kan door drijvendekomma-afronding, of
         // door bewust buiten scope gelaten vereenvoudigingen (tilt bij Sphere-Sphere, de
         // CSG-overlapvorm bij Sphere-Arm), licht buiten [-1,1] vallen — zonder deze clamp
@@ -95,7 +95,7 @@ const generateSpherePattern = (singleShape: Shape, yarnWeight: string, rowHeight
         rowArray.push(i);
     }
 
-    // Toer 1 (6) en toer 2 (12) schrijft Pattern.tsx zelf; vanaf toer 3 komen ze hier vandaan.
+    // Ronde 1 (6) en ronde 2 (12) schrijft Pattern.tsx zelf; vanaf ronde 3 komen ze hier vandaan.
     for (let row = 3; row <= incRows; row++) {
         incArray.push(`${t.row(row)}: [${t.inc(1)}, ${t.sc(row - 2)}] * 6 (${row * 6})`);
     }
@@ -107,13 +107,13 @@ const generateSpherePattern = (singleShape: Shape, yarnWeight: string, rowHeight
         scArray.push(`${rowText}: ${t.sc(maxStitches)} (${maxStitches})`);
     }
 
-    // Minderen tot 12; de slottoer "6 min (6)" op `lastRow` schrijft Pattern.tsx zelf.
+    // Minderen tot 12; de slotronde "6 min (6)" op `lastRow` schrijft Pattern.tsx zelf.
     for (let stitches = maxStitches - 6, row = incRows + scRows + 1; stitches >= 12; stitches -= 6, row++) {
         decArray.push(`${t.row(row)}: [${t.dec(1)}, ${t.sc(stitches / 6 - 1)}] * 6 (${stitches})`);
     }
     const lastRow = rows;
 
-    // Totaal aantal steken over alle toeren, voor de garenschatting: 6, 12, …, M, dan
+    // Totaal aantal steken over alle rondes, voor de garenschatting: 6, 12, …, M, dan
     // scRows × M, en terug M-6, …, 6.
     let stitchCount = 0;
     for (let row = 1; row <= incRows; row++) stitchCount += row * 6;

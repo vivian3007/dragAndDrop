@@ -4,6 +4,7 @@ import { Favorite, FavoriteBorder } from '@mui/icons-material';
 import { useStableArray } from './useStableArray.ts';
 import DesignSnapshot from './DesignSnapshot.tsx';
 import { useT } from './i18n/LanguageProvider';
+import { useFavorites } from './favorites/FavoritesProvider';
 
 const ACTION_HEIGHT = 40;
 
@@ -65,7 +66,7 @@ const areButtonsPropsEqual = (prev: AmigurumiCardButtonsProps, next: AmigurumiCa
 // heart button below, while still being skippable on its own when only `favorite` changes.
 // Verwijderen staat bewust niet op de kaart (te makkelijk per ongeluk, naast het hartje);
 // dat zit in het bewerk-menu van de detailweergave.
-const AmigurumiCardButtons = React.memo(({ onPatternClick }: AmigurumiCardButtonsProps) => {
+export const AmigurumiCardButtons = React.memo(({ onPatternClick }: AmigurumiCardButtonsProps) => {
     const t = useT();
     return (
     <>
@@ -82,22 +83,48 @@ const AmigurumiCardButtons = React.memo(({ onPatternClick }: AmigurumiCardButton
     );
 }, areButtonsPropsEqual);
 
+// Hartje met stuiter-animatie; ook gebruikt op de kaarten van gemaakte amigurumi (Makes.tsx).
+// Leest en zet zelf je persoonlijke favoriet, zodat alleen dit knopje opnieuw rendert als
+// je favorieten veranderen — niet de hele kaart.
+export const FavoriteButton = ({ amigurumiId }: { amigurumiId: string }) => {
+    const [isHeartBouncing, setIsHeartBouncing] = useState(false);
+    const { favoriteIds, toggleFavorite } = useFavorites();
+    const favorite = favoriteIds.has(amigurumiId);
+    const t = useT();
+    const iconProps = {
+        className: isHeartBouncing ? 'heart-bounce' : '',
+        onAnimationEnd: () => setIsHeartBouncing(false),
+    };
+    return (
+        <IconButton
+            size="small"
+            onClick={(e) => {
+                e.stopPropagation();
+                setIsHeartBouncing(true);
+                toggleFavorite(amigurumiId);
+            }}
+            aria-label={t(favorite ? 'card.unfavorite' : 'card.favorite')}
+            sx={actionIconButtonSx}
+        >
+            {favorite ? (
+                <Favorite {...iconProps} sx={{color: 'var(--color-favorite)', fontSize: '1.25rem'}} />
+            ) : (
+                <FavoriteBorder {...iconProps} sx={{color: 'var(--color-text)', fontSize: '1.25rem'}} />
+            )}
+        </IconButton>
+    );
+};
+
 const AmigurumiCard = ({
     amigurumi,
-    onFavoriteChange,
     onPatternClick,
     onCardClick,
 }: {
     amigurumi: Amigurumi;
-    onFavoriteChange: (amigurumi: Amigurumi) => void;
     onPatternClick: (amigurumi: Amigurumi) => void;
     onCardClick?: (amigurumi: Amigurumi) => void;
 }) => {
-    const [isHeartBouncing, setIsHeartBouncing] = useState(false);
-    const t = useT();
-
-    // Keeps handlers below referentially stable across renders (e.g. when only `favorite` changes)
-    // even though `amigurumi` itself is a fresh object on every Firestore snapshot.
+    // Keeps handlers below referentially stable across renders even though `amigurumi` itself is a fresh object on every Firestore snapshot.
     const amigurumiRef = useRef(amigurumi);
     amigurumiRef.current = amigurumi;
 
@@ -112,12 +139,6 @@ const AmigurumiCard = ({
         onPatternClick(amigurumiRef.current);
     }, [onPatternClick]);
 
-    const handleFavoriteClick = useCallback((e: React.MouseEvent) => {
-        e.stopPropagation();
-        setIsHeartBouncing(true);
-        onFavoriteChange(amigurumiRef.current);
-    }, [onFavoriteChange]);
-
     return (
         <Card className="my-pattern-text-container" onClick={handleCardClick}>
             <AmigurumiCardMedia
@@ -128,42 +149,20 @@ const AmigurumiCard = ({
             />
             <Box sx={{display: 'flex', alignItems: 'center', gap: 1, marginTop: '20px'}}>
                 <AmigurumiCardButtons onPatternClick={handlePatternClick} />
-                <IconButton
-                    size="small"
-                    onClick={handleFavoriteClick}
-                    aria-label={t(amigurumi.favorite ? 'card.unfavorite' : 'card.favorite')}
-                    sx={actionIconButtonSx}
-                >
-                    {amigurumi.favorite ? (
-                        <Favorite
-                            className={isHeartBouncing ? 'heart-bounce' : ''}
-                            onAnimationEnd={() => setIsHeartBouncing(false)}
-                            sx={{color: 'var(--color-favorite)', fontSize: '1.25rem'}}
-                        />
-                    ) : (
-                        <FavoriteBorder
-                            className={isHeartBouncing ? 'heart-bounce' : ''}
-                            onAnimationEnd={() => setIsHeartBouncing(false)}
-                            sx={{color: 'var(--color-text)', fontSize: '1.25rem'}}
-                        />
-                    )}
-                </IconButton>
+                <FavoriteButton amigurumiId={amigurumi.id} />
             </Box>
         </Card>
     );
 };
 
-const arePropsEqual = (
-    prev: { amigurumi: Amigurumi; onFavoriteChange: unknown; onPatternClick: unknown; onCardClick: unknown },
-    next: { amigurumi: Amigurumi; onFavoriteChange: unknown; onPatternClick: unknown; onCardClick: unknown }
-) =>
+type AmigurumiCardProps = React.ComponentProps<typeof AmigurumiCard>;
+
+const arePropsEqual = (prev: AmigurumiCardProps, next: AmigurumiCardProps) =>
     prev.amigurumi.id === next.amigurumi.id &&
     prev.amigurumi.name === next.amigurumi.name &&
-    prev.amigurumi.favorite === next.amigurumi.favorite &&
     prev.amigurumi.imageUrl === next.amigurumi.imageUrl &&
-    prev.amigurumi.tags.length === next.amigurumi.tags.length &&
-    prev.amigurumi.tags.every((tag, i) => tag === next.amigurumi.tags[i]) &&
-    prev.onFavoriteChange === next.onFavoriteChange &&
+    (prev.amigurumi.tags ?? []).length === (next.amigurumi.tags ?? []).length &&
+    (prev.amigurumi.tags ?? []).every((tag, i) => tag === next.amigurumi.tags[i]) &&
     prev.onPatternClick === next.onPatternClick &&
     prev.onCardClick === next.onCardClick;
 

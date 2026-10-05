@@ -1,8 +1,7 @@
-import React, {useContext, useEffect, useRef, useState} from 'react';
-import {useLoader, useThree, useFrame} from '@react-three/fiber';
+import React, {useEffect, useRef, useState} from 'react';
+import {useLoader, useThree} from '@react-three/fiber';
 import TransformControlsThree from "./TransformControlsThree.tsx";
 import * as THREE from 'three';
-import { RenderContext } from "./RenderProvider.tsx";
 import { WORLD_SCALE_FACTOR } from "./geometry/units";
 
 function Sphere({
@@ -107,8 +106,6 @@ function Sphere({
                     <meshBasicMaterial
                         map={texture}
                         color={shape?.color ?? 'white'}
-                        metalness={0}
-                        roughness={0.8}
                     />
                 </mesh>
             </group>

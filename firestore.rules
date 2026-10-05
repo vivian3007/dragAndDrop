@@ -3,8 +3,9 @@ rules_version = '2';
 // Beveiligingsregels voor Stitchify. De app zelf (React) is voor iedereen aan te passen;
 // deze regels draaien op de server van Firebase en zijn dus de echte beveiliging.
 //
-// Gebruikers worden in de data aangeduid met hun e-mailadres (user_id), daarom wordt hier
-// steeds vergeleken met request.auth.token.email.
+// Gebruikers worden in de data aangeduid met hun Firebase-uid (user_id), daarom wordt hier
+// steeds vergeleken met request.auth.uid. E-mailadressen staan bewust nergens in de database
+// (alleen in Firebase Auth), zodat andere gebruikers ze niet kunnen uitlezen.
 //
 // Deployen: `npx firebase-tools deploy --only firestore:rules` (na `npx firebase-tools login`).
 // Test wijzigingen eerst in de Rules Playground van de Firebase-console.
@@ -15,18 +16,18 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function myEmail() {
-      return request.auth.token.email;
+    function myUid() {
+      return request.auth.uid;
     }
 
     function ownsAmigurumi(amigurumiId) {
-      return get(/databases/$(database)/documents/amigurumi/$(amigurumiId)).data.user_id == myEmail();
+      return get(/databases/$(database)/documents/amigurumi/$(amigurumiId)).data.user_id == myUid();
     }
 
     // Zelfde, maar met de toestand ná een batch: bij het kopiëren van een ontwerp worden het
     // ontwerp en z'n vormen in één batch aangemaakt.
     function ownsAmigurumiAfter(amigurumiId) {
-      return getAfter(/databases/$(database)/documents/amigurumi/$(amigurumiId)).data.user_id == myEmail();
+      return getAfter(/databases/$(database)/documents/amigurumi/$(amigurumiId)).data.user_id == myUid();
     }
 
     // Een geldige gebruikersnaam: 3–20 tekens, kleine letters/cijfers/punt/underscore,
@@ -36,13 +37,13 @@ service cloud.firestore {
         && name.matches('^[a-z0-9]([a-z0-9._]*[a-z0-9])?$');
     }
 
-    // Eigen gebruikersdocument: alleen jijzelf mag het aanmaken en wijzigen, met je eigen
-    // e-mailadres, en alleen met een gebruikersnaam die op jouw naam gereserveerd is.
+    // Eigen gebruikersdocument (openbaar: alleen gebruikersnaam en aanmaakdatum). Alleen
+    // jijzelf mag het aanmaken en wijzigen, en alleen met een gebruikersnaam die op jouw naam
+    // gereserveerd is. Een e-mailadres is hier niet toegestaan.
     match /users/{uid} {
       allow read: if signedIn();
       allow create, update: if signedIn() && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['email', 'username', 'displayName', 'createdAt'])
-        && request.resource.data.email == myEmail()
+        && request.resource.data.keys().hasOnly(['username', 'displayName', 'createdAt'])
         && (!('username' in request.resource.data)
             || (validUsername(request.resource.data.username)
                 && getAfter(/databases/$(database)/documents/usernames/$(request.resource.data.username)).data.uid == uid));
@@ -67,17 +68,24 @@ service cloud.firestore {
         && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.username != name;
     }
 
+    // Persoonlijke favorieten: users/{uid}/favorites/{amigurumiId}. Alleen van jezelf, en
+    // alleen lezen, aanmaken (met enkel een tijdstempel) en weer weghalen.
+    match /users/{uid}/favorites/{amigurumiId} {
+      allow read, delete: if signedIn() && request.auth.uid == uid;
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['createdAt']);
+      allow update: if false;
+    }
+
     // Ontwerpen: iedereen die is ingelogd mag ze bekijken (Home, profielen, kopiëren).
-    // Alleen de eigenaar mag ze wijzigen of verwijderen. Uitzondering: `favorite` is (nog)
-    // één gedeeld veld per ontwerp, dat iedereen mag omzetten — en verder niets.
+    // Alleen de eigenaar mag ze wijzigen of verwijderen. (Favorieten staan per gebruiker
+    // hierboven; het oude gedeelde `favorite`-veld mag niemand anders meer omzetten.)
     match /amigurumi/{amigurumiId} {
       allow read: if signedIn();
-      allow create: if signedIn() && request.resource.data.user_id == myEmail();
-      allow update: if signedIn() && (
-        (resource.data.user_id == myEmail() && request.resource.data.user_id == myEmail())
-        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['favorite'])
-      );
-      allow delete: if signedIn() && resource.data.user_id == myEmail();
+      allow create: if signedIn() && request.resource.data.user_id == myUid();
+      allow update: if signedIn()
+        && resource.data.user_id == myUid() && request.resource.data.user_id == myUid();
+      allow delete: if signedIn() && resource.data.user_id == myUid();
     }
 
     // Vormen horen bij een ontwerp; alleen de eigenaar van dat ontwerp mag ze aanpassen.
@@ -93,20 +101,20 @@ service cloud.firestore {
     // die mag een ingelogde gebruiker eenmalig "claimen" door er z'n eigen user_id in te zetten.
     match /yarn/{yarnId} {
       allow read: if signedIn();
-      allow create: if signedIn() && request.resource.data.user_id == myEmail();
-      allow update: if signedIn() && request.resource.data.user_id == myEmail()
-        && (resource.data.get('user_id', null) == null || resource.data.user_id == myEmail());
+      allow create: if signedIn() && request.resource.data.user_id == myUid();
+      allow update: if signedIn() && request.resource.data.user_id == myUid()
+        && (resource.data.get('user_id', null) == null || resource.data.user_id == myUid());
       allow delete: if false;
     }
 
-    // Foto's van gemaakte knuffels: iedereen mag kijken, alleen jijzelf mag jouw foto's
+    // Foto's van gemaakte amigurumi: iedereen mag kijken, alleen jijzelf mag jouw foto's
     // plaatsen of verwijderen. Achteraf wijzigen kan niet.
     match /makes/{makeId} {
       allow read: if signedIn();
-      allow create: if signedIn() && request.resource.data.user_id == myEmail()
+      allow create: if signedIn() && request.resource.data.user_id == myUid()
         && request.resource.data.keys().hasOnly(['amigurumi_id', 'amigurumi_name', 'user_id', 'imageUrl', 'note', 'createdAt']);
       allow update: if false;
-      allow delete: if signedIn() && resource.data.user_id == myEmail();
+      allow delete: if signedIn() && resource.data.user_id == myUid();
     }
 
     // Alles wat hierboven niet genoemd is: dicht.

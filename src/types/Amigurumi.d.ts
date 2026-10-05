@@ -4,16 +4,17 @@
 interface AmigurumiSource {
     id: string;
     name: string;
-    user_id: string;
+    // Firebase-uid van de eigenaar van de bron (null als die niet meer te herleiden was).
+    user_id: string | null;
 }
 
 interface Amigurumi {
     id: string;
     name: string;
-    height: number;
+    height: number | null;
     tags: string[];
-    favorite: boolean;
-    yarn_id: string;
+    yarn_id: string | null;
+    // Firebase-uid van de eigenaar. (Vroeger het e-mailadres; zie scripts/migrate-user-ids.mjs.)
     user_id: string;
     createdAt?: any;
     notes?: string | null;

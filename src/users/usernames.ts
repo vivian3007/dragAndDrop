@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
 import { User, updateProfile } from 'firebase/auth';
-import { collection, doc, getDoc, getDocs, limit, query, serverTimestamp, where, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { db } from '../../firebase-config.js';
 
 // Gebruikersnamen zijn uniek. Firestore kent geen unique-constraint, dus elke naam heeft een
 // eigen document `usernames/{naam}` met daarin de uid van de eigenaar. Een document-id kan
 // maar één keer bestaan en firestore.rules staat alleen aanmaken toe (geen overschrijven),
 // dus ook als twee mensen tegelijk dezelfde naam kiezen, krijgt er maar één hem. Het
-// gebruikersdocument `users/{uid}` bevat de naam ook, zodat we van e-mailadres (zoals
-// ontwerpen hun eigenaar opslaan) naar gebruikersnaam kunnen.
+// gebruikersdocument `users/{uid}` bevat de naam ook, zodat we van uid (zoals ontwerpen hun
+// eigenaar opslaan) naar gebruikersnaam kunnen. E-mailadressen staan bewust nergens in de
+// database: die blijven in Firebase Auth, waar alleen de gebruiker zelf ze ziet.
 
 export const USERNAME_MIN = 3;
 export const USERNAME_MAX = 20;
@@ -40,7 +41,7 @@ export async function claimUsername(user: User, username: string, previous?: str
     batch.set(doc(db, 'usernames', username), { uid: user.uid });
     batch.set(
         doc(db, 'users', user.uid),
-        { email: user.email, username, ...(isNewUserDoc ? { createdAt: serverTimestamp() } : {}) },
+        { username, ...(isNewUserDoc ? { createdAt: serverTimestamp() } : {}) },
         { merge: true },
     );
     if (previous && previous !== username) {
@@ -49,7 +50,9 @@ export async function claimUsername(user: User, username: string, previous?: str
     await batch.commit();
     // Ook als displayName in Firebase Auth, zodat bv. de initiaal in de navigatiebalk klopt.
     await updateProfile(user, { displayName: username });
-    if (user.email) forgetEmail(user.email);
+    byUid.delete(user.uid);
+    uidByUsername.delete(username);
+    if (previous) uidByUsername.delete(previous);
 }
 
 export async function fetchOwnUsername(uid: string): Promise<string | null> {
@@ -57,58 +60,59 @@ export async function fetchOwnUsername(uid: string): Promise<string | null> {
     return (snap.exists() && snap.data().username) || null;
 }
 
-export type PublicUser = { username: string | null };
+// Ontwerpen, foto's en herkomst slaan hun eigenaar op als Firebase-uid. De gebruikersnaam
+// staat in `users/{uid}`. Gecachet per uid voor deze sessie.
+const byUid = new Map<string, Promise<string | null>>();
 
-// Ontwerpen, foto's en herkomst slaan hun eigenaar op als e-mailadres. Om dat nergens te
-// tonen, zoeken we de gebruikersnaam erbij. Gecachet per e-mailadres voor deze sessie.
-const byEmail = new Map<string, Promise<PublicUser>>();
-
-export function lookupUserByEmail(email: string): Promise<PublicUser> {
-    let cached = byEmail.get(email);
+export function lookupUsernameByUid(uid: string): Promise<string | null> {
+    let cached = byUid.get(uid);
     if (!cached) {
-        cached = getDocs(query(collection(db, 'users'), where('email', '==', email), limit(1)))
-            .then((snap) => ({ username: (snap.docs[0]?.data().username as string | undefined) ?? null }))
+        cached = getDoc(doc(db, 'users', uid))
+            .then((snap) => ((snap.exists() && (snap.data().username as string | undefined)) || null))
             .catch((error) => {
                 console.error('Fout bij opzoeken van gebruiker:', error);
-                byEmail.delete(email);
-                return { username: null };
+                byUid.delete(uid);
+                return null;
             });
-        byEmail.set(email, cached);
+        byUid.set(uid, cached);
     }
     return cached;
 }
 
-function forgetEmail(email: string) {
-    byEmail.delete(email);
+// Van gebruikersnaam (uit de profiel-URL) naar het uid van die gebruiker. Ook gecachet voor
+// deze sessie, zodat terugkeren naar een profiel niet eerst weer op de server wacht.
+const uidByUsername = new Map<string, Promise<string | null>>();
+
+export function lookupUidByUsername(username: string): Promise<string | null> {
+    let cached = uidByUsername.get(username);
+    if (!cached) {
+        cached = getDoc(doc(db, 'usernames', username))
+            .then((reservation) => (reservation.exists() ? (reservation.data().uid as string) : null));
+        // Fouten en "bestaat niet" niet onthouden: die naam kan zo alsnog geregistreerd worden.
+        cached.then((uid) => uid || uidByUsername.delete(username), () => uidByUsername.delete(username));
+        uidByUsername.set(username, cached);
+    }
+    return cached;
 }
 
-// Van gebruikersnaam (uit de profiel-URL) terug naar het e-mailadres waarmee de ontwerpen
-// van die gebruiker zijn opgeslagen.
-export async function lookupUserByUsername(username: string): Promise<{ uid: string; email: string; username: string } | null> {
-    const reservation = await getDoc(doc(db, 'usernames', username));
-    if (!reservation.exists()) return null;
-    const uid = reservation.data().uid as string;
-    const userDoc = await getDoc(doc(db, 'users', uid));
-    const email = userDoc.exists() ? (userDoc.data().email as string | undefined) : undefined;
-    return email ? { uid, email, username } : null;
-}
-
-// Hook: gebruikersnaam bij een e-mailadres. `undefined` zolang het laadt.
-export function useUsernameForEmail(email: string | null | undefined): string | null | undefined {
+// Hook: gebruikersnaam bij een uid. `undefined` zolang het laadt, `null` als er geen is.
+// Waarden met een "@" zijn nog niet gemigreerde e-mailadressen (zie
+// scripts/migrate-user-ids.mjs): die zoeken we niet op en tonen we ook nooit.
+export function useUsernameForUid(uid: string | null | undefined): string | null | undefined {
     const [username, setUsername] = useState<string | null | undefined>(undefined);
     useEffect(() => {
-        if (!email) {
+        if (!uid || uid.includes('@')) {
             setUsername(null);
             return;
         }
         let cancelled = false;
         setUsername(undefined);
-        lookupUserByEmail(email).then((user) => {
-            if (!cancelled) setUsername(user.username);
+        lookupUsernameByUid(uid).then((name) => {
+            if (!cancelled) setUsername(name);
         });
         return () => {
             cancelled = true;
         };
-    }, [email]);
+    }, [uid]);
     return username;
 }

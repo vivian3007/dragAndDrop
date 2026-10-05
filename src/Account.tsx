@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Alert, Button, Chip, CircularProgress, IconButton, InputAdornment, TextField } from '@mui/material';
-import { CheckCircle, ErrorOutline, Logout, Person, Visibility, VisibilityOff } from '@mui/icons-material';
+import { Alert, Button, Chip, CircularProgress, DialogContent, IconButton, InputAdornment, TextField, Typography } from '@mui/material';
+import { ArrowBack, CheckCircle, ErrorOutline, LockReset, Logout, Visibility, VisibilityOff } from '@mui/icons-material';
 import { EmailAuthProvider, reauthenticateWithCredential, sendEmailVerification, updatePassword } from 'firebase/auth';
 import { toast } from 'react-toastify';
 import { logOut, useAuth } from './auth/AuthProvider';
 import { authErrorKey, MIN_PASSWORD_LENGTH } from './auth/authErrors';
 import { profilePath } from './UserLink.tsx';
+import AppDialog from './AppDialog';
 import { claimUsername, isUsernameAvailable, usernameError } from './users/usernames';
 import UsernameField, { UsernameStatus } from './users/UsernameField';
 import { useT } from './i18n/LanguageProvider';
@@ -25,6 +26,7 @@ const Account = () => {
 
     const [sendingVerification, setSendingVerification] = useState(false);
 
+    const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -79,6 +81,17 @@ const Account = () => {
         }
     };
 
+    // Bij sluiten alles wissen, zodat er geen ingetypt wachtwoord in het formulier blijft staan.
+    const closePasswordDialog = () => {
+        if (savingPassword) return;
+        setPasswordDialogOpen(false);
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        setShowPasswords(false);
+        setPasswordError(null);
+    };
+
     const handleChangePassword = async (e: React.FormEvent) => {
         e.preventDefault();
         setPasswordError(null);
@@ -98,6 +111,7 @@ const Account = () => {
             // ingelogde computer zomaar je wachtwoord kan veranderen.
             await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, currentPassword));
             await updatePassword(user, newPassword);
+            setPasswordDialogOpen(false);
             setCurrentPassword('');
             setNewPassword('');
             setConfirmPassword('');
@@ -134,24 +148,20 @@ const Account = () => {
 
     return (
         <div className="account-page">
+            {username && (
+                <Link to={profilePath(username)} className="account-back-link">
+                    <ArrowBack fontSize="small" />
+                    {t('account.backToProfile')}
+                </Link>
+            )}
+            <h1 className="account-title">{t('nav.settings')}</h1>
             <header className="account-header">
                 <div className="account-avatar" aria-hidden="true">{initial}</div>
                 <div className="account-header-text">
-                    <h1>{username ? `@${username}` : t('account.unnamed')}</h1>
+                    <h2>{username ? `@${username}` : t('account.unnamed')}</h2>
                     <span className="account-email">{user.email}</span>
                 </div>
                 <div className="account-header-actions">
-                    {username && (
-                        <Button
-                            component={Link}
-                            to={profilePath(username)}
-                            variant="outlined"
-                            startIcon={<Person />}
-                            sx={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)', flexDirection: 'row' }}
-                        >
-                            {t('account.viewProfile')}
-                        </Button>
-                    )}
                     <Button
                         variant="contained"
                         startIcon={<Logout />}
@@ -203,51 +213,68 @@ const Account = () => {
             </section>
 
             <section className="account-section">
-                <h2>{t('account.changePassword')}</h2>
-                <form onSubmit={handleChangePassword} className="account-form account-form--stacked">
-                    {/* Verborgen gebruikersnaamveld: helpt wachtwoordmanagers het juiste account te kiezen. */}
-                    <input type="email" name="username" autoComplete="username" value={user.email ?? ''} readOnly hidden />
-                    <TextField
-                        label={t('account.currentPassword')}
-                        type={showPasswords ? 'text' : 'password'}
-                        autoComplete="current-password"
-                        value={currentPassword}
-                        onChange={(e) => setCurrentPassword(e.target.value)}
-                        required
-                        fullWidth
-                        InputProps={{ endAdornment: visibilityToggle }}
-                    />
-                    <TextField
-                        label={t('account.newPassword')}
-                        type={showPasswords ? 'text' : 'password'}
-                        autoComplete="new-password"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        helperText={t('login.passwordHint', { min: MIN_PASSWORD_LENGTH })}
-                        required
-                        fullWidth
-                    />
-                    <TextField
-                        label={t('login.confirmPassword')}
-                        type={showPasswords ? 'text' : 'password'}
-                        autoComplete="new-password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        error={confirmPassword.length > 0 && confirmPassword !== newPassword}
-                        required
-                        fullWidth
-                    />
-                    {passwordError && <Alert severity="error">{t(passwordError, { min: MIN_PASSWORD_LENGTH })}</Alert>}
-                    <Button
-                        type="submit"
-                        variant="contained"
-                        disabled={savingPassword || !currentPassword || !newPassword}
-                        sx={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-bg)', alignSelf: 'flex-start' }}
-                    >
-                        {savingPassword ? <CircularProgress size={20} sx={{ color: 'var(--color-bg)' }} /> : t('account.changePassword')}
-                    </Button>
-                </form>
+                <h2>{t('account.password')}</h2>
+                <p className="account-note">{t('account.passwordNote')}</p>
+                <Button
+                    variant="outlined"
+                    startIcon={<LockReset />}
+                    onClick={() => setPasswordDialogOpen(true)}
+                    sx={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)', alignSelf: 'flex-start' }}
+                >
+                    {t('account.changePassword')}
+                </Button>
             </section>
+
+            <AppDialog open={passwordDialogOpen} onClose={closePasswordDialog} maxWidth="xs">
+                <DialogContent sx={{ padding: 4 }}>
+                    <Typography variant="h5" gutterBottom sx={{ pr: 4 }}>{t('account.changePassword')}</Typography>
+                    <Typography sx={{ mb: 2 }}>{t('account.changePasswordIntro')}</Typography>
+                    <form onSubmit={handleChangePassword} className="account-form account-form--stacked">
+                        {/* Verborgen gebruikersnaamveld: helpt wachtwoordmanagers het juiste account te kiezen. */}
+                        <input type="email" name="username" autoComplete="username" value={user.email ?? ''} readOnly hidden />
+                        <TextField
+                            label={t('account.currentPassword')}
+                            type={showPasswords ? 'text' : 'password'}
+                            autoComplete="current-password"
+                            value={currentPassword}
+                            onChange={(e) => setCurrentPassword(e.target.value)}
+                            autoFocus
+                            required
+                            fullWidth
+                            InputProps={{ endAdornment: visibilityToggle }}
+                        />
+                        <TextField
+                            label={t('account.newPassword')}
+                            type={showPasswords ? 'text' : 'password'}
+                            autoComplete="new-password"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            helperText={t('login.passwordHint', { min: MIN_PASSWORD_LENGTH })}
+                            required
+                            fullWidth
+                        />
+                        <TextField
+                            label={t('login.confirmPassword')}
+                            type={showPasswords ? 'text' : 'password'}
+                            autoComplete="new-password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            error={confirmPassword.length > 0 && confirmPassword !== newPassword}
+                            required
+                            fullWidth
+                        />
+                        {passwordError && <Alert severity="error">{t(passwordError, { min: MIN_PASSWORD_LENGTH })}</Alert>}
+                        <Button
+                            type="submit"
+                            variant="contained"
+                            disabled={savingPassword || !currentPassword || !newPassword}
+                            sx={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-bg)', alignSelf: 'flex-start' }}
+                        >
+                            {savingPassword ? <CircularProgress size={20} sx={{ color: 'var(--color-bg)' }} /> : t('account.changePassword')}
+                        </Button>
+                    </form>
+                </DialogContent>
+            </AppDialog>
         </div>
     );
 };

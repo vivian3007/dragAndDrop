@@ -4,13 +4,12 @@ import MyPatterns from "./MyPatterns";
 import Account from "./Account";
 import Favorites from "./Favorites";
 import TopNavBar from "./TopNavBar.tsx";
-import React, {useState, useRef, useEffect, useCallback, lazy, Suspense} from "react";
-import {v4 as uuidv4} from "uuid";
+import {useState, useRef, useEffect, useCallback, lazy, Suspense} from "react";
 import Homepage from "./Homepage.tsx";
-import {Route, Routes, Link, useNavigate} from "react-router-dom";
+import {Route, Routes} from "react-router-dom";
 import {collection, getDocs, doc, updateDoc, getDoc, deleteDoc, where, query} from "firebase/firestore";
 import {db} from "../firebase-config.js";
-import {Box, Button, CircularProgress} from "@mui/material";
+import {Box, CircularProgress} from "@mui/material";
 import Login from "./Login.tsx";
 import Profile from "./Profile.tsx";
 import { toast, ToastContainer } from 'react-toastify';
@@ -40,7 +39,6 @@ export default function App() {
     const [activeId, setActiveId] = useState(null);
     const [shapeColor, setShapeColor] = useState('#FFFFFF');
 
-    const [amigurumis, setAmigurumis] = useState<Amigurumi[]>([]);
     const [yarns, setYarns] = useState<Yarn[]>([]);
 
     const [intersections, setIntersections] = useState([]);
@@ -50,8 +48,6 @@ export default function App() {
 
     const [transformMode, setTransformMode] = useState<'translate' | 'rotate' | 'scale'>('translate');
     const [showGrid, setShowGrid] = useState(false);
-
-    const navigate = useNavigate();
 
     const fetchData = async () => {
         try {
@@ -72,7 +68,6 @@ export default function App() {
                 id: doc.id,
                 ...doc.data(),
             } as Amigurumi));
-            setAmigurumis(amigurumiData);
 
             const yarnData: Yarn[] = querySnapshotYarn.docs.map((doc) => ({
                 id: doc.id,
@@ -120,7 +115,6 @@ export default function App() {
     // alles van de vorige gebruiker uit het geheugen halen.
     useEffect(() => {
         if (!user) {
-            setAmigurumis([]);
             setYarns([]);
             setDroppedShapes([]);
             setActiveId(null);
@@ -273,10 +267,11 @@ export default function App() {
         };
     }, []);
 
-    const handleUpdateYarnInfo = useCallback((updatedYarnInfo: { id: string; name: string; weight: number; mPerSkein: number, hooksize: number, material: string, color: string }) => {
+    const handleUpdateYarnInfo = useCallback((updatedYarnInfo: Yarn) => {
+        // Hetzelfde garen, of het eerste garen voor dit ontwerp (nog zonder id).
         setYarnInfo((prevYarnInfo: Yarn) =>
-            prevYarnInfo.id === updatedYarnInfo.id
-                ? { id: prevYarnInfo.id, name: updatedYarnInfo.name, weight: updatedYarnInfo.weight, mPerSkein: updatedYarnInfo.mPerSkein, hooksize: updatedYarnInfo.hooksize, material: updatedYarnInfo.material, color: updatedYarnInfo.color }
+            prevYarnInfo.id === undefined || prevYarnInfo.id === updatedYarnInfo.id
+                ? { ...prevYarnInfo, ...updatedYarnInfo }
                 : prevYarnInfo
         );
     }, []);
@@ -322,9 +317,9 @@ export default function App() {
             <Box>
                 <Routes>
                     <Route path={"/"} element={<Login />} />
-                    <Route path="/home" element={<RequireAuth><Homepage amigurumis={amigurumis} setAmigurumis={setAmigurumis} yarnInfo={yarnInfo} intersections={intersections} /></RequireAuth>} />
-                    <Route path="/myPatterns" element={<RequireAuth><MyPatterns amigurumis={amigurumis} setAmigurumis={setAmigurumis} yarnInfo={yarnInfo} intersections={intersections} setDroppedShapes={setDroppedShapes} /></RequireAuth>} />
-                    <Route path="/favorites" element={<RequireAuth><Favorites amigurumis={amigurumis} setAmigurumis={setAmigurumis} yarnInfo={yarnInfo} intersections={intersections} /></RequireAuth>} />
+                    <Route path="/home" element={<RequireAuth><Homepage yarnInfo={yarnInfo} intersections={intersections} /></RequireAuth>} />
+                    <Route path="/myPatterns" element={<RequireAuth><MyPatterns yarnInfo={yarnInfo} intersections={intersections} setDroppedShapes={setDroppedShapes} /></RequireAuth>} />
+                    <Route path="/favorites" element={<RequireAuth><Favorites yarnInfo={yarnInfo} intersections={intersections} /></RequireAuth>} />
                     <Route path="/:amigurumi_id/editor" element={
                         <RequireAuth>
                         <Suspense fallback={
@@ -364,13 +359,12 @@ export default function App() {
                                 setMeshes={setMeshes}
                                 scene={scene}
                                 setScene={setScene}
-                                transFormMode={transformMode}
                             />
                         </Suspense>
                         </RequireAuth>
                     }
                     />
-                    <Route path="/:amigurumi_id/pattern" element={<RequireAuth><Pattern shapes={droppedShapes} yarnInfo={yarnInfo} intersections={intersections} meshes={meshes} /></RequireAuth>} />
+                    <Route path="/:amigurumi_id/pattern" element={<RequireAuth><Pattern shapes={droppedShapes} yarnInfo={yarnInfo} intersections={intersections} /></RequireAuth>} />
                     <Route path="/account" element={<RequireAuth><Account /></RequireAuth>} />
                     <Route path="/profile/:username" element={<RequireAuth><Profile /></RequireAuth>} />
                 </Routes>

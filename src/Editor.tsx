@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect } from 'react';
 import { v4 as uuidv4 } from "uuid";
-import { AppBar, Container, Toolbar } from "@mui/material";
-import { Link, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import ThreeJsField from "./ThreeJsField.tsx";
 import Settingsbar from "./Settingsbar.tsx";
 import Sidebar from "./Sidebar.tsx";
@@ -56,7 +55,7 @@ const Editor = ({
     handleUpdateShape: any;
     handleUpdateYarnInfo: any;
     handleDeleteShape: any;
-    activeShape: Shape;
+    activeShape: Shape | undefined;
     shapeColor: string;
     setShapeColor: any;
     yarnInfo: Yarn;
@@ -64,7 +63,7 @@ const Editor = ({
     yarns: Yarn[];
     onSetView: (setView: (viewKey: string) => void) => void;
     setView: any;
-    transFormMode: any;
+    transformMode: 'translate' | 'rotate' | 'scale';
     setTransformMode: any;
     showGrid: boolean;
     setShowGrid: any;
@@ -165,7 +164,7 @@ const Editor = ({
             resetHistory();
         }
         if (location.state?.amigurumi) {
-            const amigurumi: Shape[] = location.state.amigurumi;
+            const amigurumi: Amigurumi = location.state.amigurumi;
             localStorage.setItem("amigurumi", amigurumi.id);
             // Net gekopieerd garen zit nog niet in de bij het opstarten geladen `yarns`,
             // dus dat wordt via de navigatie-state meegegeven.
@@ -228,7 +227,6 @@ const Editor = ({
                 shapeColor={shapeColor}
                 setShapeColor={setShapeColor}
                 droppedShapes={droppedShapes}
-                dragging={dragging}
                 onUpdateYarnInfo={handleUpdateYarnInfo}
                 yarnInfo={yarnInfo}
                 intersections={intersections}

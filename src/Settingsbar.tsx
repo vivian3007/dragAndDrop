@@ -1,10 +1,7 @@
 import { memo, useRef, useState } from "react";
 import { Button, IconButton, Tab, Tabs } from "@mui/material";
 import { HelpOutline } from "@mui/icons-material";
-import { Link, useNavigate } from "react-router-dom";
-import Trashcan from "./Trashcan.tsx";
-import Sketch from "@uiw/react-color-sketch";
-import { ColorResult } from '@uiw/color-convert';
+import { useNavigate } from "react-router-dom";
 import YarnSettings, { YarnSettingsHandle } from "./YarnSettings.tsx";
 import ShapeSettings from "./ShapeSettings.tsx"
 import AppDialog from "./AppDialog.tsx";
@@ -28,9 +25,9 @@ function Settingsbar({
     onMirrorShape: (id: string) => void,
     shapeColor: string,
     setShapeColor: any,
-    droppedShapes: [],
+    droppedShapes: Shape[],
     onUpdateYarnInfo: any,
-    yarnInfo: {},
+    yarnInfo: Yarn,
     intersections: any;
 }) {
     const [showYarnSettings, setShowYarnSettings] = useState(false)
@@ -102,7 +99,7 @@ function Settingsbar({
             <div className="settings-bar-scroll">
                 {showYarnSettings ? (
                     <YarnSettings ref={yarnSettingsRef} onUpdateYarnInfo={onUpdateYarnInfo} yarnInfo={yarnInfo} onDirtyChange={setYarnDirty}/>
-                ) : <ShapeSettings shapeColor={shapeColor} setShapeColor={setShapeColor} droppedShapes={droppedShapes} activeShape={activeShape} onUpdateShape={onUpdateShape}/>}
+                ) : <ShapeSettings shapeColor={shapeColor} setShapeColor={setShapeColor} activeShape={activeShape} onUpdateShape={onUpdateShape}/>}
             </div>
             <div className="settings-bar-footer" style={{marginBottom: 20, alignItems: "center", display: "flex", flexDirection: "column"}}>
                 {!showYarnSettings && activeShape && (

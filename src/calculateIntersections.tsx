@@ -92,7 +92,7 @@ function getBoxVolume(box: THREE.Box3): number {
 export default function calculateIntersections(
     droppedShapes: Shape[],
     scene: THREE.Scene,
-    meshes: { id: string; mesh: THREE.Mesh }[],
+    _meshes: { id: string; mesh: THREE.Mesh }[],
     setIntersections: any,
     setMeshes: any
 ) {
