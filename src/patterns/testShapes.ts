@@ -27,16 +27,3 @@ export function shapeOfCm(type: string, cm: { width: number; height: number; len
     const px = pixelsPerCm(type);
     return makeShape({ type, width: cm.width * px, height: cm.height * px, length: cm.length * px, ...overrides });
 }
-
-// Het steekaantal tussen haakjes aan het eind van een patroonregel: "Ronde 4: … (24)" → 24.
-export function stitchesOf(row: string): number {
-    const match = row.match(/\((\d+)\)\s*$/);
-    if (!match) throw new Error(`Geen steekaantal in "${row}"`);
-    return Number(match[1]);
-}
-
-// Aantal rondes dat een regel beslaat: "Row 7" → 1, "Row 7-12" → 6.
-export function rowSpan(row: string): number {
-    const range = row.match(/^Row (\d+)-(\d+):/);
-    return range ? Number(range[2]) - Number(range[1]) + 1 : 1;
-}

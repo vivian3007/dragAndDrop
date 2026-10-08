@@ -1,4 +1,4 @@
-import { englishPatternTerms, increaseRow, PatternTerms } from "./patternTerms";
+import { englishPatternTerms, evenRows, increaseRow, PatternRow, PatternTerms } from "./patternTerms";
 import { shapeDimensionCm } from "../geometry/units";
 import { maxStitchesForDiameter, STITCH_WIDTH_PER_ROW_HEIGHT } from "./stitchGeometry";
 
@@ -27,7 +27,7 @@ const generateConePattern = (shape: Shape, yarnWeight: string, rowHeights: Recor
     // Steken per ronde: van 6 (ronde 1) gelijkmatig oplopend naar maxStitches (laatste ronde).
     const stitchesPerRow = Array.from({ length: rows }, (_, i) => 6 * Math.max(1, Math.ceil(((i + 1) * steps) / rows)));
 
-    const incArray: string[] = [];
+    const incArray: PatternRow[] = [];
     const intersectionRows: IntersectionRow[] = [];
 
     // Hoogte als fractie van de onderkant (0) naar de punt (1). Ronde 1 is de punt.
@@ -58,8 +58,7 @@ const generateConePattern = (shape: Shape, yarnWeight: string, rowHeights: Recor
         }
         let end = row;
         while (end + 1 <= rows && stitchesPerRow[end] === stitches) end++;
-        const rowText = end === row ? t.row(row) : t.row(`${row}-${end}`);
-        incArray.push(`${rowText}: ${t.sc(stitches)} (${stitches})`);
+        incArray.push(evenRows(t, row, end, stitches));
         row = end + 1;
     }
 
@@ -79,8 +78,8 @@ const generateConePattern = (shape: Shape, yarnWeight: string, rowHeights: Recor
         lastRow: rows,
         stitchCount: stitchesPerRow.reduce((sum, n) => sum + n, 0),
         incArray,
-        scArray: [] as string[],
-        decArray: [] as string[],
+        scArray: [] as PatternRow[],
+        decArray: [] as PatternRow[],
         rowArray: Array.from({ length: rows }, (_, i) => i + 1),
         intersectionRows,
     };

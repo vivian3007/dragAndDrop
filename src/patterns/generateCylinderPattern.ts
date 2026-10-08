@@ -1,4 +1,4 @@
-import { englishPatternTerms, increaseRow, PatternTerms } from "./patternTerms";
+import { decreaseRow, englishPatternTerms, evenRows, increaseRow, PatternRow, PatternTerms } from "./patternTerms";
 import { shapeDimensionCm } from "../geometry/units";
 import { maxStitchesForDiameter, STITCH_WIDTH_PER_ROW_HEIGHT } from "./stitchGeometry";
 
@@ -27,9 +27,9 @@ const generateCylinderPattern = (shape: Shape, yarnWeight: string, rowHeights: R
     const decRows = maxStitches / 6 - 1; // bovenkant: M-6 t/m 6
     const rows = incRows + sideRows + decRows;
 
-    const incArray: string[] = [];
-    const scArray: string[] = [];
-    const decArray: string[] = [];
+    const incArray: PatternRow[] = [];
+    const scArray: PatternRow[] = [];
+    const decArray: PatternRow[] = [];
     const intersectionRows: IntersectionRow[] = [];
 
     // Hoogte als fractie van onder (0) naar boven (1), net als bij de Arm (zie
@@ -57,20 +57,19 @@ const generateCylinderPattern = (shape: Shape, yarnWeight: string, rowHeights: R
     const startRow = incRows + 1;
     const endRow = incRows + sideRows;
     // Eerste zijronde in de achterste lus: de rand onderaan.
-    scArray.push(`${t.row(startRow)}: ${t.scBackLoop(maxStitches)} (${maxStitches})`);
+    scArray.push(evenRows(t, startRow, startRow, maxStitches, true));
     if (sideRows >= 3) {
-        const middle = sideRows === 3 ? t.row(startRow + 1) : t.row(`${startRow + 1}-${endRow - 1}`);
-        scArray.push(`${middle}: ${t.sc(maxStitches)} (${maxStitches})`);
+        scArray.push(evenRows(t, startRow + 1, endRow - 1, maxStitches));
     }
     // Laatste zijronde in de achterste lus: de rand bovenaan, daarna plat minderen. (Bij één
     // zijronde doet die ene ronde beide.)
     if (sideRows >= 2) {
-        scArray.push(`${t.row(endRow)}: ${t.scBackLoop(maxStitches)} (${maxStitches})`);
+        scArray.push(evenRows(t, endRow, endRow, maxStitches, true));
     }
 
     // Minderen tot 12; de slotronde "6 min (6)" op `lastRow` schrijft Pattern.tsx zelf.
     for (let stitches = maxStitches - 6, row = endRow + 1; stitches >= 12; stitches -= 6, row++) {
-        decArray.push(`${t.row(row)}: [${t.dec(1)}, ${t.sc(stitches / 6 - 1)}] * 6 (${stitches})`);
+        decArray.push(decreaseRow(t, row, stitches));
     }
 
     let stitchCount = sideRows * maxStitches;

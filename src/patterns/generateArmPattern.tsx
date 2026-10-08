@@ -1,4 +1,4 @@
-import {englishPatternTerms, increaseRow, PatternTerms} from "./patternTerms";
+import { englishPatternTerms, evenRows, increaseRow, PatternRow, PatternTerms } from "./patternTerms";
 import { shapeDimensionCm } from "../geometry/units";
 import { halfEllipsePerimeter, maxStitchesForDiameter, STITCH_WIDTH_PER_ROW_HEIGHT } from "./stitchGeometry";
 
@@ -27,9 +27,9 @@ const generateArmPattern = (singleShape: Shape, yarnWeight: string, rowHeights: 
     const rows = incRows + scRows;
 
     const rowArray: number[] = [];
-    const incArray: string[] = [];
-    const scArray: string[] = [];
-    const decArray: string[] = [];
+    const incArray: PatternRow[] = [];
+    const scArray: PatternRow[] = [];
+    const decArray: PatternRow[] = [];
     const intersectionRows: IntersectionRow[] = [];
 
     // Een cilinder heeft geen polen-compressie zoals een bol — rijen liggen al gelijkmatig
@@ -74,8 +74,7 @@ const generateArmPattern = (singleShape: Shape, yarnWeight: string, rowHeights: 
     if (scRows > 0) {
         const startRow = incRows + 1;
         const endRow = incRows + scRows;
-        const rowText = scRows === 1 ? t.row(startRow) : t.row(`${startRow}-${endRow}`);
-        scArray.push(`${rowText}: ${t.sc(maxStitches)} (${maxStitches})`);
+        scArray.push(evenRows(t, startRow, endRow, maxStitches));
     }
 
     // Totaal aantal steken, voor de garenschatting: 6, 12, …, M en dan scRows × M. Een arm

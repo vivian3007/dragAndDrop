@@ -1,4 +1,4 @@
-import {englishPatternTerms, increaseRow, PatternTerms} from "./patternTerms";
+import { decreaseRow, englishPatternTerms, evenRows, increaseRow, PatternRow, PatternTerms } from "./patternTerms";
 import { shapeDimensionCm } from "../geometry/units";
 import { maxStitchesForDiameter, STITCH_WIDTH_PER_ROW_HEIGHT } from "./stitchGeometry";
 
@@ -30,9 +30,9 @@ const generateSpherePattern = (singleShape: Shape, yarnWeight: string, rowHeight
     const rows = incRows + scRows + decRows;
 
     const rowArray: number[] = [];
-    const incArray: string[] = [];
-    const scArray: string[] = [];
-    const decArray: string[] = [];
+    const incArray: PatternRow[] = [];
+    const scArray: PatternRow[] = [];
+    const decArray: PatternRow[] = [];
     const intersectionRows: IntersectionRow[] = [];
 
     // Camera-onafhankelijk: de meegegeven fractie ligt op de schaal [-1 (onderpool) ..
@@ -103,13 +103,12 @@ const generateSpherePattern = (singleShape: Shape, yarnWeight: string, rowHeight
     if (scRows > 0) {
         const startRow = incRows + 1;
         const endRow = incRows + scRows;
-        const rowText = scRows === 1 ? t.row(startRow) : t.row(`${startRow}-${endRow}`);
-        scArray.push(`${rowText}: ${t.sc(maxStitches)} (${maxStitches})`);
+        scArray.push(evenRows(t, startRow, endRow, maxStitches));
     }
 
     // Minderen tot 12; de slotronde "6 min (6)" op `lastRow` schrijft Pattern.tsx zelf.
     for (let stitches = maxStitches - 6, row = incRows + scRows + 1; stitches >= 12; stitches -= 6, row++) {
-        decArray.push(`${t.row(row)}: [${t.dec(1)}, ${t.sc(stitches / 6 - 1)}] * 6 (${stitches})`);
+        decArray.push(decreaseRow(t, row, stitches));
     }
     const lastRow = rows;
 

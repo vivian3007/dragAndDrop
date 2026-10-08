@@ -4,10 +4,11 @@ import generateArmPattern from "./generateArmPattern";
 import generateCylinderPattern from "./generateCylinderPattern";
 import generateConePattern from "./generateConePattern";
 import { generatePattern, PatternPart } from "./generators";
+import { englishPatternTerms, formatRow } from "./patternTerms";
 import { halfEllipsePerimeter, maxStitchesForDiameter, STITCH_WIDTH_PER_ROW_HEIGHT } from "./stitchGeometry";
 import { estimateYarnByColor, estimateYarnMeters, ROW_HEIGHTS, skeinsNeeded, yarnWeightKey } from "./estimateYarn";
 import { pixelsPerCm, shapeDimensionCm } from "../geometry/units";
-import { rowSpan, shapeOfCm, stitchesOf } from "./testShapes";
+import { shapeOfCm } from "./testShapes";
 
 const medium = ROW_HEIGHTS.Medium;
 
@@ -17,7 +18,7 @@ const medium = ROW_HEIGHTS.Medium;
 function stitchesPerRow(pattern: PatternPart): number[] {
     const rows = [6];
     for (const line of [...pattern.incArray, ...pattern.scArray, ...pattern.decArray]) {
-        for (let i = 0; i < rowSpan(line); i++) rows.push(stitchesOf(line));
+        for (let i = line.from; i <= line.to; i++) rows.push(line.stitches);
     }
     if (pattern.closed) rows.push(6);
     return rows;
@@ -177,7 +178,7 @@ describe.each([
 
 describe("generateCylinderPattern: platte bodem en bovenkant (achterste lus)", () => {
     const sideRowsOf = (pattern: PatternPart) =>
-        pattern.scArray.flatMap((line) => Array.from({ length: rowSpan(line) }, () => line));
+        pattern.scArray.flatMap((line) => Array.from({ length: line.to - line.from + 1 }, () => line.instruction));
 
     it("de eerste en de laatste zijronde zijn in de achterste lus, de rest niet", () => {
         const pattern = generateCylinderPattern(shapeOfCm("Cylinder", { width: 4, height: 6, length: 4 }), "Medium", ROW_HEIGHTS, []);
@@ -199,7 +200,7 @@ describe("generateCylinderPattern: platte bodem en bovenkant (achterste lus)", (
 
     it("een bol heeft geen rondes in de achterste lus", () => {
         const ball = generateSpherePattern(shapeOfCm("Sphere", { width: 4, height: 6, length: 4 }), "Medium", ROW_HEIGHTS, []);
-        [...ball.incArray, ...ball.scArray, ...ball.decArray].forEach((line) => expect(line).not.toMatch(/BLO/));
+        [...ball.incArray, ...ball.scArray, ...ball.decArray].forEach((line) => expect(line.instruction).not.toMatch(/BLO/));
     });
 });
 
@@ -243,6 +244,17 @@ describe("generatePattern (register)", () => {
             expect(generatePattern(shapeOfCm(type, { width: 3, height: 3, length: 3 }), "Medium", ROW_HEIGHTS, [])).not.toBeNull();
         }
         expect(generatePattern(shapeOfCm("Driehoek", { width: 3, height: 3, length: 3 }), "Medium", ROW_HEIGHTS, [])).toBeNull();
+    });
+});
+
+describe("formatRow (tekst van een patroonregel)", () => {
+    it("zelfde tekst als vóór de omzetting naar gegevens", () => {
+        const pattern = generateSpherePattern(shapeOfCm("Sphere", { width: 6, height: 6, length: 6 }), "Medium", ROW_HEIGHTS, []);
+        const lines = [...pattern.incArray, ...pattern.scArray, ...pattern.decArray].map((row) => formatRow(englishPatternTerms, row));
+        expect(lines[0]).toBe("Row 2: 6inc (12)");
+        expect(lines[1]).toBe("Row 3: [1inc, 1sc] * 6 (18)");
+        expect(lines).toContain(`Row ${pattern.scArray[0].from}-${pattern.scArray[0].to}: ${pattern.scArray[0].stitches}sc (${pattern.scArray[0].stitches})`);
+        expect(lines[lines.length - 1]).toBe("Row " + pattern.decArray[pattern.decArray.length - 1].from + ": [1dec, 1sc] * 6 (12)");
     });
 });
 
