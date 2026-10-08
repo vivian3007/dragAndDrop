@@ -139,7 +139,11 @@ const Pattern = () => {
 
     // Garenoverzicht: per kleur de meters en waarvoor (patterns/yarnUsage.ts). Ogen zijn geen
     // garen: die staan bij de benodigdheden.
-    const { colors: yarnColors, total: totalMeters } = yarnUsage(shapes, yarnInfo?.weight);
+    // Onderdelen zonder naam heten hier naar hun vorm ("Halve bol"), niet naar het interne type.
+    const { colors: yarnColors, total: totalMeters } = yarnUsage(
+        shapes.map((shape) => ({ ...shape, name: shape.name || t(`shapes.${shape.type}`) })),
+        yarnInfo?.weight,
+    );
     // Elke kleur een letter (kleur A, B, …), zoals in gewone haakpatronen: in het garenoverzicht
     // en bij "Begin in"/"Wissel naar" in de patronen.
     const colorLetters = new Map(yarnColors.map(({ color }, index) => [color, String.fromCharCode(65 + index)]));
