@@ -9,6 +9,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "test": "vitest run",
     "emulators": "npx -y firebase-tools@15.29.0 emulators:start --only firestore,auth --project demo-stitchify",
     "test:emulator": "node scripts/emulator-tests/migration.test.mjs && node scripts/emulator-tests/firestore-rules.test.mjs && node scripts/emulator-tests/search-fields.test.mjs"
   },
@@ -47,6 +48,7 @@
     "react-router-dom": "^7.3.0",
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.26.1",
-    "vite": "^6.2.2"
+    "vite": "^6.2.2",
+    "vitest": "^3.2.7"
   }
 }

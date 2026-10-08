@@ -17,6 +17,10 @@ export default defineConfig({
   optimizeDeps: {
     include: ['@react-three/drei', '@react-three/fiber', 'three', 'three-csg-ts'],
   },
+  // Unit tests (npm test). De emulatortests in scripts/ draaien apart: npm run test:emulator.
+  test: {
+    include: ['src/**/*.test.ts'],
+  },
   build: {
     rollupOptions: {
       output: {
