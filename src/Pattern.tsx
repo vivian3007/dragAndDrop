@@ -10,7 +10,9 @@ import { computePatternHeightCm, computePatternWidthCm } from "./geometry/patter
 import { useIntl } from "react-intl";
 import { useT } from "./i18n/LanguageProvider";
 import { usePatternTerms } from "./i18n/usePatternTerms";
-import { estimateYarnByColor, ROW_HEIGHTS } from "./patterns/estimateYarn";
+import { ROW_HEIGHTS } from "./patterns/estimateYarn";
+import { rowRanges, yarnUsage, type YarnUse } from "./patterns/yarnUsage";
+import { colorName } from "./patterns/colorNames";
 
 // three.js pas laden als de preview echt in beeld komt.
 const PatternPreview3D = lazy(() => import("./PatternPreview3D.tsx"));
@@ -135,19 +137,21 @@ const Pattern = () => {
     const heightCm = computePatternHeightCm(shapes);
     const widthCm = computePatternWidthCm(shapes);
 
-    // Eén regel per kleur, met de onderdelen die in die kleur gehaakt worden.
-    // Ook de kleuren van kleurwissels, bij het onderdeel waarin ze zitten. Ogen zijn geen
-    // garen: die staan los onder "Ogen".
-    const partsByColor = shapes.filter((shape) => !isEye(shape)).reduce<Record<string, string[]>>((acc, shape) => {
-        const colors = new Set([shape.color ?? "#cccccc", ...(shape.stripes ?? []).map((stripe) => stripe.color)]);
-        colors.forEach((color) => (acc[color] ??= []).push(shape.name ?? shape.type));
-        return acc;
-    }, {});
-    // Elke kleur een letter (kleur A, B, …), zoals in gewone haakpatronen: in de materialenlijst
+    // Garenoverzicht: per kleur de meters en waarvoor (patterns/yarnUsage.ts). Ogen zijn geen
+    // garen: die staan bij de benodigdheden.
+    const { colors: yarnColors, total: totalMeters } = yarnUsage(shapes, yarnInfo?.weight);
+    // Elke kleur een letter (kleur A, B, …), zoals in gewone haakpatronen: in het garenoverzicht
     // en bij "Begin in"/"Wissel naar" in de patronen.
-    const colorLetters = new Map(Object.keys(partsByColor).map((color, index) => [color, String.fromCharCode(65 + index)]));
+    const colorLetters = new Map(yarnColors.map(({ color }, index) => [color, String.fromCharCode(65 + index)]));
     const letterOf = (color: string) => colorLetters.get(color) ?? "?";
     const multipleColors = colorLetters.size > 1;
+    const useLabel = ({ name, rows }: YarnUse) =>
+        rows === null
+            ? name
+            : t("pattern.yarnUseRows", {
+                name,
+                rows: rowRanges(rows).map(([from, to]) => (from === to ? `${from}` : `${from}–${to}`)).join(", "),
+            });
 
     // Alle regels van één onderdeel, met "wissel naar …" waar de kleur verandert. Ronde 1
     // (magische ring) en de slotronde zitten niet in de generator-uitvoer.
@@ -184,8 +188,6 @@ const Pattern = () => {
         return lines;
     };
 
-    // Geschatte hoeveelheid garen per kleur, op basis van het aantal steken per onderdeel.
-    const { byColor: metersByColor, total: totalMeters } = estimateYarnByColor(shapes, yarnInfo?.weight);
     const yarnAmountLabel = (meters: number) => t("pattern.yarnAmount", { meters });
 
     return (
@@ -218,85 +220,71 @@ const Pattern = () => {
                     <div className="pattern-reference-grid">
                         <Card className="pattern-text-container pattern-card--legend">
                             <h2 className="pattern-card-title">{t("pattern.materials")}</h2>
-                            <dl className="pattern-info-list">
-                                <dt>{t("yarn.title")}</dt>
-                                <dd>
-                                    {yarnInfo?.name ? (
-                                        <>
-                                            <span className="pattern-info-strong">{yarnInfo.name}</span>
-                                            <span className="pattern-info-muted">
-                                                {[
-                                                    yarnInfo.weight && weightLabel(yarnInfo.weight),
-                                                    yarnInfo.material,
-                                                    yarnInfo.mPerSkein && t("pattern.perSkein", { meters: yarnInfo.mPerSkein }),
-                                                ].filter(Boolean).join(" · ")}
-                                            </span>
-                                        </>
-                                    ) : (
-                                        t("pattern.yarnFallback", { weight: weightLabel(yarnWeightDisplay) })
-                                    )}
-                                </dd>
+                            {/* Garen: één regel per kleur met de meters en waarvoor, en het totaal. */}
+                            <h3 className="pattern-supplies-heading">{t("yarn.title")}</h3>
+                            <p className="pattern-supplies-yarn">
+                                {yarnInfo?.name
+                                    ? [
+                                        yarnInfo.name,
+                                        yarnInfo.weight && weightLabel(yarnInfo.weight),
+                                        yarnInfo.material && yarnInfo.material !== yarnInfo.name ? yarnInfo.material : null,
+                                    ].filter(Boolean).join(", ")
+                                    : t("pattern.yarnFallback", { weight: weightLabel(yarnWeightDisplay) })}
+                            </p>
+                            {yarnColors.length > 0 ? (
+                                <table className="pattern-yarn-table">
+                                    <tbody>
+                                        {yarnColors.map(({ color, meters, uses }) => (
+                                            <tr key={color}>
+                                                <td className="pattern-yarn-swatch">
+                                                    <span className="pattern-color-swatch" style={{ backgroundColor: color }} />
+                                                </td>
+                                                <td>
+                                                    <span className="pattern-yarn-color">
+                                                        {[
+                                                            multipleColors ? t("pattern.colourLetter", { letter: letterOf(color) }) : null,
+                                                            colorName(color, intl.locale),
+                                                        ].filter(Boolean).join(" – ")}
+                                                    </span>
+                                                    <span className="pattern-yarn-uses">{uses.map(useLabel).join(" · ")}</span>
+                                                </td>
+                                                <td className="pattern-yarn-meters">{yarnAmountLabel(meters)}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                    {multipleColors ? (
+                                        <tfoot>
+                                            <tr>
+                                                <td />
+                                                <td>{t("pattern.yarnTotal")}</td>
+                                                <td className="pattern-yarn-meters">{yarnAmountLabel(totalMeters)}</td>
+                                            </tr>
+                                        </tfoot>
+                                    ) : null}
+                                </table>
+                            ) : null}
+                            <p className="pattern-info-muted">{t("pattern.yarnEstimateNote")}</p>
 
-                                {Object.keys(partsByColor).length > 0 ? (
-                                    <>
-                                        <dt>{t("pattern.colours")}</dt>
-                                        <dd>
-                                            <ul className="pattern-color-list">
-                                                {Object.entries(partsByColor).map(([color, parts]) => (
-                                                    <li key={color}>
-                                                        <span className="pattern-color-swatch" style={{ backgroundColor: color }} />
-                                                        <span>
-                                                            {multipleColors ? <strong>{t("pattern.colourLetter", { letter: letterOf(color) })}: </strong> : null}
-                                                            {parts.join(", ")}
-                                                        </span>
-                                                        {metersByColor[color] ? (
-                                                            <span className="pattern-color-amount"> · {yarnAmountLabel(metersByColor[color])}</span>
-                                                        ) : null}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </dd>
-                                    </>
-                                ) : null}
+                            {/* De rest als eenvoudige boodschappenlijst. */}
+                            <h3 className="pattern-supplies-heading">{t("pattern.alsoNeeded")}</h3>
+                            <ul className="pattern-supplies-list">
+                                <li>
+                                    {yarnInfo?.hooksize
+                                        ? t("pattern.hookSupply", { size: yarnInfo.hooksize })
+                                        : t("pattern.hookSupplyFallback")}
+                                </li>
+                                {eyeSupplies(shapes).map(({ count, sizeMm }) => (
+                                    <li key={sizeMm}>{t("pattern.eyesSupply", { count, size: sizeMm })}</li>
+                                ))}
+                                <li>{t("pattern.stuffingSupply")}</li>
+                                <li>{t("pattern.toolsSupply")}</li>
+                            </ul>
 
-                                {totalMeters > 0 ? (
-                                    <>
-                                        <dt>{t("pattern.yarnNeeded")}</dt>
-                                        <dd>
-                                            <span className="pattern-info-strong">{yarnAmountLabel(totalMeters)}</span>
-                                            <span className="pattern-info-muted">
-                                                {t("pattern.yarnEstimateNote")}
-                                            </span>
-                                        </dd>
-                                    </>
-                                ) : null}
-
-                                <dt>{t("yarn.hooksize")}</dt>
-                                <dd>
-                                    {yarnInfo?.hooksize ? (
-                                        <span className="pattern-info-strong">{yarnInfo.hooksize} mm</span>
-                                    ) : (
-                                        t("pattern.hookFallback")
-                                    )}
-                                </dd>
-
-                                {eyeSupplies(shapes).length > 0 && (
-                                    <>
-                                        <dt>{t("pattern.eyes")}</dt>
-                                        <dd>{eyeSupplies(shapes).map(({ count, sizeMm }) => t("pattern.eyesSupply", { count, size: sizeMm })).join(", ")}</dd>
-                                    </>
-                                )}
-
-                                <dt>{t("pattern.also")}</dt>
-                                <dd>{t("pattern.alsoItems")}</dd>
-
-                                {heightCm && widthCm ? (
-                                    <>
-                                        <dt>{t("pattern.finishedSize")}</dt>
-                                        <dd>{t("pattern.finishedSizeValue", { height: Math.round(heightCm), width: Math.round(widthCm) })}</dd>
-                                    </>
-                                ) : null}
-                            </dl>
+                            {heightCm && widthCm ? (
+                                <p className="pattern-supplies-size">
+                                    {t("pattern.finishedSize")}: {t("pattern.finishedSizeValue", { height: Math.round(heightCm), width: Math.round(widthCm) })}
+                                </p>
+                            ) : null}
                         </Card>
                         <Card className="pattern-text-container pattern-card--legend">
                             <h2 className="pattern-card-title">{t("pattern.abbreviations")}</h2>
