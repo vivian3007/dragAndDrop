@@ -5,7 +5,7 @@ import * as THREE from "three";
 import type {Camera} from "three";
 import { toast } from "react-toastify";
 import type { SetState } from "./editor/types";
-import { SHAPE_TYPES } from "./shapeTypes";
+import { PALETTE_SHAPE_TYPES } from "./shapeTypes";
 import { snapIfTouching } from "./geometry/attach";
 import {setDoc, doc} from "firebase/firestore";
 import {db} from "../firebase-config.js";
@@ -158,7 +158,7 @@ function Shapebar({ amigurumiId, shapes, setDroppedShapes, setActiveId, threeJsC
 
             <h1 className="shapes-text">{t("shapebar.title")}</h1>
             <div className={"draggables"}>
-                {SHAPE_TYPES.map((type) => (
+                {PALETTE_SHAPE_TYPES.map((type) => (
                     <div key={type} className="palette-item">
                         <div
                             className={`draggable-shape ${type}`}

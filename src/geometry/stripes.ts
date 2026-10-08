@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { stripeColorAt } from "../patterns/colorChanges";
 import { ARM_TOTAL_LOCAL_LENGTH } from "./armGeometry";
 import { meshScaleOf } from "./units";
+import { domeCapFraction, domeFractionAtHeight } from "./domeShape";
 
 // Kleurwissels in 3D: elk hoekpunt van een vorm krijgt de kleur van de ronde waar het op ligt
 // (vertex colors), in dezelfde haakvolgorde als het patroon (zie patterns/colorChanges.ts):
@@ -32,8 +33,10 @@ export function crochetFraction(shape: Shape, point: THREE.Vector3): number {
             return point.y <= 1e-4 ? 1 : clamp01(1 - point.y);
         case "Disc":
             return clamp01(radial / 0.5);
-        case "Dome":
-            return clamp01(Math.acos(Math.min(1, Math.max(-1, point.y))) / (Math.PI / 2));
+        case "Dome": {
+            const [sx, sy, sz] = meshScaleOf(shape);
+            return domeFractionAtHeight(point.y, (sx + sz) / 2, sy, domeCapFraction(shape));
+        }
         default:
             return clamp01(Math.acos(Math.min(1, Math.max(-1, point.y))) / Math.PI);
     }
@@ -67,5 +70,5 @@ export function paintStripes(geometry: THREE.BufferGeometry, shape: Shape, offse
 // Sleutel om geometrie opnieuw te kleuren als kleur, kleurwissels of (bij de cilinder) de
 // verhoudingen veranderen.
 export function stripeKey(shape: Shape): string {
-    return JSON.stringify([shape.color, shape.stripes ?? [], shape.type === "Cylinder" ? meshScaleOf(shape) : null]);
+    return JSON.stringify([shape.color, shape.stripes ?? [], shape.type === "Cylinder" || shape.type === "Dome" ? meshScaleOf(shape) : null]);
 }

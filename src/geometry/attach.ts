@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { meshScaleOf } from "./units";
 import { ARM_TOTAL_LOCAL_LENGTH } from "./armGeometry";
+import { domeCapFraction, insideDome } from "./domeShape";
 
 // "Aansluiten": een vorm netjes tegen de dichtstbijzijnde andere vorm zetten, zodat hij er
 // rondom op aansluit — zoals een aangenaaid been, oor of snuit.
@@ -39,16 +40,16 @@ function worldMatrix(shape: Shape): THREE.Matrix4 {
 // Ligt een punt (in de eigen, ongeschaalde ruimte van de vorm) in de vorm? Zelfde geometrie
 // als in 3D: bol met straal 1; arm = cilinder (straal 0,5, y 0..1) met halve bol erop;
 // cilinder en kegel: diameter 1, y 0..1.
-function insideLocal(type: string, p: THREE.Vector3): boolean {
+function insideLocal(shape: Shape, p: THREE.Vector3): boolean {
     const radial = Math.hypot(p.x, p.z);
-    switch (type) {
+    switch (shape.type) {
         case "Arm":
             return (p.y >= 0 && p.y <= 1 && radial <= 0.5) || p.distanceTo(new THREE.Vector3(0, 1, 0)) <= 0.5;
         case "Cylinder":
         case "Disc":
             return p.y >= 0 && p.y <= 1 && radial <= 0.5;
         case "Dome":
-            return p.y >= 0 && (radial / 0.5) ** 2 + p.y ** 2 <= 1;
+            return insideDome(p.x, p.y, p.z, domeCapFraction(shape));
         case "Cone":
             return p.y >= 0 && p.y <= 1 && radial <= 0.5 * (1 - p.y);
         default:
@@ -88,7 +89,7 @@ class Solid {
     }
 
     contains(world: THREE.Vector3): boolean {
-        return insideLocal(this.shape.type, world.clone().applyMatrix4(this.inverse));
+        return insideLocal(this.shape, world.clone().applyMatrix4(this.inverse));
     }
 
     // Waar de straal van het middelpunt in richting `direction` het oppervlak verlaat.

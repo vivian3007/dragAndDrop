@@ -14,7 +14,7 @@ import { eyePlacements, eyeSupplies } from "./patterns/eyes";
 function sceneOf(shapes: Shape[]): THREE.Scene {
     const scene = new THREE.Scene();
     for (const shape of shapes) {
-        const geometry = isSolidShapeType(shape.type) ? createSolidGeometry(shape.type) : new THREE.SphereGeometry(1, 32, 32);
+        const geometry = isSolidShapeType(shape.type) ? createSolidGeometry(shape.type, shape) : new THREE.SphereGeometry(1, 32, 32);
         const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial());
         mesh.uuid = shape.id;
         mesh.scale.set(shape.width * WORLD_SCALE_FACTOR, shape.height * WORLD_SCALE_FACTOR, shape.length * WORLD_SCALE_FACTOR);

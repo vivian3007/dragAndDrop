@@ -8,7 +8,7 @@ import generateDomePattern from "./generateDomePattern";
 import { generatePattern } from "./generators";
 import { englishPatternTerms, formatRow, PatternRow } from "./patternTerms";
 import { halfEllipsePerimeter, maxStitchesForDiameter, STITCH_WIDTH_PER_ROW_HEIGHT } from "./stitchGeometry";
-import { estimateYarnByColor, estimateYarnMeters, ROW_HEIGHTS, skeinsNeeded, yarnWeightKey } from "./estimateYarn";
+import { estimateYarnByColor, estimateYarnMeters, ROW_HEIGHTS, yarnWeightKey } from "./estimateYarn";
 import { pixelsPerCm, shapeDimensionCm } from "../geometry/units";
 import { shapeOfCm } from "./testShapes";
 
@@ -269,6 +269,7 @@ describe.each([
     ["halve bol 6 × 3 cm (muts)", shapeOfCm("Dome", { width: 6, height: 3, length: 6 })],
     ["hoge koepel", shapeOfCm("Dome", { width: 4, height: 5, length: 4 })],
     ["platte koepel", shapeOfCm("Dome", { width: 8, height: 1, length: 8 })],
+    ["halve bol met buis (arm)", shapeOfCm("Dome", { width: 2, height: 8, length: 2 })],
 ])("generateDomePattern: %s", (_label, shape) => {
     const pattern = generateDomePattern(shape, "Medium", ROW_HEIGHTS, []);
     const rows = stitchesPerRow(pattern);
@@ -288,6 +289,16 @@ describe.each([
 
     it("het totaal aantal steken is de som van alle rondes", () => {
         expect(pattern.stitchCount).toBe(rows.reduce((sum, n) => sum + n, 0));
+    });
+});
+
+describe("halve bol met buis", () => {
+    it("hoger dan de halve breedte: zelfde kapje, de extra hoogte zijn rechte rondes", () => {
+        const dome = generateDomePattern(shapeOfCm("Dome", { width: 3, height: 1.5, length: 3 }), "Medium", ROW_HEIGHTS, []);
+        const arm = generateDomePattern(shapeOfCm("Dome", { width: 3, height: 7.5, length: 3 }), "Medium", ROW_HEIGHTS, []);
+        expect(arm.incRows).toBe(dome.incRows);
+        // 6 cm buis extra, op een ronde na (afronding van het totaal).
+        expect(Math.abs(arm.rows - dome.rows - 6 / ROW_HEIGHTS.Medium)).toBeLessThanOrEqual(1);
     });
 });
 
@@ -322,13 +333,6 @@ describe("estimateYarn", () => {
         expect(estimateYarnMeters(28, medium)).toBeCloseTo((28 * 0.45 * 8 * 1.15) / 100, 10);
         expect(estimateYarnMeters(28, medium)).toBeGreaterThan(1);
         expect(estimateYarnMeters(28, medium)).toBeLessThan(1.25);
-    });
-
-    it("aantal bollen naar boven afgerond, minimaal 1, onbekend als meters per bol ontbreken", () => {
-        expect(skeinsNeeded(150, 100)).toBe(2);
-        expect(skeinsNeeded(5, 100)).toBe(1);
-        expect(skeinsNeeded(150, null)).toBeNull();
-        expect(skeinsNeeded(150, 0)).toBeNull();
     });
 
     it("totaal is de som van de (afgeronde) kleuren", () => {

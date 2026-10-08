@@ -21,6 +21,22 @@ export function stripeColorAt(fraction: number, stripes: Stripe[] | null | undef
     return color;
 }
 
+// De rondes (1-based, t/m) die een baan beslaat bij `rows` rondes — voor de editor, die met
+// rondes werkt. Minstens één ronde, ook als de baan bij weinig rondes tussen twee in valt.
+export function stripeRows(stripe: Stripe, rows: number): { from: number; to: number } {
+    const total = Math.max(rows, 1);
+    const clamp = (row: number) => Math.min(Math.max(row, 1), total);
+    const from = clamp(Math.round(Math.min(stripe.from, stripe.to) * total) + 1);
+    const to = clamp(Math.round(Math.max(stripe.from, stripe.to) * total));
+    return { from, to: Math.max(from, to) };
+}
+
+// Baan voor rondes `from` t/m `to` (van `rows`), als fractie — het omgekeerde van stripeRows.
+export function stripeFromRows(from: number, to: number, rows: number, color: string): Stripe {
+    const total = Math.max(rows, 1);
+    return { from: (Math.min(from, to) - 1) / total, to: Math.max(from, to) / total, color };
+}
+
 export function rowColor(row: number, rows: number, stripes: Stripe[] | null | undefined): string | null {
     return stripeColorAt(rowFraction(row, rows), stripes);
 }

@@ -10,7 +10,7 @@ import { computePatternHeightCm, computePatternWidthCm } from "./geometry/patter
 import { useIntl } from "react-intl";
 import { useT } from "./i18n/LanguageProvider";
 import { usePatternTerms } from "./i18n/usePatternTerms";
-import { estimateYarnByColor, ROW_HEIGHTS, skeinsNeeded } from "./patterns/estimateYarn";
+import { estimateYarnByColor, ROW_HEIGHTS } from "./patterns/estimateYarn";
 
 // three.js pas laden als de preview echt in beeld komt.
 const PatternPreview3D = lazy(() => import("./PatternPreview3D.tsx"));
@@ -143,21 +143,26 @@ const Pattern = () => {
         colors.forEach((color) => (acc[color] ??= []).push(shape.name ?? shape.type));
         return acc;
     }, {});
+    // Elke kleur een letter (kleur A, B, …), zoals in gewone haakpatronen: in de materialenlijst
+    // en bij "Begin in"/"Wissel naar" in de patronen.
+    const colorLetters = new Map(Object.keys(partsByColor).map((color, index) => [color, String.fromCharCode(65 + index)]));
+    const letterOf = (color: string) => colorLetters.get(color) ?? "?";
+    const multipleColors = colorLetters.size > 1;
 
     // Alle regels van één onderdeel, met "wissel naar …" waar de kleur verandert. Ronde 1
     // (magische ring) en de slotronde zitten niet in de generator-uitvoer.
     const patternLines = (pattern: PatternPart): { text: string; color?: string }[] => {
         const baseColor = pattern.color ?? "#cccccc";
         const lines: { text: string; color?: string }[] = [];
-        let current = baseColor;
-        if (pattern.startColor) {
-            lines.push({ text: t("pattern.startInColor"), color: pattern.startColor });
-            current = pattern.startColor;
+        // Bij meer kleuren in het ontwerp zegt elk onderdeel met welke kleur je begint.
+        let current = pattern.startColor ?? baseColor;
+        if (multipleColors) {
+            lines.push({ text: t("pattern.startInColor", { letter: letterOf(current) }), color: current });
         }
         lines.push({ text: `${terms.row(1)}: ${t("pattern.magicRingStart", { stitches: terms.sc(6) })} (6)` });
         const switchTo = (color: string) => {
             if (color !== current) {
-                lines.push({ text: t("pattern.changeColor"), color });
+                lines.push({ text: t("pattern.changeColor", { letter: letterOf(color) }), color });
                 current = color;
             }
         };
@@ -181,14 +186,7 @@ const Pattern = () => {
 
     // Geschatte hoeveelheid garen per kleur, op basis van het aantal steken per onderdeel.
     const { byColor: metersByColor, total: totalMeters } = estimateYarnByColor(shapes, yarnInfo?.weight);
-    const metersPerSkein = yarnInfo?.mPerSkein ? Number(yarnInfo.mPerSkein) : null;
-
-    const yarnAmountLabel = (meters: number) => {
-        const skeins = skeinsNeeded(meters, metersPerSkein);
-        return skeins
-            ? t("pattern.yarnAmountWithSkeins", { meters, skeins })
-            : t("pattern.yarnAmount", { meters });
-    };
+    const yarnAmountLabel = (meters: number) => t("pattern.yarnAmount", { meters });
 
     return (
         <div>
@@ -247,7 +245,10 @@ const Pattern = () => {
                                                 {Object.entries(partsByColor).map(([color, parts]) => (
                                                     <li key={color}>
                                                         <span className="pattern-color-swatch" style={{ backgroundColor: color }} />
-                                                        {parts.join(", ")}
+                                                        <span>
+                                                            {multipleColors ? <strong>{t("pattern.colourLetter", { letter: letterOf(color) })}: </strong> : null}
+                                                            {parts.join(", ")}
+                                                        </span>
                                                         {metersByColor[color] ? (
                                                             <span className="pattern-color-amount"> · {yarnAmountLabel(metersByColor[color])}</span>
                                                         ) : null}
@@ -264,7 +265,7 @@ const Pattern = () => {
                                         <dd>
                                             <span className="pattern-info-strong">{yarnAmountLabel(totalMeters)}</span>
                                             <span className="pattern-info-muted">
-                                                {metersPerSkein ? t("pattern.yarnEstimateNote") : t("pattern.yarnEstimateNoSkein")}
+                                                {t("pattern.yarnEstimateNote")}
                                             </span>
                                         </dd>
                                     </>

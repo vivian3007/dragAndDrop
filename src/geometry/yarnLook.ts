@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { ARM_TOTAL_LOCAL_LENGTH } from "./armGeometry";
 import { halfEllipsePerimeter } from "../patterns/stitchGeometry";
 import { shapeDimensionCm } from "./units";
+import { domeCapFraction, domeLengths } from "./domeShape";
 
 // Hoe een vorm er in 3D uitziet: als gehaakt garen. Gedeeld door de editor, de
 // patroonpreview (via useStitchTexture/YarnLights) en de ontwerp-snapshots.
@@ -41,7 +42,8 @@ export function stitchRepeat(shape: Shape): [number, number] {
             along = diameter / 2;
             break;
         case "Dome":
-            along = halfEllipsePerimeter(diameter / 2, height) / 2;
+            // Over het kapje en (als die er is) de buis.
+            along = domeLengths(diameter, height, domeCapFraction(shape)).total;
             break;
         default:
             // Bol: van pool tot pool.

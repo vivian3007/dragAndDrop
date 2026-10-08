@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyStripes, rowColor, stitchesWithColor } from "./colorChanges";
+import { applyStripes, rowColor, stitchesWithColor, stripeFromRows, stripeRows } from "./colorChanges";
 import { generatePattern } from "./generators";
 import { estimateYarnByColor, ROW_HEIGHTS } from "./estimateYarn";
 import { englishPatternTerms } from "./patternTerms";
@@ -64,5 +64,20 @@ describe("kleurwissels", () => {
             const all = [...pattern.incArray, ...pattern.scArray, ...pattern.decArray];
             expect(all.some((row) => row.color === white) || pattern.closingColor === white).toBe(true);
         }
+    });
+});
+
+describe("kleurwissels in rondes (editor)", () => {
+    it("rondes 4 t/m 6 van 20 heen en terug", () => {
+        const stripe = stripeFromRows(4, 6, 20, "#ff0000");
+        expect(stripeRows(stripe, 20)).toEqual({ from: 4, to: 6 });
+        for (let row = 1; row <= 20; row++) {
+            expect(rowColor(row, 20, [stripe])).toBe(row >= 4 && row <= 6 ? "#ff0000" : null);
+        }
+    });
+
+    it("blijft minstens één ronde, ook bij weinig rondes", () => {
+        expect(stripeRows({ from: 0.41, to: 0.42, color: "#fff" }, 5)).toEqual({ from: 3, to: 3 });
+        expect(stripeRows({ from: 0, to: 1, color: "#fff" }, 7)).toEqual({ from: 1, to: 7 });
     });
 });

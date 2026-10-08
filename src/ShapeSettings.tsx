@@ -20,11 +20,13 @@ function ShapeSettings({
                                         onUpdateShape,
                                         shapeColor,
                                         setShapeColor,
+                                        yarnWeight,
                                     }: {
     activeShape: Shape | undefined,
     onUpdateShape: (shape: Shape) => void,
     shapeColor: string,
     setShapeColor: (color: string) => void,
+    yarnWeight?: string | null,
 }) {
     const t = useT();
     const [width, setWidth] = useState<number | null>(null);
@@ -402,7 +404,7 @@ function ShapeSettings({
                         {activeShape.type !== "Eye" && (
                             <div className="shape-settings-group">
                                 <h3 className="shape-settings-title">{t("stripes.title")}</h3>
-                                <StripeEditor shape={activeShape} onChange={(stripes) => handleUpdate({ stripes })} />
+                                <StripeEditor shape={activeShape} yarnWeight={yarnWeight} onChange={(stripes) => handleUpdate({ stripes })} />
                             </div>
                         )}
                     </form>

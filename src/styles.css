@@ -484,6 +484,19 @@ body {
     align-items: center;
 }
 
+.stripe-range {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    margin-left: 8px;
+}
+
+.stripe-range-label {
+    font-size: 0.75rem;
+    line-height: 1;
+}
+
 .stripe-color {
     flex-shrink: 0;
     width: 28px;

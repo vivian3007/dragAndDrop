@@ -41,7 +41,7 @@ function SolidShape({
     const transformControlsRef = useRef<TransformControlsImpl | null>(null);
     const [isDragging, setIsDragging] = useState(false);
 
-    const geometry = useStripedGeometry(() => createSolidGeometry(type), { ...shape, type });
+    const geometry = useStripedGeometry(() => createSolidGeometry(type, shape), { ...shape, type });
 
     const handleDraggingChange = (value: boolean) => {
         setIsDragging(value);

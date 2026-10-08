@@ -100,7 +100,7 @@ function Settingsbar({
             <div className="settings-bar-scroll">
                 {showYarnSettings ? (
                     <YarnSettings ref={yarnSettingsRef} amigurumiId={amigurumiId} onUpdateYarnInfo={onUpdateYarnInfo} yarnInfo={yarnInfo} onDirtyChange={setYarnDirty}/>
-                ) : <ShapeSettings shapeColor={shapeColor} setShapeColor={setShapeColor} activeShape={activeShape} onUpdateShape={onUpdateShape}/>}
+                ) : <ShapeSettings yarnWeight={yarnInfo?.weight} shapeColor={shapeColor} setShapeColor={setShapeColor} activeShape={activeShape} onUpdateShape={onUpdateShape}/>}
             </div>
             <div className="settings-bar-footer" style={{marginBottom: 20, alignItems: "center", display: "flex", flexDirection: "column"}}>
                 {!showYarnSettings && activeShape && (

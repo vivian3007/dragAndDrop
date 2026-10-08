@@ -32,14 +32,6 @@ export function estimateYarnMeters(stitchCount: number, rowHeightCm: number): nu
     return (stitchCount * rowHeightCm * YARN_PER_STITCH_IN_ROW_HEIGHTS * SAFETY_MARGIN) / 100;
 }
 
-// Aantal bollen voor een hoeveelheid garen, of null als de meters per bol onbekend zijn.
-export function skeinsNeeded(meters: number, metersPerSkein: number | null | undefined): number | null {
-    if (!metersPerSkein || metersPerSkein <= 0) {
-        return null;
-    }
-    return Math.max(1, Math.ceil(meters / metersPerSkein));
-}
-
 // Geschatte hoeveelheid garen per kleur (hele meters, naar boven afgerond) en het totaal.
 // Het totaal is de som van de afgeronde kleuren, zodat de getallen die naast elkaar op de
 // patroonpagina staan ook echt optellen. Gebruikt door de patroonpagina én de
