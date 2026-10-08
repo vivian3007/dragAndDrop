@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
-import {useLoader} from '@react-three/fiber';
 import * as THREE from 'three';
 import TransformControlsThree from "./TransformControlsThree.tsx";
 import type { TransformControls as TransformControlsImpl } from 'three-stdlib';
 import { isGizmoAxisActive } from "./editor/types";
 import type { ShapeComponentProps } from "./editor/types";
 import { meshScaleOf } from "./geometry/units";
+import { useStitchTexture } from "./editor/useStitchTexture";
+import { YARN_MATERIAL, yarnColor } from "./geometry/yarnLook";
 
 function Arm({
                                          id,
@@ -40,7 +41,7 @@ function Arm({
         onDraggingChange?.(value);
     };
 
-    const texture = useLoader(THREE.TextureLoader, '/textures/stitch-texture.jpg');
+    const texture = useStitchTexture(shape);
 
     useEffect(() => {
         if (meshRef.current) {
@@ -78,12 +79,12 @@ function Arm({
             >
                 <mesh position={[0, 0.5, 0]} ref={meshRef}>
                     <mesh position={[0, 0.5, 0]}>
-                        <cylinderGeometry args={[0.5, 0.5, 1, 32, 1, true]} />
-                        <meshBasicMaterial map={texture} color={color} side={THREE.DoubleSide} />
+                        <cylinderGeometry args={[0.5, 0.5, 1, 48, 1, true]} />
+                        <meshStandardMaterial map={texture} bumpMap={texture} {...YARN_MATERIAL} color={yarnColor(color)} side={THREE.DoubleSide} />
                     </mesh>
                     <mesh position={[0, 1, 0]}>
-                        <sphereGeometry args={[0.5, 32, 16]} />
-                        <meshBasicMaterial map={texture} color={color} side={THREE.DoubleSide} />
+                        <sphereGeometry args={[0.5, 48, 24]} />
+                        <meshStandardMaterial map={texture} bumpMap={texture} {...YARN_MATERIAL} color={yarnColor(color)} side={THREE.DoubleSide} />
                     </mesh>
                 </mesh>
             </group>

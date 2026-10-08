@@ -3,14 +3,13 @@ import { ARM_TOTAL_LOCAL_LENGTH } from './geometry/armGeometry';
 import { computePatternBox } from './geometry/patternBox';
 import { createSolidGeometry, isSolidShapeType } from './geometry/solidGeometry';
 import { WORLD_SCALE_FACTOR } from './geometry/units';
+import { addYarnLights, STITCH_TEXTURE_URL, stitchTextureFor, YARN_MATERIAL, yarnColor } from './geometry/yarnLook';
 
 // Maakt een stilstaand plaatje van een ontwerp, als fallback voor kaarten zonder foto.
 // Bewust geen <Canvas> per kaart: browsers staan maar ~16 WebGL-contexten tegelijk toe,
 // en een overzicht heeft er al snel meer. Eén gedeelde renderer tekent de ontwerpen dus
 // één voor één en levert een data-URL op. Dit bestand wordt dynamisch geïmporteerd
-// (zie DesignSnapshot.tsx). Let op: three.js zit nu toch al in de hoofdbundel, omdat
-// Pattern.tsx (met PatternPreview3D) niet lazy geladen wordt — dat apart trekken is
-// nodig voordat dit echt bundelgrootte scheelt.
+// (zie DesignSnapshot.tsx), zodat three.js pas laadt als er een snapshot nodig is.
 
 const WIDTH = 480;
 const HEIGHT = 360; // 4:3, zelfde verhouding als .amigurumi-image
@@ -34,21 +33,25 @@ function getRenderer() {
 }
 
 function getTexture() {
-    texturePromise ??= new THREE.TextureLoader().loadAsync('/textures/stitch-texture.jpg');
+    texturePromise ??= new THREE.TextureLoader().loadAsync(STITCH_TEXTURE_URL);
     return texturePromise;
 }
 
-// Zelfde opbouw als Sphere.tsx/Arm.tsx: een object op (x,y,z) met de rotatie in graden en
-// de schaal uit width/height/length × zoom × WORLD_SCALE_FACTOR.
-function buildShape(shape: Shape, texture: THREE.Texture): THREE.Object3D {
+// Zelfde opbouw als Sphere.tsx/Arm.tsx/SolidShape.tsx: een object op (x,y,z) met de rotatie in
+// graden en de schaal uit width/height/length × zoom × WORLD_SCALE_FACTOR, in hetzelfde
+// garenmateriaal (zie geometry/yarnLook.ts).
+function buildShape(shape: Shape, baseTexture: THREE.Texture): THREE.Object3D {
     const zoom = shape.zoom ?? 1;
-    const material = new THREE.MeshBasicMaterial({ map: texture, color: shape.color ?? 'white', side: THREE.DoubleSide });
+    const texture = stitchTextureFor(baseTexture, shape);
+    const material = new THREE.MeshStandardMaterial({
+        map: texture, bumpMap: texture, ...YARN_MATERIAL, color: yarnColor(shape.color), side: THREE.DoubleSide,
+    });
     const object = new THREE.Group();
 
     if (shape.type === 'Arm') {
-        const cylinder = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 1, 32, 1, true), material);
+        const cylinder = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 1, 48, 1, true), material);
         cylinder.position.y = 0.5;
-        const cap = new THREE.Mesh(new THREE.SphereGeometry(0.5, 32, 16), material);
+        const cap = new THREE.Mesh(new THREE.SphereGeometry(0.5, 48, 24), material);
         cap.position.y = 1;
         object.add(cylinder, cap);
         object.scale.set(
@@ -59,7 +62,7 @@ function buildShape(shape: Shape, texture: THREE.Texture): THREE.Object3D {
     } else {
         // Bol: eenheidsbol; cilinder en kegel: zie geometry/solidGeometry.ts. Alle drie met
         // dezelfde schaal (width/height/length × zoom).
-        const geometry = isSolidShapeType(shape.type) ? createSolidGeometry(shape.type) : new THREE.SphereGeometry(1, 32, 32);
+        const geometry = isSolidShapeType(shape.type) ? createSolidGeometry(shape.type) : new THREE.SphereGeometry(1, 64, 48);
         object.add(new THREE.Mesh(geometry, material));
         object.scale.set(
             (shape.width ?? 50) * zoom * WORLD_SCALE_FACTOR,
@@ -83,6 +86,7 @@ async function render(shapes: Shape[]): Promise<string | null> {
 
     const texture = await getTexture();
     const scene = new THREE.Scene();
+    addYarnLights(scene);
     shapes.forEach((shape) => scene.add(buildShape(shape, texture)));
 
     // Licht schuin van voren (zoals het vooraanzicht in de editor, met wat diepte), op
@@ -102,7 +106,10 @@ async function render(shapes: Shape[]): Promise<string | null> {
     scene.traverse((object) => {
         if (object instanceof THREE.Mesh) {
             object.geometry.dispose();
-            (object.material as THREE.Material).dispose();
+            const material = object.material as THREE.MeshStandardMaterial;
+            // De textuurkopie per vorm (stitchTextureFor); de gedeelde foto blijft.
+            material.map?.dispose();
+            material.dispose();
         }
     });
     return dataUrl;

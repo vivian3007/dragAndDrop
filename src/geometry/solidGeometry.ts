@@ -16,8 +16,8 @@ export function isSolidShapeType(type: string | null | undefined): type is Solid
 
 export function createSolidGeometry(type: SolidShapeType): THREE.BufferGeometry {
     const geometry = type === "Cone"
-        ? new THREE.ConeGeometry(0.5, 1, 32)
-        : new THREE.CylinderGeometry(0.5, 0.5, 1, 32);
+        ? new THREE.ConeGeometry(0.5, 1, 48)
+        : new THREE.CylinderGeometry(0.5, 0.5, 1, 48);
     // three.js zet deze vormen gecentreerd neer (-0.5..0.5); wij willen 0..1.
     geometry.translate(0, 0.5, 0);
     // calculateIntersections maakt voor CSG een grovere kopie uit `parameters`, maar die kent

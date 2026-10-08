@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useLoader } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { TransformControls as TransformControlsImpl } from 'three-stdlib';
 import TransformControlsThree from "./TransformControlsThree.tsx";
 import { isGizmoAxisActive } from "./editor/types";
 import type { ShapeComponentProps } from "./editor/types";
 import { meshScaleOf } from "./geometry/units";
+import { useStitchTexture } from "./editor/useStitchTexture";
+import { YARN_MATERIAL, yarnColor } from "./geometry/yarnLook";
 import { createSolidGeometry, SolidShapeType } from "./geometry/solidGeometry";
 
 // Cilinder of kegel in de editor en de patroonpreview. Zelfde gedrag als Sphere.tsx
@@ -46,7 +47,7 @@ function SolidShape({
         onDraggingChange?.(value);
     };
 
-    const texture = useLoader(THREE.TextureLoader, '/textures/stitch-texture.jpg');
+    const texture = useStitchTexture(shape);
 
     useEffect(() => {
         if (meshRef.current) {
@@ -78,7 +79,7 @@ function SolidShape({
                 }}
             >
                 <mesh ref={meshRef} geometry={geometry}>
-                    <meshBasicMaterial map={texture} color={shape?.color ?? 'white'} />
+                    <meshStandardMaterial map={texture} bumpMap={texture} {...YARN_MATERIAL} color={yarnColor(shape?.color)} />
                 </mesh>
             </group>
             {isSelected && (

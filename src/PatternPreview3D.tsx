@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import Sphere from './Sphere.tsx';
 import Arm from './Arm.tsx';
 import { Cone, Cylinder } from './SolidShape';
+import { GroundShadow, YarnLights } from './editor/YarnScene';
 import { computePatternBox } from './geometry/patternBox';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import type { ShapeComponentProps } from './editor/types';
@@ -91,9 +92,8 @@ const PatternPreview3D = ({ shapes, onIntersections }: { shapes: Shape[]; onInte
 
     return (
         <Canvas className="pattern-preview-canvas" camera={{ fov: 50 }}>
-            <ambientLight intensity={0.4} />
-            <directionalLight position={[10, 10, 10]} intensity={1} />
-            <spotLight position={[100, 1000, 100]} intensity={1.2} />
+            <YarnLights />
+            <GroundShadow shapes={shapes} />
             <CameraFraming box={box} />
             {onIntersections ? <IntersectionReporter shapes={shapes} onIntersections={onIntersections} /> : null}
             {shapes.map((shape) => {

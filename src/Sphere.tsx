@@ -1,11 +1,12 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {useLoader} from '@react-three/fiber';
 import TransformControlsThree from "./TransformControlsThree.tsx";
 import type { TransformControls as TransformControlsImpl } from 'three-stdlib';
 import { isGizmoAxisActive } from "./editor/types";
 import type { ShapeComponentProps } from "./editor/types";
 import * as THREE from 'three';
 import { meshScaleOf } from "./geometry/units";
+import { useStitchTexture } from "./editor/useStitchTexture";
+import { YARN_MATERIAL, yarnColor } from "./geometry/yarnLook";
 
 function Sphere({
                                    id,
@@ -38,7 +39,7 @@ function Sphere({
         onDraggingChange?.(value);
     };
 
-    const texture = useLoader(THREE.TextureLoader, '/textures/stitch-texture.jpg');
+    const texture = useStitchTexture(shape);
 
     // const meshRendered = useContext(RenderContext)
     // const [hasRendered, setHasRendered] = useState(false);
@@ -84,11 +85,8 @@ function Sphere({
             >
                 <mesh ref={meshRef} scale={[1, 1, 1]}>
                     {/*position={[x, y, z]*/}
-                    <sphereGeometry args={[1, 32, 32]} />
-                    <meshBasicMaterial
-                        map={texture}
-                        color={shape?.color ?? 'white'}
-                    />
+                    <sphereGeometry args={[1, 64, 48]} />
+                    <meshStandardMaterial map={texture} bumpMap={texture} {...YARN_MATERIAL} color={yarnColor(shape?.color)} />
                 </mesh>
             </group>
             {isSelected && (

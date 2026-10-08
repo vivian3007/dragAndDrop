@@ -9,6 +9,7 @@ import { GridHelper } from 'three';
 import Sphere from './Sphere';
 import Arm from './Arm';
 import { Cone, Cylinder } from './SolidShape';
+import { GroundShadow, YarnLights } from './editor/YarnScene';
 import SceneController from "./SceneController.tsx";
 
 const shapeComponents: Record<string, React.ComponentType<ShapeComponentProps>> = {
@@ -110,9 +111,8 @@ export default function ThreeJsField({
                     rotation={gridRotations[currentView] || [Math.PI / 2, 0, 0]}
                 />
             )}
-            <ambientLight intensity={0.4} />
-            <directionalLight position={[10, 10, 10]} intensity={1} castShadow />
-            <spotLight position={[100, 1000, 100]} intensity={1.2} />
+            <YarnLights />
+            <GroundShadow shapes={droppedShapes} />
             <OrbitControls
                 ref={orbitControlsRef}
                 enableRotate={true}

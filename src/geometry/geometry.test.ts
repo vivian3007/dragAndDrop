@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { computePatternBounds, computePatternHeightCm, computePatternWidthCm } from "./patternBounds";
 import { mirrorShape } from "./mirrorShape";
 import { meshScaleOf, sizeFromMeshScale } from "./units";
+import { stitchRepeat } from "./yarnLook";
 import { makeShape, shapeOfCm } from "../patterns/testShapes";
 
 describe("patternBounds", () => {
@@ -79,5 +80,21 @@ describe("meshScaleOf / sizeFromMeshScale (schalen met de gizmo)", () => {
         const [x, y, z] = meshScaleOf(arm);
         const size = sizeFromMeshScale(arm, { x: x * 2, y: y * 2, z: z * 2 });
         expect(size.height * size.zoom).toBeCloseTo(300, 8);
+    });
+});
+
+describe("stitchRepeat (steken in 3D op echte maat)", () => {
+    it("een twee keer zo grote bol krijgt twee keer zoveel herhalingen: steken blijven even groot", () => {
+        const small = stitchRepeat(shapeOfCm("Sphere", { width: 4, height: 4, length: 4 }));
+        const big = stitchRepeat(shapeOfCm("Sphere", { width: 8, height: 8, length: 8 }));
+        expect(big[0]).toBeCloseTo(small[0] * 2, 6);
+        expect(big[1]).toBeCloseTo(small[1] * 2, 6);
+    });
+
+    it("rond een cilinder: de omtrek; over de lengte: de hoogte", () => {
+        const low = stitchRepeat(shapeOfCm("Cylinder", { width: 4, height: 2, length: 4 }));
+        const high = stitchRepeat(shapeOfCm("Cylinder", { width: 4, height: 6, length: 4 }));
+        expect(high[0]).toBeCloseTo(low[0], 6);
+        expect(high[1]).toBeCloseTo(low[1] * 3, 6);
     });
 });
