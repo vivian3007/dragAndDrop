@@ -97,3 +97,5 @@ const areEqual = (prev: ShapeComponentProps, next: ShapeComponentProps) =>
 
 export const Cylinder = React.memo((props: ShapeComponentProps) => <SolidShape {...props} type="Cylinder" />, areEqual);
 export const Cone = React.memo((props: ShapeComponentProps) => <SolidShape {...props} type="Cone" />, areEqual);
+export const Disc = React.memo((props: ShapeComponentProps) => <SolidShape {...props} type="Disc" />, areEqual);
+export const Dome = React.memo((props: ShapeComponentProps) => <SolidShape {...props} type="Dome" />, areEqual);

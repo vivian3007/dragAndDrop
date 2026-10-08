@@ -6,6 +6,8 @@ import { WORLD_SCALE_FACTOR } from "./geometry/units";
 import { generatePattern } from "./patterns/generators";
 import { ROW_HEIGHTS } from "./patterns/estimateYarn";
 import { shapeOfCm } from "./patterns/testShapes";
+import { attachToNearest, containsPoint } from "./geometry/attach";
+import { eyePlacements, eyeSupplies } from "./patterns/eyes";
 
 // Bouwt de scene zoals Sphere.tsx en SolidShape.tsx dat doen (mesh met uuid = vorm-id,
 // schaal uit width/height/length), zonder te renderen.
@@ -71,5 +73,51 @@ describe("kruispunten met de nieuwe vormen", () => {
     it("vormen die elkaar niet raken: geen verbinding", () => {
         const far = { ...ear, x: 10 };
         expect(intersectionsOf([head, far])).toEqual([]);
+    });
+});
+
+describe("ogen", () => {
+    const head = shapeOfCm("Sphere", { width: 6, height: 6, length: 6 }, { id: "hoofd", name: "Hoofd", y: 2 });
+    // Twee veiligheidsoogjes van 10 mm, voor op het hoofd, links en rechts.
+    const looseLeft = shapeOfCm("Eye", { width: 1, height: 1, length: 1 }, { id: "oogL", name: "Linkeroog", x: -0.4, y: 2.3, z: 1.3, color: "#111111" });
+    const looseRight = { ...looseLeft, id: "oogR", name: "Rechteroog", x: 0.4 };
+    const left = attachToNearest(looseLeft, [head])!.shape;
+    const right = attachToNearest(looseRight, [head])!.shape;
+    const shapes = [head, left, right];
+
+    it("een oog zit half in het hoofd", () => {
+        expect(containsPoint(head, new THREE.Vector3(left.x, left.y, left.z))).toBe(false);
+        const radius = left.width * WORLD_SCALE_FACTOR;
+        const center = new THREE.Vector3(left.x, left.y, left.z);
+        const toHead = new THREE.Vector3(0, 2, 0).sub(center).normalize();
+        // Een stuk richting het hoofd zit erin; het midden net niet.
+        expect(containsPoint(head, center.clone().addScaledVector(toHead, radius * 0.7))).toBe(true);
+    });
+
+    it("het patroon van het hoofd weet tussen welke rondes de ogen komen", () => {
+        const pattern = generatePattern(head, "Medium", ROW_HEIGHTS, intersectionsOf(shapes))!;
+        const eyeRows = pattern.intersectionRows.filter((row) => row.shapeId1.startsWith("oog"));
+        expect(eyeRows.map((row) => row.shapeId1).sort()).toEqual(["oogL", "oogR"]);
+    });
+
+    it("plaatsing: zelfde rondes voor beide ogen, en de afstand in steken", () => {
+        const headPattern = generatePattern(head, "Medium", ROW_HEIGHTS, intersectionsOf(shapes))!;
+        const placements = eyePlacements(shapes, headPattern.intersectionRows, ROW_HEIGHTS.Medium);
+        expect(placements).toHaveLength(2);
+        const [a, b] = placements;
+        expect(a.target.id).toBe("hoofd");
+        expect(a.betweenRows).toEqual(b.betweenRows);
+        expect(a.betweenRows[1]).toBe(a.betweenRows[0] + 1);
+        // Op de bovenste helft van het hoofd (rondes tellen vanaf de top).
+        expect(a.betweenRows[0]).toBeLessThan(headPattern.rows / 2 + 1);
+        // ±0,8 wereld-eenheden uit elkaar = ±2,1 cm = ±4 steken van 0,5 cm.
+        expect(a.stitchesApart).toBeGreaterThanOrEqual(3);
+        expect(a.stitchesApart).toBeLessThanOrEqual(6);
+        expect(a.sizeMm).toBe(10);
+    });
+
+    it("ogen hebben geen eigen patroon en tellen niet mee als garen", () => {
+        expect(generatePattern(left, "Medium", ROW_HEIGHTS, [])).toBeNull();
+        expect(eyeSupplies(shapes)).toEqual([{ sizeMm: 10, count: 2 }]);
     });
 });

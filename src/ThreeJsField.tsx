@@ -2,22 +2,13 @@ import React, {useCallback, useEffect, useRef, useState} from 'react';
 import type * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl, TransformControls as TransformControlsImpl } from 'three-stdlib';
 import { isGizmoAxisActive } from './editor/types';
-import type { SetState, SetView, ShapeComponentProps, TransformMode, ViewKey } from './editor/types';
+import type { SetState, SetView, TransformMode, ViewKey } from './editor/types';
 import {Canvas} from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { GridHelper } from 'three';
-import Sphere from './Sphere';
-import Arm from './Arm';
-import { Cone, Cylinder } from './SolidShape';
+import { shapeComponentFor } from './shapeComponents';
 import { GroundShadow, YarnLights } from './editor/YarnScene';
 import SceneController from "./SceneController.tsx";
-
-const shapeComponents: Record<string, React.ComponentType<ShapeComponentProps>> = {
-    Sphere,
-    Arm,
-    Cylinder,
-    Cone,
-};
 
 export default function ThreeJsField({
     droppedShapes,
@@ -121,7 +112,7 @@ export default function ThreeJsField({
                 zoomToCursor={true}
             />
                 {droppedShapes.map((shape) => {
-                    const ShapeComponent = shapeComponents[shape.type] || Sphere;
+                    const ShapeComponent = shapeComponentFor(shape.type);
                     return (
                             <ShapeComponent
                                 key={shape.id}

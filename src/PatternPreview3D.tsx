@@ -1,22 +1,12 @@
-import React, { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import Sphere from './Sphere.tsx';
-import Arm from './Arm.tsx';
-import { Cone, Cylinder } from './SolidShape';
+import { shapeComponentFor } from './shapeComponents';
 import { GroundShadow, YarnLights } from './editor/YarnScene';
 import { computePatternBox } from './geometry/patternBox';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
-import type { ShapeComponentProps } from './editor/types';
 import calculateIntersections from './calculateIntersections';
 import { useT } from './i18n/LanguageProvider';
-
-const shapeComponents: Record<string, React.ComponentType<ShapeComponentProps>> = {
-    Sphere,
-    Arm,
-    Cylinder,
-    Cone,
-};
 
 const noop = () => {};
 
@@ -97,7 +87,7 @@ const PatternPreview3D = ({ shapes, onIntersections }: { shapes: Shape[]; onInte
             <CameraFraming box={box} />
             {onIntersections ? <IntersectionReporter shapes={shapes} onIntersections={onIntersections} /> : null}
             {shapes.map((shape) => {
-                const ShapeComponent = shapeComponents[shape.type] || Sphere;
+                const ShapeComponent = shapeComponentFor(shape.type);
                 return (
                     <ShapeComponent
                         key={shape.id}

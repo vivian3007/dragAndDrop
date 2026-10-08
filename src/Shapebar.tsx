@@ -5,11 +5,10 @@ import * as THREE from "three";
 import type {Camera} from "three";
 import { toast } from "react-toastify";
 import type { SetState } from "./editor/types";
+import { SHAPE_TYPES } from "./shapeTypes";
 import {setDoc, doc} from "firebase/firestore";
 import {db} from "../firebase-config.js";
 
-// De vormen die je in de editor kunt slepen (zie patterns/generators.ts voor hun patronen).
-const PALETTE = ["Sphere", "Arm", "Cylinder", "Cone", "Disc", "Dome"] as const;
 
 // Dikte van een plat rondje (een laag vasten), in opslag-eenheden (zie units.ts): ±0,3 cm.
 const DISC_THICKNESS = 0.3 * 37.8;
@@ -89,6 +88,9 @@ function Shapebar({ amigurumiId, setDroppedShapes, setActiveId, threeJsContainer
             }
 
             if (!isOutOfBounds) {
+                // Een oog is een veiligheidsoogje van 10 mm (bol-maat: straal, zie units.ts).
+                const eyeSize = 1 * 37.8 / 2;
+                const isEyeShape = currentShape === "Eye";
                 const newShape: Shape & { zIndex: number } = {
                     id: uuidv4(),
                     amigurumi_id: amigurumiId,
@@ -96,11 +98,11 @@ function Shapebar({ amigurumiId, setDroppedShapes, setActiveId, threeJsContainer
                     x: worldPosition.x,
                     y: worldPosition.y,
                     z: 0,
-                    length: width,
-                    width: width,
+                    length: isEyeShape ? eyeSize : width,
+                    width: isEyeShape ? eyeSize : width,
                     // Plat rondje: de dikte van een laag garen; halve bol: half zo hoog als breed.
-                    height: currentShape === "Disc" ? DISC_THICKNESS : currentShape === "Dome" ? width / 2 : height,
-                    color: "#FFFFFF",
+                    height: isEyeShape ? eyeSize : currentShape === "Disc" ? DISC_THICKNESS : currentShape === "Dome" ? width / 2 : height,
+                    color: isEyeShape ? "#111111" : "#FFFFFF",
                     name: null,
                     rotation_x: 0,
                     rotation_y: 0,
@@ -152,7 +154,7 @@ function Shapebar({ amigurumiId, setDroppedShapes, setActiveId, threeJsContainer
 
             <h1 className="shapes-text">{t("shapebar.title")}</h1>
             <div className={"draggables"}>
-                {PALETTE.map((type) => (
+                {SHAPE_TYPES.map((type) => (
                     <div key={type} className="palette-item">
                         <div
                             className={`draggable-shape ${type}`}

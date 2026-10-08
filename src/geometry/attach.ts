@@ -17,6 +17,8 @@ import { ARM_TOTAL_LOCAL_LENGTH } from "./armGeometry";
 
 // Hoeveel van z'n straal een bol in de andere vorm zakt.
 const SPHERE_OVERLAP = 0.25;
+// Een veiligheidsoogje zit tot de helft in het werk.
+const EYE_OVERLAP = 0.5;
 // Rand net iets verder naar binnen dan strikt nodig, tegen afrondingsverschillen.
 const RIM_MARGIN = 1.03;
 const RIM_SAMPLES = 24;
@@ -178,7 +180,8 @@ function attachTo(shape: Shape, solid: Solid, direction: THREE.Vector3): Shape {
         );
         // Straal van de (mogelijk uitgerekte) bol in de richting van de normaal.
         const radius = 1 / Math.sqrt((local.x / sx) ** 2 + (local.y / sy) ** 2 + (local.z / sz) ** 2);
-        const center = surface.clone().addScaledVector(normal, radius * (1 - SPHERE_OVERLAP));
+        const overlap = shape.type === "Eye" ? EYE_OVERLAP : SPHERE_OVERLAP;
+        const center = surface.clone().addScaledVector(normal, radius * (1 - overlap));
         return { ...shape, x: center.x, y: center.y, z: center.z };
     }
 

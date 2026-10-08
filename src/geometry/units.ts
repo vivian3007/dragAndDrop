@@ -14,7 +14,7 @@ export const WORLD_SCALE_FACTOR = 0.01;
 // (vorminstellingen, patroongenerators) moet deze functie gebruiken, anders zijn bollen in
 // cijfers half zo groot als in 3D.
 export function pixelsPerCm(shapeType: string | null | undefined): number {
-    return shapeType === "Sphere" ? PIXELS_PER_CM / 2 : PIXELS_PER_CM;
+    return shapeType === "Sphere" || shapeType === "Eye" ? PIXELS_PER_CM / 2 : PIXELS_PER_CM;
 }
 
 // Echte afmeting in cm van één as van een vorm (zoom meegerekend).

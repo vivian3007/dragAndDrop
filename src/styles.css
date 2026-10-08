@@ -563,6 +563,15 @@ body {
     border-bottom-style: dashed;
 }
 
+/* Oog: klein, zwart, glanzend. */
+.Eye {
+    width: 24px;
+    height: 24px;
+    margin: 16px 0;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #8a8a8a 0, #111111 45%);
+}
+
 .draggables {
     display: grid;
     grid-template-columns: repeat(2, 1fr);

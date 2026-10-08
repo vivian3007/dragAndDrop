@@ -86,7 +86,12 @@ function Sphere({
                 }}
             >
                 <mesh ref={meshRef} scale={[1, 1, 1]} geometry={geometry}>
-                    <meshStandardMaterial map={texture} bumpMap={texture} {...YARN_MATERIAL} vertexColors color={YARN_TINT} />
+                    {shape.type === "Eye" ? (
+                        // Veiligheidsoogje: glad en glanzend, geen garen.
+                        <meshPhysicalMaterial color={shape.color ?? "#111111"} roughness={0.15} clearcoat={1} clearcoatRoughness={0.05} />
+                    ) : (
+                        <meshStandardMaterial map={texture} bumpMap={texture} {...YARN_MATERIAL} vertexColors color={YARN_TINT} />
+                    )}
                 </mesh>
             </group>
             {isSelected && (

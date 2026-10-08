@@ -151,7 +151,9 @@ export default function calculateIntersections(
                 const shapeA = shapeById.get(meshesArray[i].id);
                 const shapeB = shapeById.get(meshesArray[j].id);
 
-                if (shapeA?.type === "Sphere" && shapeB?.type === "Sphere") {
+                // Oog = ook een bol (zie patterns/eyes.ts).
+                const isRound = (shape?: Shape) => shape?.type === "Sphere" || shape?.type === "Eye";
+                if (isRound(shapeA) && isRound(shapeB)) {
                     const radiusA = getSphereWorldRadius(meshA);
                     const radiusB = getSphereWorldRadius(meshB);
 

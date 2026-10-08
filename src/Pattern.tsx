@@ -5,6 +5,7 @@ import {collection, doc, getDoc, getDocs, query, where} from "firebase/firestore
 import {db} from "../firebase-config.js";
 import { generatePattern, PatternPart } from "./patterns/generators";
 import { formatRow, PatternRow } from "./patterns/patternTerms";
+import { eyePlacements, eyeSupplies, isEye } from "./patterns/eyes";
 import { computePatternHeightCm, computePatternWidthCm } from "./geometry/patternBounds";
 import { useIntl } from "react-intl";
 import { useT } from "./i18n/LanguageProvider";
@@ -277,6 +278,13 @@ const Pattern = () => {
                                     )}
                                 </dd>
 
+                                {eyeSupplies(shapes).length > 0 && (
+                                    <>
+                                        <dt>{t("pattern.eyes")}</dt>
+                                        <dd>{eyeSupplies(shapes).map(({ count, sizeMm }) => t("pattern.eyesSupply", { count, size: sizeMm })).join(", ")}</dd>
+                                    </>
+                                )}
+
                                 <dt>{t("pattern.also")}</dt>
                                 <dd>{t("pattern.alsoItems")}</dd>
 
@@ -383,8 +391,27 @@ const Pattern = () => {
                         <ul className="pattern-row-list">
                             {(() => {
                                 const allIntersectionRows = patterns.flatMap((p) => p.intersectionRows ?? []);
-                                return allIntersectionRows.length > 0 ? (
-                                    allIntersectionRows.map((intersection, idx) => {
+                                // Ogen krijgen een eigen regel (tussen welke rondes, hoe ver uit elkaar).
+                                const eyeIds = new Set(shapes.filter(isEye).map((shape) => shape.id));
+                                const placements = eyePlacements(shapes, allIntersectionRows, rowHeights[yarnWeight] ?? rowHeights.Medium);
+                                const connections = allIntersectionRows.filter((row) => !eyeIds.has(row.shapeId1) && !eyeIds.has(row.shapeId2));
+                                const eyeLines = placements.map((placement) => {
+                                    const other = placements.find((p) => p !== placement && p.target.id === placement.target.id);
+                                    const base = t("pattern.placeEye", {
+                                        eye: placement.eye.name ?? t("shapes.Eye"),
+                                        part: placement.target.name ?? t(`shapes.${placement.target.type}`),
+                                        from: placement.betweenRows[0],
+                                        to: placement.betweenRows[1],
+                                    });
+                                    return placement.stitchesApart && other
+                                        ? `${base}, ${t("pattern.eyeSpacing", { count: placement.stitchesApart, other: other.eye.name ?? t("shapes.Eye") })}`
+                                        : base;
+                                });
+                                if (placements.length > 0) {
+                                    eyeLines.push(t("pattern.eyesBeforeClosing"));
+                                }
+                                return connections.length > 0 || eyeLines.length > 0 ? (
+                                    [...eyeLines.map((text, idx) => <RowLine key={`eye-${idx}`} text={text} />), ...connections.map((intersection, idx) => {
                                         const shape1 = shapes.find((shape) => shape.id === intersection.shapeId1)?.name ?? t("pattern.unknownShape", { id: intersection.shapeId1 });
                                         const shape2 = shapes.find((shape) => shape.id === intersection.shapeId2)?.name ?? t("pattern.unknownShape", { id: intersection.shapeId2 });
                                         return (
@@ -393,7 +420,7 @@ const Pattern = () => {
                                                 text={t("pattern.connect", { part1: shape1, part2: shape2, top: intersection.topRow, bottom: intersection.bottomRow })}
                                             />
                                         );
-                                    })
+                                    })]
                                 ) : (
                                     <RowLine text={t("pattern.noIntersections")} />
                                 );
