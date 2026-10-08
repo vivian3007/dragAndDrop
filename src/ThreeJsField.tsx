@@ -1,4 +1,8 @@
-import React, {Ref, useCallback, useEffect, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
+import type * as THREE from 'three';
+import type { OrbitControls as OrbitControlsImpl, TransformControls as TransformControlsImpl } from 'three-stdlib';
+import { isGizmoAxisActive } from './editor/types';
+import type { SetState, SetView, ShapeComponentProps, ShapeMesh, TransformMode, ViewKey } from './editor/types';
 import {Canvas} from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { GridHelper } from 'three';
@@ -6,54 +10,47 @@ import Sphere from './Sphere';
 import Arm from './Arm';
 import SceneController from "./SceneController.tsx";
 
-const shapeComponents: { [key: string]: React.ComponentType<any> } = {
+const shapeComponents: Record<string, React.ComponentType<ShapeComponentProps>> = {
     Sphere,
     Arm,
 };
 
 export default function ThreeJsField({
-                                         droppedShapes,
-                                         threeJsContainerRef,
-                                         activeId,
-                                         setActiveId,
-                                         onUpdateShape,
-                                         onDeleteShape,
-                                         onSetView,
-                                         transformMode,
-                                         setTransformMode,
-                                         showGrid,
-                                         setShowGrid,
-                                         setCamera,
-                                         setIntersections,
-                                         intersections,
-                                        meshes,
-                                        setMeshes,
-                                        setScene,
-                                     }: {
-    droppedShapes: any[];
-    setDroppedShapes: any;
-    threeJsContainerRef: Ref<HTMLCanvasElement>;
-    activeId: any;
-    setActiveId: any;
-    onUpdateShape: any;
-    onDeleteShape: any;
-    onSetView: (setView: (viewKey: string) => void) => void;
-    transformMode: any;
-    setTransformMode: any;
+    droppedShapes,
+    threeJsContainerRef,
+    activeId,
+    setActiveId,
+    onUpdateShape,
+    onDeleteShape,
+    onSetView,
+    transformMode,
+    setTransformMode,
+    showGrid,
+    setShowGrid,
+    setCamera,
+    setIntersections,
+    meshes,
+    setMeshes,
+}: {
+    droppedShapes: Shape[];
+    threeJsContainerRef: React.RefObject<HTMLCanvasElement | null>;
+    activeId: string | null;
+    setActiveId: SetState<string | null>;
+    onUpdateShape: (shape: Shape) => void;
+    onDeleteShape: (id: string) => void;
+    onSetView: (setView: SetView) => void;
+    transformMode: TransformMode;
+    setTransformMode: (mode: TransformMode) => void;
     showGrid: boolean;
-    setShowGrid: any;
-    camera: any;
-    setCamera: any;
-    setIntersections: any;
-    intersections: any;
-    meshes: any;
-    setMeshes: any;
-    scene: any;
-    setScene: any;
+    setShowGrid: SetState<boolean>;
+    setCamera: (camera: THREE.Camera) => void;
+    setIntersections: (intersections: Intersection[]) => void;
+    meshes: ShapeMesh[];
+    setMeshes: (meshes: ShapeMesh[]) => void;
 }) {
-    const orbitControlsRef = useRef<any>(null);
-    const activeTransformControlsRef = useRef<any>(null);
-    const [currentView, setCurrentView] = useState<'front' | 'back' | 'left' | 'right' | 'top'>('front');
+    const orbitControlsRef = useRef<OrbitControlsImpl | null>(null);
+    const activeTransformControlsRef = useRef<TransformControlsImpl | null>(null);
+    const [currentView, setCurrentView] = useState<ViewKey>('front');
     const [isDragging, setIsDragging] = useState(false);
 
     const gridRotations: Record<string, [number, number, number]> = {
@@ -84,32 +81,10 @@ export default function ThreeJsField({
         };
     }, [activeId, onDeleteShape]);
 
-    const handleSelect = useCallback((id: any) => {
-        setActiveId((prevActiveId: any) => (prevActiveId === id ? null : id));
+    const handleSelect = useCallback((id: string) => {
+        setActiveId((prevActiveId) => (prevActiveId === id ? null : id));
     }, [setActiveId]);
 
-    // const [allMeshesReady, setAllMeshesReady] = useState(false);
-    // const meshCount = droppedShapes.length // total number of meshes
-
-    // const handleAllRendered = () => {
-    //     setAllMeshesReady(true);
-    // };
-
-    // useEffect(() => {
-    //     if (allMeshesReady) {
-    //         calculateIntersections(
-    //             droppedShapes,
-    //             scene,
-    //             threeJsContainerRef,
-    //             camera,
-    //             meshes,
-    //             setIntersections,
-    //             setMeshes
-    //         );
-    //         setAllMeshesReady(false); // reset zodat het opnieuw kan bij volgende render
-    //     }
-    // // Voeg alle relevante dependencies toe!
-    // }, [allMeshesReady, droppedShapes]);
 
     return (
         <Canvas
@@ -118,20 +93,17 @@ export default function ThreeJsField({
             className="threejs-canvas"
             style={{ backgroundColor: 'var(--color-accent-soft)' }}
             onPointerMissed={() => {
-                if (activeTransformControlsRef.current?.axis) return;
+                // Klik op een as van de gizmo telt niet als "naast de vormen klikken".
+                if (isGizmoAxisActive(activeTransformControlsRef)) return;
                 setActiveId(null);
             }}
         >
             <SceneController
                 orbitControlsRef={orbitControlsRef}
                 onSetView={onSetView}
-                activeId={activeId}
                 droppedShapes={droppedShapes}
                 setCamera={setCamera}
-                setScene={setScene}
-                threeJsContainerRef={threeJsContainerRef}
                 setIntersections={setIntersections}
-                intersections={intersections}
                 meshes={meshes}
                 setMeshes={setMeshes}
                 setCurrentView={setCurrentView}
@@ -154,8 +126,7 @@ export default function ThreeJsField({
                 enableZoom={true}
                 zoomToCursor={true}
             />
-            {/* <RenderProvider meshCount={meshCount} onAllRendered={handleAllRendered}> */}
-                {droppedShapes.map((shape: any) => {
+                {droppedShapes.map((shape) => {
                     const ShapeComponent = shapeComponents[shape.type] || Sphere;
                     return (
                             <ShapeComponent
@@ -173,7 +144,6 @@ export default function ThreeJsField({
                             />
                     );
                 })}
-            {/* </RenderProvider> */}
         </Canvas>
     );
 }

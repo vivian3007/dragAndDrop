@@ -1,7 +1,8 @@
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import calculateIntersections from "./calculateIntersections.tsx";
+import type { OrbitControlsRef, SetView, ShapeMesh, ViewKey } from "./editor/types";
 
 // Camera-offsets t.o.v. het midden van het patroon (zie patternCenterRef hieronder).
 const views = {
@@ -23,26 +24,18 @@ export default function SceneController({
                                             setCurrentView,
                                             isDragging,
                                         }: {
-    orbitControlsRef: React.RefObject<any>;
-    onSetView: (setView: (viewKey: string) => void) => void;
-    activeId: any;
+    orbitControlsRef: OrbitControlsRef;
+    onSetView: (setView: SetView) => void;
     droppedShapes: Shape[];
-    setCamera: any;
-    setScene: any;
-    threeJsContainerRef: any;
-    setIntersections: any;
-    intersections: any;
-    meshes: any;
-    setMeshes: any;
-    setCurrentView: (view: 'front' | 'back' | 'left' | 'right' | 'top') => void;
+    setCamera: (camera: THREE.Camera) => void;
+    setIntersections: (intersections: Intersection[]) => void;
+    meshes: ShapeMesh[];
+    setMeshes: (meshes: ShapeMesh[]) => void;
+    setCurrentView: (view: ViewKey) => void;
     isDragging: boolean;
 }) {
     const { camera, scene } = useThree();
     const patternCenterRef = useRef(new THREE.Vector3(0, 0, 0));
-
-    // useEffect(() => {
-    //     setScene(scene);
-    // }, [amigurumi]);
 
     const setView = (viewKey: string) => {
         const view = views[viewKey as keyof typeof views];
@@ -87,7 +80,7 @@ export default function SceneController({
         }
 
         const box = new THREE.Box3();
-        meshes.forEach(({ mesh }: { mesh: THREE.Mesh }) => {
+        meshes.forEach(({ mesh }) => {
             box.expandByObject(mesh);
         });
 
@@ -126,7 +119,6 @@ export default function SceneController({
                 clearTimeout(intersectionTimeoutRef.current);
             }
         };
-    // }, [droppedShapes, scene, threeJsContainerRef, camera, amigurumi]);
     }, [droppedShapes, isDragging]);
 
     return null;

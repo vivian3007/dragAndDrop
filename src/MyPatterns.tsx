@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Button, Typography } from '@mui/material';
 import { Add } from '@mui/icons-material';
 import { collection, query, where } from 'firebase/firestore';
@@ -10,11 +10,7 @@ import PatternBrowser from './PatternBrowser.tsx';
 import { useT } from './i18n/LanguageProvider';
 
 // Je eigen ontwerpen, met de knop om een nieuw patroon te beginnen.
-const MyPatterns = ({ yarnInfo, intersections, setDroppedShapes }: {
-    yarnInfo: Yarn;
-    intersections: Intersection[];
-    setDroppedShapes: React.Dispatch<React.SetStateAction<Shape[]>>;
-}) => {
+const MyPatterns = () => {
     const loggedInUser = useAuth().user?.uid;
     const t = useT();
     const [isNewPatternOpen, setIsNewPatternOpen] = useState(false);
@@ -49,15 +45,12 @@ const MyPatterns = ({ yarnInfo, intersections, setDroppedShapes }: {
                 amigurumis={amigurumis}
                 loading={loading}
                 error={error}
-                yarnInfo={yarnInfo}
-                intersections={intersections}
                 actions={filterActions}
                 emptyMessage={t('patterns.empty')}
             />
             <NewPattern
                 open={isNewPatternOpen}
                 onClose={() => setIsNewPatternOpen(false)}
-                setDroppedShapes={setDroppedShapes}
             />
         </>
     );

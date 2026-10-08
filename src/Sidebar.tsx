@@ -1,15 +1,30 @@
-import React, {useRef} from "react";
-import {Camera} from "three";
+import React from "react";
+import type {Camera} from "three";
+import type { SetState, SetView, TransformMode } from "./editor/types";
 import Shapebar from "./Shapebar";
 import Toolbar from "./Toolbar";
 
-function Sidebar({ setDroppedShapes, setActiveId, containerRef, threeJsContainerRef, dragging, setDragging, camera, setView, setTransformMode, showGrid, setShowGrid, onUndo, onRedo, canUndo, canRedo }: { setDroppedShapes: any, setActiveId: any, containerRef: React.RefObject<HTMLDivElement | null>, threeJsContainerRef: React.RefObject<HTMLElement | null>, dragging: boolean, setDragging: any, camera: Camera, setView: any, setTransformMode: any, showGrid: boolean, setShowGrid: any, onUndo: () => void, onRedo: () => void, canUndo: boolean, canRedo: boolean }) {
-
-    const navBarRef = useRef<HTMLDivElement>(null);
+function Sidebar({ amigurumiId, setDroppedShapes, setActiveId, threeJsContainerRef, dragging, setDragging, camera, setView, setTransformMode, showGrid, setShowGrid, onUndo, onRedo, canUndo, canRedo }: {
+    amigurumiId: string;
+    setDroppedShapes: SetState<Shape[]>;
+    setActiveId: SetState<string | null>;
+    threeJsContainerRef: React.RefObject<HTMLElement | null>;
+    dragging: boolean;
+    setDragging: SetState<boolean>;
+    camera: Camera | null;
+    setView: SetView;
+    setTransformMode: (mode: TransformMode) => void;
+    showGrid: boolean;
+    setShowGrid: SetState<boolean>;
+    onUndo: () => void;
+    onRedo: () => void;
+    canUndo: boolean;
+    canRedo: boolean;
+}) {
 
     return (
-        <nav className="Navbar" ref={navBarRef}>
-            <Shapebar setActiveId={setActiveId} containerRef={containerRef} threeJsContainerRef={threeJsContainerRef} dragging={dragging} setDragging={setDragging} camera={camera} setDroppedShapes={setDroppedShapes} navBarRef={navBarRef} />
+        <nav className="Navbar">
+            <Shapebar amigurumiId={amigurumiId} setActiveId={setActiveId} threeJsContainerRef={threeJsContainerRef} dragging={dragging} setDragging={setDragging} camera={camera} setDroppedShapes={setDroppedShapes} />
             <Toolbar setView={setView} setTransformMode={setTransformMode} showGrid={showGrid} setShowGrid={setShowGrid} onUndo={onUndo} onRedo={onRedo} canUndo={canUndo} canRedo={canRedo} />
         </nav>
     );

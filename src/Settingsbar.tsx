@@ -8,6 +8,7 @@ import AppDialog from "./AppDialog.tsx";
 import { FormattedMessage } from "react-intl";
 import { useT } from "./i18n/LanguageProvider";
 function Settingsbar({
+                                        amigurumiId,
                                         activeShape,
                                         onUpdateShape,
                                         onDeleteShape,
@@ -17,18 +18,17 @@ function Settingsbar({
                                         droppedShapes,
                                         onUpdateYarnInfo,
                                         yarnInfo,
-    intersections,
                                     }: {
-    activeShape: any,
-    onUpdateShape: any,
-    onDeleteShape: any,
+    amigurumiId: string,
+    activeShape: Shape | undefined,
+    onUpdateShape: (shape: Shape) => void,
+    onDeleteShape: (id: string) => void,
     onMirrorShape: (id: string) => void,
     shapeColor: string,
-    setShapeColor: any,
+    setShapeColor: (color: string) => void,
     droppedShapes: Shape[],
-    onUpdateYarnInfo: any,
+    onUpdateYarnInfo: (yarn: Yarn) => void,
     yarnInfo: Yarn,
-    intersections: any;
 }) {
     const [showYarnSettings, setShowYarnSettings] = useState(false)
     const [showHelp, setShowHelp] = useState(false)
@@ -37,11 +37,10 @@ function Settingsbar({
     const yarnSettingsRef = useRef<YarnSettingsHandle>(null);
     const navigate = useNavigate();
     const t = useT();
-    const currentAmigurumiId = localStorage.getItem("amigurumi")
 
     const goToPattern = () => {
-        navigate(`/${currentAmigurumiId}/pattern`, {
-            state: { shapes: droppedShapes, yarnInfo: yarnInfo, intersections: intersections },
+        navigate(`/${amigurumiId}/pattern`, {
+            state: { shapes: droppedShapes },
         });
     };
 
@@ -53,7 +52,7 @@ function Settingsbar({
         }
     };
 
-    const handleTabChange = (_event: any, newValue: number) => {
+    const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
         const wantsYarn = newValue === 1;
         if (wantsYarn === showYarnSettings) return;
         if (showYarnSettings && yarnDirty) {
@@ -98,7 +97,7 @@ function Settingsbar({
             </div>
             <div className="settings-bar-scroll">
                 {showYarnSettings ? (
-                    <YarnSettings ref={yarnSettingsRef} onUpdateYarnInfo={onUpdateYarnInfo} yarnInfo={yarnInfo} onDirtyChange={setYarnDirty}/>
+                    <YarnSettings ref={yarnSettingsRef} amigurumiId={amigurumiId} onUpdateYarnInfo={onUpdateYarnInfo} yarnInfo={yarnInfo} onDirtyChange={setYarnDirty}/>
                 ) : <ShapeSettings shapeColor={shapeColor} setShapeColor={setShapeColor} activeShape={activeShape} onUpdateShape={onUpdateShape}/>}
             </div>
             <div className="settings-bar-footer" style={{marginBottom: 20, alignItems: "center", display: "flex", flexDirection: "column"}}>

@@ -1,86 +1,56 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { v4 as uuidv4 } from "uuid";
-import { useLocation } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import { Box, Typography } from "@mui/material";
+import { toast } from "react-toastify";
 import ThreeJsField from "./ThreeJsField.tsx";
 import Settingsbar from "./Settingsbar.tsx";
 import Sidebar from "./Sidebar.tsx";
 import { useShapeHistory } from "./useShapeHistory";
 import { saveShapeDoc } from "./shapeDocs";
 import { mirrorShape } from "./geometry/mirrorShape";
+import { useEditorState } from "./editor/useEditorState";
 import { useT } from "./i18n/LanguageProvider";
 
-const Editor = ({
-                    droppedShapes,
-                    setDroppedShapes,
-                    setActiveId,
-                    activeId,
-                    containerRef,
-                    threeJsContainerRef,
-                    dragging,
-                    setDragging,
-                    camera,
-                    setCamera,
-                    handleUpdateShape,
-                    handleUpdateYarnInfo,
-                    handleDeleteShape,
-                    activeShape,
-                    shapeColor,
-                    setShapeColor,
-                    yarnInfo,
-                    setYarnInfo,
-                    yarns,
-    onSetView,
-    setView,
-    transformMode,
-    setTransformMode,
-    showGrid,
-    setShowGrid,
-    intersections,
-    setIntersections,
-    meshes,
-    setMeshes,
-    scene,
-    setScene,
-                }: {
-    droppedShapes: Shape[];
-    setDroppedShapes: React.Dispatch<React.SetStateAction<Shape[]>>;
-    setActiveId: any;
-    activeId: any;
-    containerRef: any;
-    threeJsContainerRef: any;
-    dragging: any;
-    setDragging: any;
-    camera: any;
-    setCamera: any;
-    handleUpdateShape: any;
-    handleUpdateYarnInfo: any;
-    handleDeleteShape: any;
-    activeShape: Shape | undefined;
-    shapeColor: string;
-    setShapeColor: any;
-    yarnInfo: Yarn;
-    setYarnInfo: any;
-    yarns: Yarn[];
-    onSetView: (setView: (viewKey: string) => void) => void;
-    setView: any;
-    transformMode: 'translate' | 'rotate' | 'scale';
-    setTransformMode: any;
-    showGrid: boolean;
-    setShowGrid: any;
-    intersections: any;
-    setIntersections: any;
-    meshes: any;
-    setMeshes: any;
-    scene: any;
-    setScene: any;
-}) => {
-    const location = useLocation();
+// De editor voor één ontwerp (/:amigurumi_id/editor). Alle state zit in useEditorState;
+// welk ontwerp het is komt uit de URL, zodat herladen en een gedeelde link gewoon werken.
+const Editor = () => {
+    const { amigurumi_id: amigurumiId = '' } = useParams();
     const t = useT();
+    const threeJsContainerRef = useRef<HTMLCanvasElement>(null);
+    const {
+        loading,
+        amigurumi,
+        droppedShapes,
+        setDroppedShapes,
+        yarnInfo,
+        handleUpdateYarnInfo,
+        activeId,
+        setActiveId,
+        activeShape,
+        dragging,
+        setDragging,
+        camera,
+        setCamera,
+        shapeColor,
+        setShapeColor,
+        setIntersections,
+        meshes,
+        setMeshes,
+        setView,
+        onSetView,
+        transformMode,
+        setTransformMode,
+        showGrid,
+        setShowGrid,
+        handleUpdateShape,
+        handleDeleteShape,
+    } = useEditorState(amigurumiId);
 
     // Zet een eerdere toestand terug: in de state, en het verschil met de huidige toestand
     // ook in Firestore — verwijderde vormen weer aanmaken, toegevoegde weer weghalen en
     // gewijzigde via de gewone (debounced) update, zodat die een nog lopende update vervangt.
-    const applySnapshot = useCallback((target: any[], current: any[]) => {
+    const applySnapshot = useCallback((target: Shape[], current: Shape[]) => {
         const targetIds = new Set(target.map((shape) => shape.id));
         const currentById = new Map(current.map((shape) => [shape.id, shape]));
 
@@ -90,16 +60,21 @@ const Editor = ({
         target.forEach((shape) => {
             const before = currentById.get(shape.id);
             if (!before) {
-                saveShapeDoc(shape).catch((error) => console.error("Fout bij terugzetten van vorm:", error));
+                saveShapeDoc({ ...shape, amigurumi_id: amigurumiId }).catch((error) => console.error("Fout bij terugzetten van vorm:", error));
             } else if (before !== shape) {
                 handleUpdateShape(shape);
             }
         });
         setDroppedShapes(target);
-    }, [handleDeleteShape, handleUpdateShape, setDroppedShapes]);
+    }, [handleDeleteShape, handleUpdateShape, setDroppedShapes, amigurumiId]);
 
     const history = useShapeHistory(droppedShapes, applySnapshot);
     const { checkpoint, undo, redo, reset: resetHistory } = history;
+
+    // Ander ontwerp (of opnieuw geladen): de geschiedenis van het vorige telt niet meer.
+    useEffect(() => {
+        if (!loading) resetHistory();
+    }, [loading, amigurumiId, resetHistory]);
 
     // Alle wijzigingen door de gebruiker lopen via deze wrappers, zodat er vooraf een
     // undo-stap wordt vastgelegd.
@@ -119,11 +94,12 @@ const Editor = ({
     }, [checkpoint, setDroppedShapes]);
 
     const handleMirrorShape = useCallback((id: string) => {
-        const source: any = droppedShapes.find((shape: any) => shape.id === id);
+        const source = droppedShapes.find((shape) => shape.id === id);
         if (!source) return;
-        const mirrored: any = {
-            ...mirrorShape(source, droppedShapes as any[]),
+        const mirrored: Shape & { amigurumi_id: string } = {
+            ...mirrorShape(source, droppedShapes),
             id: uuidv4(),
+            amigurumi_id: amigurumiId,
             name: source.name ? t("editor.mirroredName", { name: source.name }) : null,
         };
         checkpoint();
@@ -131,9 +107,9 @@ const Editor = ({
         setActiveId(mirrored.id);
         saveShapeDoc(mirrored).catch((error) => {
             console.error("Fout bij opslaan van gespiegelde vorm:", error);
-            alert(t("errors.saveShape", { message: String(error) }));
+            toast.error(t("errors.saveShape", { message: String(error) }));
         });
-    }, [droppedShapes, checkpoint, setDroppedShapes, setActiveId, t]);
+    }, [droppedShapes, checkpoint, setDroppedShapes, setActiveId, t, amigurumiId]);
 
     // Ctrl/Cmd+Z = ongedaan maken, Ctrl/Cmd+Shift+Z of Ctrl+Y = opnieuw. Niet in invoervelden,
     // daar hoort Ctrl+Z bij de tekst.
@@ -155,35 +131,20 @@ const Editor = ({
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [undo, redo]);
 
-    useEffect(() => {
-        if (location.state?.shapes) {
-            const incomingShapes: Shape[] = location.state.shapes;
-            console.log("UseEFFECT van Editor.")
-            setDroppedShapes(incomingShapes);
-            // Ander (of opnieuw geladen) ontwerp: geschiedenis van het vorige telt niet meer.
-            resetHistory();
-        }
-        if (location.state?.amigurumi) {
-            const amigurumi: Amigurumi = location.state.amigurumi;
-            localStorage.setItem("amigurumi", amigurumi.id);
-            // Net gekopieerd garen zit nog niet in de bij het opstarten geladen `yarns`,
-            // dus dat wordt via de navigatie-state meegegeven.
-            const currentYarn = location.state.yarn ?? yarns.find((yarn) => yarn.id === amigurumi.yarn_id);
-            if(currentYarn){
-                setYarnInfo(currentYarn);
-
-            } else {
-                setYarnInfo({name: null, weight: null, mPerSkein: null, hooksize: null, color: null, material: null});
-            }
-        }
-    }, [location.state?.shapes, setDroppedShapes]);
+    if (!loading && !amigurumi) {
+        return (
+            <Box sx={{ p: 5 }}>
+                <Typography>{t('editor.notFound')}</Typography>
+            </Box>
+        );
+    }
 
     return (
         <div className="editor">
             <Sidebar
+                amigurumiId={amigurumiId}
                 setDroppedShapes={setShapesFromUser}
                 setActiveId={setActiveId}
-                containerRef={containerRef}
                 threeJsContainerRef={threeJsContainerRef}
                 dragging={dragging}
                 setDragging={setDragging}
@@ -199,27 +160,23 @@ const Editor = ({
             />
             <ThreeJsField
                 droppedShapes={droppedShapes}
-                setDroppedShapes={setDroppedShapes}
                 threeJsContainerRef={threeJsContainerRef}
                 activeId={activeId}
                 setActiveId={setActiveId}
                 onUpdateShape={updateShape}
                 setCamera={setCamera}
-                camera={camera}
                 onDeleteShape={deleteShape}
                 onSetView={onSetView}
                 transformMode={transformMode}
                 setTransformMode={setTransformMode}
-                showGrid={showGrid}
                 setShowGrid={setShowGrid}
-                intersections={intersections}
+                showGrid={showGrid}
                 setIntersections={setIntersections}
                 meshes={meshes}
                 setMeshes={setMeshes}
-                scene={scene}
-                setScene={setScene}
             />
             <Settingsbar
+                amigurumiId={amigurumiId}
                 activeShape={activeShape}
                 onUpdateShape={updateShape}
                 onDeleteShape={deleteShape}
@@ -229,10 +186,9 @@ const Editor = ({
                 droppedShapes={droppedShapes}
                 onUpdateYarnInfo={handleUpdateYarnInfo}
                 yarnInfo={yarnInfo}
-                intersections={intersections}
             />
         </div>
     );
-}
+};
 
 export default Editor;

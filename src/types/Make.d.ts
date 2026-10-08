@@ -9,5 +9,6 @@ interface Make {
     user_id: string;
     imageUrl: string;
     note?: string | null;
-    createdAt?: any;
+    // Firestore-tijdstempel; bij het aanmaken nog een serverTimestamp()-placeholder.
+    createdAt?: import('firebase/firestore').Timestamp | import('firebase/firestore').FieldValue | Date | null;
 }

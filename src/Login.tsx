@@ -10,7 +10,7 @@ import {
 } from 'firebase/auth';
 import { auth } from '../firebase-config.js';
 import { useAuth } from './auth/AuthProvider';
-import { authErrorKey, MIN_PASSWORD_LENGTH } from './auth/authErrors';
+import { authErrorKey, errorCode, MIN_PASSWORD_LENGTH } from './auth/authErrors';
 import { claimUsername, isUsernameAvailable, USERNAME_MAX, USERNAME_MIN, usernameError } from './users/usernames';
 import UsernameField, { UsernameStatus } from './users/UsernameField';
 import { useT } from './i18n/LanguageProvider';
@@ -85,10 +85,10 @@ const Login = () => {
     const handleReset = async () => {
         try {
             await sendPasswordResetEmail(auth, email.trim());
-        } catch (err: any) {
+        } catch (err) {
             // "Geen account met dit adres" bewust niet laten zien: anders kan iedereen
             // uitproberen welke e-mailadressen een account hebben.
-            if (err?.code !== 'auth/user-not-found') throw err;
+            if (errorCode(err) !== 'auth/user-not-found') throw err;
         }
         setInfo('login.reset.sent');
     };
@@ -103,8 +103,8 @@ const Login = () => {
             if (mode === 'login') await handleLogin();
             else if (mode === 'register') await handleRegister();
             else await handleReset();
-        } catch (err: any) {
-            setError(authErrorKey(err?.code, mode));
+        } catch (err) {
+            setError(authErrorKey(errorCode(err), mode));
         } finally {
             setSubmitting(false);
         }

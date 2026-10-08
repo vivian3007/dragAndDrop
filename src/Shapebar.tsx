@@ -2,11 +2,34 @@ import { v4 as uuidv4 } from "uuid";
 import { useT } from "./i18n/LanguageProvider";
 import React, {useEffect, useRef, useState} from "react";
 import * as THREE from "three";
-import {Camera} from "three";
+import type {Camera} from "three";
+import { toast } from "react-toastify";
+import type { SetState } from "./editor/types";
 import {setDoc, doc} from "firebase/firestore";
 import {db} from "../firebase-config.js";
 
-function Shapebar({ setDroppedShapes, setActiveId, threeJsContainerRef, dragging, setDragging, camera, navBarRef }: { setDroppedShapes: any, setActiveId: any, containerRef: React.RefObject<HTMLDivElement | null>, threeJsContainerRef: React.RefObject<HTMLElement | null>, dragging: boolean, setDragging: any, camera: Camera, navBarRef: React.RefObject<HTMLDivElement | null> }) {
+// Muis of vinger, als React-event of als gewoon DOM-event (de window-listeners hieronder).
+type PointerLikeEvent = MouseEvent | TouchEvent | React.MouseEvent | React.TouchEvent;
+
+// Schermpositie van een muis- of touch-event. Bij `touchend` staat de vinger al niet meer in
+// `touches`, maar wel in `changedTouches`.
+const getEventCoordinates = (e: PointerLikeEvent) => {
+    if ("touches" in e) {
+        const touch = e.touches[0] ?? e.changedTouches[0];
+        return { x: touch?.clientX ?? 0, y: touch?.clientY ?? 0 };
+    }
+    return { x: e.clientX, y: e.clientY };
+};
+
+function Shapebar({ amigurumiId, setDroppedShapes, setActiveId, threeJsContainerRef, dragging, setDragging, camera }: {
+    amigurumiId: string;
+    setDroppedShapes: SetState<Shape[]>;
+    setActiveId: SetState<string | null>;
+    threeJsContainerRef: React.RefObject<HTMLElement | null>;
+    dragging: boolean;
+    setDragging: SetState<boolean>;
+    camera: Camera | null;
+}) {
     const shapes = [
         { type: "Sphere", label: "Head" },
         { type: "Arm", label: "body" },
@@ -20,69 +43,57 @@ function Shapebar({ setDroppedShapes, setActiveId, threeJsContainerRef, dragging
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [currentShape, setCurrentShape] = useState<string | null>(null);
     const dragItemRef = useRef<HTMLDivElement | null>(null);
-    const currentAmigurumiId = localStorage.getItem("amigurumi");
 
-    const getEventCoordinates = (e: any) => {
-        if (e.touches && e.touches.length > 0) {
-            return { x: e.touches[0].clientX, y: e.touches[0].clientY };
-        }
-        return { x: e.clientX, y: e.clientY };
-    };
-
-
-    const handleMouseDown = (e: any, shapeType: any) => {
+    const handleMouseDown = (e: React.MouseEvent | React.TouchEvent, shapeType: string) => {
         e.preventDefault();
         setDragging(true);
         setCurrentShape(shapeType);
-        const coords = getEventCoordinates(e);
-        setPosition(coords);
+        setPosition(getEventCoordinates(e));
     }
 
-    const handleMouseMove = (e: any) => {
+    const handleMouseMove = (e: PointerLikeEvent) => {
         if (dragging) {
-            const coords = getEventCoordinates(e);
-            setPosition(coords);
+            setPosition(getEventCoordinates(e));
         }
     }
 
-    const handleMouseUp = async (e: any) => {
+    const handleMouseUp = async (e: PointerLikeEvent) => {
         if (dragging && currentShape) {
             const width = dragItemRef.current?.offsetWidth;
             const height = dragItemRef.current?.offsetHeight;
             const containerRect = threeJsContainerRef.current?.getBoundingClientRect();
-            const navBarWidth = navBarRef.current?.clientWidth;
-            if (width === undefined || height === undefined || !containerRect || navBarWidth === undefined) {
+            if (width === undefined || height === undefined || !containerRect) {
                 setDragging(false);
                 return;
             }
+            // De vorm moet helemaal binnen het canvas vallen. Alles in schermcoördinaten: eerder
+            // werd de muispositie met de canvashoogte vergeleken zonder de navigatiebalk erboven
+            // mee te tellen, waardoor loslaten onderin het canvas stilletjes werd geweigerd.
+            const { x: clientX, y: clientY } = getEventCoordinates(e);
             const isOutOfBounds =
-                e?.clientX - navBarWidth - width / 2 < 0 ||
-                e?.clientX - navBarWidth + width / 2 > containerRect.width ||
-                e?.clientY - height / 2 < 0 ||
-                e?.clientY + height / 2 > containerRect.height;
+                clientX - width / 2 < containerRect.left ||
+                clientX + width / 2 > containerRect.right ||
+                clientY - height / 2 < containerRect.top ||
+                clientY + height / 2 > containerRect.bottom;
 
-
-            const mouseX = ((e.clientX - containerRect.left) / containerRect.width) * 2 - 1;
-            const mouseY = -((e.clientY - containerRect.top) / containerRect.height) * 2 + 1;
+            const mouseX = ((clientX - containerRect.left) / containerRect.width) * 2 - 1;
+            const mouseY = -((clientY - containerRect.top) / containerRect.height) * 2 + 1;
 
             let worldPosition = { x: 0, y: 0, z: 0 };
-
-            console.log("camera neee")
             if (camera) {
-                console.log("camera jaaa")
                 const vector = new THREE.Vector3(mouseX, mouseY, 0.5);
                 vector.unproject(camera);
 
                 const dir = vector.sub(camera.position).normalize();
                 const distance = -camera.position.z / dir.z;
                 const pos = camera.position.clone().add(dir.multiplyScalar(distance));
-                console.log(pos);
                 worldPosition = { x: pos.x, y: pos.y, z: 0 };
             }
 
-            if(!isOutOfBounds) {
-                const newShape = {
+            if (!isOutOfBounds) {
+                const newShape: Shape & { zIndex: number } = {
                     id: uuidv4(),
+                    amigurumi_id: amigurumiId,
                     type: currentShape,
                     x: worldPosition.x,
                     y: worldPosition.y,
@@ -99,42 +110,15 @@ function Shapebar({ setDroppedShapes, setActiveId, threeJsContainerRef, dragging
                     zoom: 1,
                 };
 
-                console.log(newShape)
-                setDroppedShapes((prevShapes: any[]) => [...prevShapes, newShape]);
-                setActiveId(newShape.id)
+                setDroppedShapes((prevShapes) => [...prevShapes, newShape]);
+                setActiveId(newShape.id);
 
                 try {
-                    const shapeRef = doc(db, "shapes", newShape.id);
-
-                    const shapeData: { [key: string]: any } = {
-                        type: newShape.type,
-                        x: newShape.x ?? 0,
-                        y: newShape.y ?? 0,
-                        z: newShape.z ?? 0,
-                        width: newShape.width ?? 0,
-                        height: newShape.height ?? 0,
-                        length: newShape.length ?? 0,
-                        color: newShape.color ?? "#FFFFFF",
-                        name: newShape.name ?? null,
-                        rotation_x: newShape.rotation_x ?? 0,
-                        rotation_y: newShape.rotation_y ?? 0,
-                        rotation_z: newShape.rotation_z ?? 0,
-                        zIndex: newShape.zIndex ?? 10,
-                        zoom: newShape.zoom ?? 1,
-                        amigurumi_id: currentAmigurumiId,
-                    };
-
-                    Object.keys(shapeData).forEach((key) => {
-                        if (shapeData[key] === undefined) {
-                            console.warn(`Field ${key} is undefined, excluding from Firestore`);
-                            delete shapeData[key];
-                        }
-                    });
-
-                    await setDoc(shapeRef, shapeData);
+                    const { id, ...shapeData } = newShape;
+                    await setDoc(doc(db, "shapes", id), shapeData);
                 } catch (error) {
-                    console.error("Error saving shape to Firestore:", error);
-                    alert(t("errors.saveShape", { message: String(error) }));
+                    console.error("Fout bij opslaan van nieuwe vorm:", error);
+                    toast.error(t("errors.saveShape", { message: String(error) }));
                 }
             }
         }

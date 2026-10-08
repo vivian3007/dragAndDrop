@@ -19,14 +19,12 @@ import { buildCopiedFrom, saveAmigurumiCopy } from './copyAmigurumi.ts';
 const NewPattern = ({
     open,
     onClose,
-    setDroppedShapes,
     editingAmigurumi,
     copySource,
     onSaved,
 }: {
     open: boolean;
     onClose: () => void;
-    setDroppedShapes?: React.Dispatch<React.SetStateAction<Shape[]>>;
     editingAmigurumi?: Amigurumi | null;
     copySource?: Amigurumi | null;
     onSaved?: (updated: Amigurumi) => void;
@@ -149,7 +147,6 @@ const NewPattern = ({
                         copiedFrom: buildCopiedFrom(copySource),
                         copiedFromId: copySource.id,
                     });
-                    setDroppedShapes?.(copy.shapes);
                     onClose();
                     navigate(`/${amigurumiId}/editor`, {
                         state: { amigurumi: copy.amigurumi, shapes: copy.shapes, yarn: copy.yarn },
@@ -159,10 +156,6 @@ const NewPattern = ({
 
                 // Save to Firestore with the UUID as the document ID
                 await setDoc(doc(db, 'amigurumi', amigurumiId), amigurumiData);
-                console.log('Saved amigurumi:', amigurumiData);
-
-                // Clear droppedShapes
-                setDroppedShapes?.([]);
 
                 onClose();
 

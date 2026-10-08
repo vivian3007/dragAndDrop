@@ -1,7 +1,8 @@
+import { timestampMillis } from './timestamps.ts';
+
 export type SortOption = 'newest' | 'oldest' | 'popular' | 'favorite' | 'name';
 
-const getTime = (amigurumi: Amigurumi) =>
-    amigurumi.createdAt?.toDate ? amigurumi.createdAt.toDate().getTime() : 0;
+const getTime = (amigurumi: Amigurumi) => timestampMillis(amigurumi.createdAt);
 
 // Edit distance between two short strings, used to tolerate small typos in search.
 const levenshteinDistance = (a: string, b: string): number => {

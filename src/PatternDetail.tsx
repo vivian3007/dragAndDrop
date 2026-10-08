@@ -44,6 +44,7 @@ import Makes from './Makes.tsx';
 import { useT } from './i18n/LanguageProvider';
 import { sizedImageUrl } from './uploadImage.ts';
 import { useFavorites } from './favorites/FavoritesProvider';
+import { timestampDate } from './timestamps.ts';
 
 type DetailTab = 'about' | 'yarn' | 'makes';
 
@@ -219,8 +220,9 @@ const PatternDetail = ({
     const [directSource, ...olderSources] = amigurumi.copiedFrom ?? [];
     const previous = trail[trail.length - 1];
 
-    const createdDate = amigurumi.createdAt?.toDate
-        ? intl.formatDate(amigurumi.createdAt.toDate(), { day: 'numeric', month: 'long', year: 'numeric' })
+    const createdAt = timestampDate(amigurumi.createdAt);
+    const createdDate = createdAt
+        ? intl.formatDate(createdAt, { day: 'numeric', month: 'long', year: 'numeric' })
         : null;
 
     const summary = [

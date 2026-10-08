@@ -9,6 +9,15 @@ type AuthContext = 'login' | 'register' | 'reset' | 'account';
 // Zet een Firebase-foutcode (of een eigen `local/...`-code) om naar een vertaalsleutel.
 // Bij inloggen geven "onbekend e-mailadres" en "fout wachtwoord" bewust dezelfde melding,
 // zodat niet af te leiden is welke e-mailadressen een account hebben.
+// Firebase-fouten (FirebaseError) hebben een `code` zoals "auth/wrong-password"; andere
+// fouten niet. Veilig uit te lezen uit een onbekende `catch`-waarde.
+export function errorCode(error: unknown): string | undefined {
+    if (typeof error === 'object' && error !== null && 'code' in error && typeof error.code === 'string') {
+        return error.code;
+    }
+    return undefined;
+}
+
 export function authErrorKey(code: string | undefined, context: AuthContext): string {
     switch (code) {
         case 'local/username-invalid':

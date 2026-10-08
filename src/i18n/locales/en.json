@@ -63,6 +63,7 @@
   "editor.helpDialog.title": "How it works",
   "editor.mirrorShape": "Mirror",
   "editor.mirroredName": "{name} (mirrored)",
+  "editor.notFound": "This design doesn't exist (anymore).",
   "editor.pattern": "Pattern",
   "editor.save": "Save",
   "editor.shortcut.delete": "Delete selected shape",

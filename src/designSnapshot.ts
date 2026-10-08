@@ -109,7 +109,8 @@ async function render(shapes: Shape[]): Promise<string | null> {
 const cache = new Map<string, { signature: string; image: Promise<string | null> }>();
 
 export function renderDesignSnapshot(amigurumiId: string, shapes: Shape[]): Promise<string | null> {
-    const signature = JSON.stringify(shapes.map(({ mesh, ...shape }) => shape));
+    // Zonder `mesh`: dat is een three.js-object, geen ontwerpgegeven.
+    const signature = JSON.stringify(shapes, (key, value) => (key === 'mesh' ? undefined : value));
     const cached = cache.get(amigurumiId);
     if (cached?.signature === signature) {
         return cached.image;

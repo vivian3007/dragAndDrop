@@ -5,7 +5,7 @@ import { ArrowBack, CheckCircle, ErrorOutline, LockReset, Logout, Visibility, Vi
 import { EmailAuthProvider, reauthenticateWithCredential, sendEmailVerification, updatePassword } from 'firebase/auth';
 import { toast } from 'react-toastify';
 import { logOut, useAuth } from './auth/AuthProvider';
-import { authErrorKey, MIN_PASSWORD_LENGTH } from './auth/authErrors';
+import { authErrorKey, errorCode, MIN_PASSWORD_LENGTH } from './auth/authErrors';
 import { profilePath } from './UserLink.tsx';
 import AppDialog from './AppDialog';
 import { claimUsername, isUsernameAvailable, usernameError } from './users/usernames';
@@ -74,8 +74,8 @@ const Account = () => {
         try {
             await sendEmailVerification(user);
             toast.success(t('account.verificationSent', { email: user.email ?? '' }));
-        } catch (err: any) {
-            toast.error(t(authErrorKey(err?.code, 'account')));
+        } catch (err) {
+            toast.error(t(authErrorKey(errorCode(err), 'account')));
         } finally {
             setSendingVerification(false);
         }
@@ -117,8 +117,8 @@ const Account = () => {
             setConfirmPassword('');
             setShowPasswords(false);
             toast.success(t('account.passwordChanged'));
-        } catch (err: any) {
-            setPasswordError(authErrorKey(err?.code, 'account'));
+        } catch (err) {
+            setPasswordError(authErrorKey(errorCode(err), 'account'));
         } finally {
             setSavingPassword(false);
         }

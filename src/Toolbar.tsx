@@ -2,8 +2,9 @@ import React from "react";
 import {Button} from "@mui/material";
 import {Redo, Undo} from "@mui/icons-material";
 import { useT } from "./i18n/LanguageProvider";
+import type { SetState, SetView, TransformMode } from "./editor/types";
 
-function Toolbar({ setView, setTransformMode, showGrid, setShowGrid, onUndo, onRedo, canUndo, canRedo }: { setView: (viewKey: string) => void, setTransformMode: any, showGrid: boolean, setShowGrid: any, onUndo: () => void, onRedo: () => void, canUndo: boolean, canRedo: boolean }) {
+function Toolbar({ setView, setTransformMode, showGrid, setShowGrid, onUndo, onRedo, canUndo, canRedo }: { setView: SetView, setTransformMode: (mode: TransformMode) => void, showGrid: boolean, setShowGrid: SetState<boolean>, onUndo: () => void, onRedo: () => void, canUndo: boolean, canRedo: boolean }) {
     const t = useT();
 
     return (

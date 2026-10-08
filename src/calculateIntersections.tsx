@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import {CSG} from "three-csg-ts";
+import type { ShapeMesh } from "./editor/types";
 import {computeSphereSphereIntersection} from "./geometry/sphereIntersection";
 import {ARM_TOTAL_LOCAL_LENGTH} from "./geometry/armGeometry";
 
@@ -12,7 +13,11 @@ import {ARM_TOTAL_LOCAL_LENGTH} from "./geometry/armGeometry";
 const MAX_CSG_SEGMENTS = 12;
 
 function getCsgProxyGeometry(geometry: THREE.BufferGeometry): THREE.BufferGeometry {
-    const params: any = (geometry as any).parameters;
+    // SphereGeometry en CylinderGeometry hebben een `parameters`-object; BufferGeometry als
+    // basistype kent dat niet.
+    const params = (geometry as THREE.BufferGeometry & { parameters?: Record<string, number | boolean | undefined> }).parameters as
+        | (Record<string, number | undefined> & { openEnded?: boolean })
+        | undefined;
     if (!params) {
         return geometry;
     }
@@ -92,9 +97,9 @@ function getBoxVolume(box: THREE.Box3): number {
 export default function calculateIntersections(
     droppedShapes: Shape[],
     scene: THREE.Scene,
-    _meshes: { id: string; mesh: THREE.Mesh }[],
-    setIntersections: any,
-    setMeshes: any
+    _meshes: ShapeMesh[],
+    setIntersections: (intersections: Intersection[]) => void,
+    setMeshes: (meshes: ShapeMesh[]) => void
 ) {
 
     if (!scene) {
@@ -109,7 +114,7 @@ export default function calculateIntersections(
     });
 
 
-    const meshesArray: { id: string; mesh: THREE.Mesh }[] = [];
+    const meshesArray: ShapeMesh[] = [];
 
     droppedShapes.forEach((shape) => {
         const mesh = scene.getObjectByProperty('uuid', shape.id);
@@ -124,7 +129,7 @@ export default function calculateIntersections(
 
     const shapeById = new Map(droppedShapes.map((s) => [s.id, s]));
 
-    const intersectionArray = [];
+    const intersectionArray: Intersection[] = [];
 
     for (let i = 0; i < meshesArray.length; i++) {
         for (let j = i + 1; j < meshesArray.length; j++) {

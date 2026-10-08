@@ -15,6 +15,7 @@ import { useResponsiveMinColumns } from './useResponsiveMinColumns.ts';
 import { lookupUidByUsername } from './users/usernames';
 import { useT } from './i18n/LanguageProvider';
 import { useFollowCounts, useFollowing } from './follows/FollowingProvider';
+import { timestampMillis } from './timestamps.ts';
 
 // Openbaar profiel, op gebruikersnaam (/profile/:username). Ontwerpen en foto's slaan hun
 // eigenaar op als uid; dat zoeken we hier bij de naam op.
@@ -96,7 +97,7 @@ const ProfileContent = ({ userId, username }: { userId: string; username: string
     );
     const amigurumis = snapshot
         ? (snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Amigurumi[])
-            .sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0))
+            .sort((a, b) => timestampMillis(b.createdAt) - timestampMillis(a.createdAt))
         : [];
 
     // Een gemaakte amigurumi hoort bij een patroon van (meestal) iemand anders. Die ontwerpen

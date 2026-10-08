@@ -3,7 +3,7 @@ interface Shape {
     id: string;
     // Ontwerp waar de vorm bij hoort (ontbreekt alleen op nog niet opgeslagen vormen).
     amigurumi_id?: string;
-    name: string;
+    name: string | null;
     type: string;
     x: number;
     y: number;
@@ -16,5 +16,5 @@ interface Shape {
     rotation_y: number;
     rotation_z: number;
     zoom: number;
-    mesh?: any;
+    mesh?: unknown;
 }

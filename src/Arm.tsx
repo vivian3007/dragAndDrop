@@ -2,6 +2,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import {useLoader, useThree} from '@react-three/fiber';
 import * as THREE from 'three';
 import TransformControlsThree from "./TransformControlsThree.tsx";
+import type { TransformControls as TransformControlsImpl } from 'three-stdlib';
+import { isGizmoAxisActive } from "./editor/types";
+import type { ShapeComponentProps } from "./editor/types";
 import { ARM_TOTAL_LOCAL_LENGTH } from "./geometry/armGeometry";
 import { WORLD_SCALE_FACTOR } from "./geometry/units";
 
@@ -12,18 +15,11 @@ function Arm({
                                          isSelected,
                                          onSelect,
                                          onUpdateShape,
+                                         transformMode,
+                                         setTransformMode,
                                          onDraggingChange,
                                          activeTransformControlsRef,
-                                     }: {
-    id: string;
-    shape: any;
-    orbitControlsRef: React.MutableRefObject<any>;
-    isSelected: boolean;
-    onSelect: (id: string) => void;
-    onUpdateShape: (shape: any) => void;
-    onDraggingChange?: (isDragging: boolean) => void;
-    activeTransformControlsRef?: React.MutableRefObject<any>;
-}) {
+                                     }: ShapeComponentProps) {
 
     const width = shape?.width ?? 50;
     const height = shape?.height ?? 50;
@@ -38,8 +34,7 @@ function Arm({
     const color = shape?.color ?? 'white';
     const { camera, size } = useThree();
     const meshRef = useRef<THREE.Mesh>(null);
-    const transformControlsRef = useRef<any>(null);
-    const [transformMode, setTransformMode] = useState<'translate' | 'rotate' | 'scale'>('translate');
+    const transformControlsRef = useRef<TransformControlsImpl | null>(null);
     const [isDragging, setIsDragging] = useState(false);
 
     const handleDraggingChange = (value: boolean) => {
@@ -87,7 +82,7 @@ function Arm({
         <>
             <group
                 onPointerDown={(e) => {
-                    if (activeTransformControlsRef?.current?.axis) {
+                    if (isGizmoAxisActive(activeTransformControlsRef)) {
                         return;
                     }
                     e.stopPropagation();

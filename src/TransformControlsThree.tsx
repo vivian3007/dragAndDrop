@@ -1,7 +1,24 @@
 import {TransformControls} from "@react-three/drei";
-import {useEffect} from "react";
+import React, {useEffect} from "react";
+import type * as THREE from "three";
+import type { TransformControls as TransformControlsImpl } from "three-stdlib";
+import type { OrbitControlsRef, TransformControlsRef, TransformMode } from "./editor/types";
 
-export default function TransformControlsThree ({transformRef, object, transformMode, setTransformMode, setIsDragging, orbitControlsRef, meshRef, shape, size, width, onUpdateShape, isSelected, activeTransformControlsRef} : {transformRef: any, object: any, transformMode: any, setTransformMode: any, setIsDragging: any, orbitControlsRef: any, meshRef: any, shape: any, size: any, width: any, onUpdateShape: any, isSelected: boolean, activeTransformControlsRef?: any}) {
+export default function TransformControlsThree ({transformRef, object, transformMode, setTransformMode, setIsDragging, orbitControlsRef, meshRef, shape, size, width, onUpdateShape, isSelected, activeTransformControlsRef} : {
+    transformRef: React.RefObject<TransformControlsImpl | null>;
+    object: THREE.Object3D | null;
+    transformMode: TransformMode;
+    setTransformMode: (mode: TransformMode) => void;
+    setIsDragging: (isDragging: boolean) => void;
+    orbitControlsRef: OrbitControlsRef;
+    meshRef: React.RefObject<THREE.Mesh | null>;
+    shape: Shape;
+    size: { width: number; height: number };
+    width: number;
+    onUpdateShape: (shape: Shape) => void;
+    isSelected: boolean;
+    activeTransformControlsRef?: TransformControlsRef;
+}) {
 
     useEffect(() => {
         if (activeTransformControlsRef) {
@@ -16,8 +33,8 @@ export default function TransformControlsThree ({transformRef, object, transform
 
     useEffect(() => {
         if (transformRef.current) {
-            transformRef.current.traverse((child: any) => {
-                if (child.isMesh) {
+            transformRef.current.traverse((child) => {
+                if ((child as THREE.Mesh).isMesh) {
                     child.renderOrder = 999;
                 }
             });
@@ -62,7 +79,7 @@ export default function TransformControlsThree ({transformRef, object, transform
 
         <TransformControls
             ref={transformRef}
-            object={object}
+            object={object ?? undefined}
             mode={transformMode}
             onMouseDown={() => {
                 setIsDragging(true);
@@ -79,7 +96,7 @@ export default function TransformControlsThree ({transformRef, object, transform
             onObjectChange={() => {
                 if (meshRef.current && shape) {
                     const mesh = meshRef.current;
-                    const updatedShape: any = {...shape};
+                    const updatedShape: Shape = {...shape};
 
                     if (transformMode === 'translate') {
                         updatedShape.x = mesh.position.x;

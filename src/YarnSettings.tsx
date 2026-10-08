@@ -9,8 +9,8 @@ export type YarnSettingsHandle = {
     save: () => void;
 };
 
-const YarnSettings = forwardRef<YarnSettingsHandle, {onUpdateYarnInfo: any,  yarnInfo: Yarn, onDirtyChange?: (dirty: boolean) => void}>(
-    function YarnSettings({onUpdateYarnInfo, yarnInfo, onDirtyChange}, ref) {
+const YarnSettings = forwardRef<YarnSettingsHandle, {amigurumiId: string, onUpdateYarnInfo: (yarn: Yarn) => void, yarnInfo: Yarn, onDirtyChange?: (dirty: boolean) => void}>(
+    function YarnSettings({amigurumiId, onUpdateYarnInfo, yarnInfo, onDirtyChange}, ref) {
     const [name, setName] = useState<string | null>(null);
     const [weight, setWeight] = useState<string | null>(null);
     const [mPerSkein, setMPerSkein] = useState<number | null>(null);
@@ -18,7 +18,6 @@ const YarnSettings = forwardRef<YarnSettingsHandle, {onUpdateYarnInfo: any,  yar
     const [hooksize, setHooksize] = useState<number | null>(null);
     const [color, setColor] = useState<string | null>(null);
     const [dirty, setDirty] = useState(false);
-    const storedAmigurumi = localStorage.getItem("amigurumi");
     const t = useT();
 
     const yarnWeights = [
@@ -47,12 +46,11 @@ const YarnSettings = forwardRef<YarnSettingsHandle, {onUpdateYarnInfo: any,  yar
                 user_id: auth.currentUser?.uid ?? null,
             };
 
-            if (!storedAmigurumi) throw new Error("Geen geopend ontwerp om het garen aan te koppelen");
             const docId = yarnInfo.id ? yarnInfo.id.toString() : uuidv4();
             const yarnRef = doc(db, "yarn", docId);
             await setDoc(yarnRef, yarnData, { merge: true });
 
-            const amigurumiRef = doc(db, "amigurumi", storedAmigurumi);
+            const amigurumiRef = doc(db, "amigurumi", amigurumiId);
             await setDoc(amigurumiRef, { yarn_id: docId }, { merge: true });
 
             // Het (eventueel net aangemaakte) id meegeven: anders maakt de volgende keer
@@ -69,7 +67,6 @@ const YarnSettings = forwardRef<YarnSettingsHandle, {onUpdateYarnInfo: any,  yar
 
             setDirty(false);
             toast.success(t("yarnSettings.saved"));
-            console.log("Yarn data saved successfully:", yarnData);
         } catch (error) {
             console.error("Fout bij opslaan yarn:", error);
             toast.error(t("yarnSettings.saveError", { message: (error as Error).message }));

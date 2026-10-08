@@ -1,18 +1,18 @@
 import {lazy, Suspense, useEffect, useState} from "react";
 import {useLocation, useNavigate, useParams} from "react-router-dom";
 import {Button, Card, Skeleton} from "@mui/material";
-import {doc, getDoc} from "firebase/firestore";
+import {collection, doc, getDoc, getDocs, query, where} from "firebase/firestore";
 import {db} from "../firebase-config.js";
 import generateSpherePattern from "./patterns/generateSpherePattern";
 import generateArmPattern from "./patterns/generateArmPattern";
 import { computePatternHeightCm, computePatternWidthCm } from "./geometry/patternBounds";
 import { useIntl } from "react-intl";
 import { useT } from "./i18n/LanguageProvider";
+import { usePatternTerms } from "./i18n/usePatternTerms";
+import { estimateYarnByColor, ROW_HEIGHTS, skeinsNeeded } from "./patterns/estimateYarn";
 
 // three.js pas laden als de preview echt in beeld komt.
 const PatternPreview3D = lazy(() => import("./PatternPreview3D.tsx"));
-import { usePatternTerms } from "./i18n/usePatternTerms";
-import { estimateYarnByColor, ROW_HEIGHTS, skeinsNeeded } from "./patterns/estimateYarn";
 
 // Splitst "Row 3: [1inc, 2sc] * 6 (24)" in een label- en tekst-kolom, zodat de
 // dubbele punten van alle rijen in de lijst netjes onder elkaar uitlijnen
@@ -35,34 +35,55 @@ const RowLine = ({ text }: { text: string }) => {
     );
 };
 
-// Vaste lege array: `?? []` maakte elke render een nieuwe array, waardoor de useEffect op
-// [shapes] eindeloos opnieuw liep (en de pagina bevroor) als er geen navigatie-state was.
+// Vaste lege arrays: `?? []` maakte elke render een nieuwe array, waardoor de useEffect op
+// [shapes] eindeloos opnieuw liep (en de pagina bevroor).
 const NO_SHAPES: Shape[] = [];
+const NO_INTERSECTIONS: Intersection[] = [];
 
 // Uitgewerkt patroon van één vorm.
 type PatternPart = ReturnType<typeof generateSpherePattern> | ReturnType<typeof generateArmPattern>;
 
-const Pattern = ({ shapes, yarnInfo, intersections } : {shapes: Shape[], yarnInfo: Yarn | null, intersections: any}) => {
+// Patroonpagina (/:amigurumi_id/pattern). Vanuit een overzicht of de editor komen ontwerp en
+// vormen mee in de navigatie-state, zodat de pagina meteen staat; na herladen of via een
+// gedeelde link haalt hij ze zelf op aan de hand van het id in de URL.
+const Pattern = () => {
+    const location = useLocation();
+    const navigate = useNavigate();
+    const { amigurumi_id: amigurumiId = "" } = useParams();
+    const stateAmigurumi = (location.state?.amigurumi as Amigurumi | undefined) ?? null;
+    const stateShapes = location.state?.shapes as Shape[] | undefined;
+
+    const [amigurumi, setAmigurumi] = useState<Amigurumi | null>(stateAmigurumi);
+    const [shapes, setShapes] = useState<Shape[]>(stateShapes ?? NO_SHAPES);
     const [patterns, setPatterns] = useState<PatternPart[]>([]);
-    // Door PatternPreview3D uit de 3D-scene berekend; null zolang de preview nog laadt.
-    const [computedIntersections, setComputedIntersections] = useState<any[] | null>(null);
-    // Het garen van dít amigurumi. De yarnInfo in de navigatie-state komt vanuit Home/My
-    // patterns/Favorites uit de App-state en kan bij een ander amigurumi horen (zelfde
-    // probleem als de intersections), dus we halen het hier zelf op via yarn_id.
-    const [fetchedYarn, setFetchedYarn] = useState<Yarn | null>(null);
+    // Door PatternPreview3D uit de 3D-scene berekend; leeg zolang de preview nog laadt.
+    const [computedIntersections, setComputedIntersections] = useState<Intersection[] | null>(null);
+    // Het garen van dít amigurumi, via z'n yarn_id.
+    const [yarnInfo, setYarnInfo] = useState<Yarn | null>(null);
     const intl = useIntl();
     const t = useT();
     const terms = usePatternTerms();
-    const location = useLocation();
-    const navigate = useNavigate();
-    const { amigurumi_id } = useParams();
 
     const rowHeights = ROW_HEIGHTS;
+    const intersections = computedIntersections ?? NO_INTERSECTIONS;
 
-    shapes = location.state?.shapes ?? NO_SHAPES;
-    const amigurumi = location.state?.amigurumi ?? null;
-    yarnInfo = fetchedYarn ?? location.state?.yarnInfo ?? null;
-    intersections = computedIntersections ?? location.state?.intersections ?? [];
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            const [designSnap, shapesSnap] = await Promise.all([
+                stateAmigurumi ? null : getDoc(doc(db, "amigurumi", amigurumiId)),
+                stateShapes ? null : getDocs(query(collection(db, "shapes"), where("amigurumi_id", "==", amigurumiId))),
+            ]);
+            if (cancelled) return;
+            if (designSnap?.exists()) setAmigurumi({ id: designSnap.id, ...designSnap.data() } as Amigurumi);
+            if (shapesSnap) setShapes(shapesSnap.docs.map((d) => ({ id: d.id, ...d.data() }) as Shape));
+        })().catch((error) => console.error("Fout bij ophalen van het patroon:", error));
+        return () => {
+            cancelled = true;
+        };
+    // Alleen opnieuw bij een ander ontwerp; de navigatie-state hoort bij dat moment.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [amigurumiId]);
 
     useEffect(() => {
         if (!amigurumi?.yarn_id) {
@@ -71,7 +92,7 @@ const Pattern = ({ shapes, yarnInfo, intersections } : {shapes: Shape[], yarnInf
         getDoc(doc(db, "yarn", amigurumi.yarn_id))
             .then((snap) => {
                 if (snap.exists()) {
-                    setFetchedYarn(snap.data() as Yarn);
+                    setYarnInfo(snap.data() as Yarn);
                 }
             })
             .catch((error) => console.error("Fout bij het ophalen van garen:", error));
@@ -90,9 +111,6 @@ const Pattern = ({ shapes, yarnInfo, intersections } : {shapes: Shape[], yarnInf
     useEffect(() => {
         if (shapes && shapes.length > 0) {
             const newPatterns = shapes.map((singleShape) => {
-                // singleShape.width *= singleShape.zoom;
-                // singleShape.height *= singleShape.zoom;
-                // singleShape.length *= singleShape.zoom;
                 switch (singleShape.type) {
                     case "Sphere":
                         return generateSpherePattern(singleShape, yarnWeight, rowHeights, intersections, terms);
@@ -106,7 +124,7 @@ const Pattern = ({ shapes, yarnInfo, intersections } : {shapes: Shape[], yarnInf
         } else {
             setPatterns([]);
         }
-    }, [shapes, yarnWeight, computedIntersections, terms]);
+    }, [shapes, yarnWeight, intersections, terms]);
 
     // Garendikte staat als Engelse waarde in Firestore ("Super Fine"); alleen het label
     // wordt vertaald, met de ruwe waarde als terugval voor onbekende diktes.
@@ -134,9 +152,6 @@ const Pattern = ({ shapes, yarnInfo, intersections } : {shapes: Shape[], yarnInf
             : t("pattern.yarnAmount", { meters });
     };
 
-    console.log(patterns);
-    console.log(intersections);
-
     return (
         <div>
             <div className="pattern">
@@ -152,29 +167,10 @@ const Pattern = ({ shapes, yarnInfo, intersections } : {shapes: Shape[], yarnInf
                         color="inherit"
                         style={{ backgroundColor: "var(--color-primary)", color: "var(--color-bg)" }}
                         onClick={() => {
-                            // Alleen Settingsbar.tsx (de "bekijk patroon"-knop in de editor) laat
-                            // `amigurumi` weg uit de navigatie-state; Home/My patterns/Favorites en
-                            // de detail-dialoog geven 'm altijd mee. Dat onderscheidt of we vanuit
-                            // de editor kwamen (die stale-shapes-fix hieronder nodig heeft) of vanuit
-                            // een patronen-overzicht (dat gewoon opnieuw uit Firestore laadt, dus een
-                            // normale terug-navigatie stuurt je daar correct naartoe).
-                            if (amigurumi) {
-                                navigate(-1);
-                                return;
-                            }
-
-                            // navigate(-1, {state}) roept enkel history.go(-1) aan — react-router
-                            // negeert de meegegeven state dan volledig en herstelt de *oorspronkelijke*
-                            // editor-locatie-state van vóór deze sessie, met eventueel inmiddels
-                            // verwijderde shapes erin. Expliciet terugnavigeren met de actuele shapes
-                            // voorkomt dat verwijderde shapes na het teruggaan weer verschijnen.
-                            // Let op: `meshes` bevat rauwe THREE.Mesh-objecten en kan niet via
-                            // history-state geserialiseerd worden (Editor.tsx leest dit ook niet
-                            // uit location.state, dus het hoort hier niet bij).
-                            navigate(`/${amigurumi_id}/editor`, {
-                                replace: true,
-                                state: { shapes, intersections },
-                            });
+                            // Terug naar waar je vandaan kwam (editor of een overzicht). Geopend
+                            // via een gedeelde link is er geen vorige pagina in de app: dan naar Home.
+                            if ((window.history.state?.idx ?? 0) > 0) navigate(-1);
+                            else navigate("/home");
                         }}
                     >
                         {t("pattern.goBack")}

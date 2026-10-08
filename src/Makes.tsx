@@ -14,9 +14,9 @@ import { CardGridSkeleton } from './Skeletons.tsx';
 import UserLink from './UserLink.tsx';
 import { sizedImageUrl, uploadPatternImage } from './uploadImage.ts';
 import { useT } from './i18n/LanguageProvider';
+import { timestampMillis } from './timestamps.ts';
 
-const createdAtMillis = (make: Make) =>
-    make.createdAt?.toMillis?.() ?? (make.createdAt instanceof Date ? make.createdAt.getTime() : 0);
+const createdAtMillis = (make: Make) => timestampMillis(make.createdAt);
 
 // Nieuwste eerst. Client-side sorteren i.p.v. orderBy in de query: where + orderBy op een
 // ander veld vraagt in Firestore om een samengestelde index.

@@ -47,7 +47,7 @@ function useDesignsByUsers(uids: string[]): { amigurumis: Amigurumi[]; loading: 
     return { amigurumis, loading, error };
 }
 
-const Following = ({ yarnInfo, intersections }: { yarnInfo: Yarn; intersections: Intersection[] }) => {
+const Following = () => {
     const t = useT();
     const { followingIds, loaded } = useFollowing();
     const uids = useMemo(() => Array.from(followingIds), [followingIds]);
@@ -58,8 +58,6 @@ const Following = ({ yarnInfo, intersections }: { yarnInfo: Yarn; intersections:
             amigurumis={amigurumis}
             loading={!loaded || loading}
             error={error}
-            yarnInfo={yarnInfo}
-            intersections={intersections}
             emptyMessage={
                 uids.length === 0 ? (
                     <>

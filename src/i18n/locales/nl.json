@@ -63,6 +63,7 @@
   "editor.helpDialog.title": "Zo werkt het",
   "editor.mirrorShape": "Spiegelen",
   "editor.mirroredName": "{name} (gespiegeld)",
+  "editor.notFound": "Dit ontwerp bestaat niet (meer).",
   "editor.pattern": "Patroon",
   "editor.save": "Opslaan",
   "editor.shortcut.delete": "Geselecteerde vorm verwijderen",

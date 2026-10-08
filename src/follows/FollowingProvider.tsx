@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { collection, doc, getCountFromServer, onSnapshot, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import { db } from '../../firebase-config.js';
@@ -75,31 +75,43 @@ export function FollowingProvider({ children }: { children: React.ReactNode }) {
 
 export const useFollowing = () => useContext(FollowingContext);
 
-// Aantal volgers en gevolgden van een profiel. Geteld op de server (zonder alle documenten op
-// te halen); opnieuw geteld als jij die persoon net (ont)volgd hebt. `undefined` zolang het
-// telt, `null` als tellen mislukte (dan laat het profiel de aantallen gewoon weg).
+// Aantal volgers en gevolgden van een profiel, geteld op de server (zonder alle documenten
+// op te halen). (Ont)volg je die persoon daarna, dan rekenen we dat lokaal bij: opnieuw tellen
+// zou nog de oude stand geven, omdat de wijziging dan nog onderweg is naar de server.
+// `undefined` zolang het telt, `null` als tellen mislukte (dan laat het profiel de aantallen weg).
 export function useFollowCounts(uid: string): { followers: number; following: number } | null | undefined {
-    const { followingIds } = useFollowing();
+    const { followingIds, loaded } = useFollowing();
     const iFollow = followingIds.has(uid);
-    const [counts, setCounts] = useState<{ followers: number; following: number } | null | undefined>(undefined);
+    const [counted, setCounted] = useState<{ followers: number; following: number; iFollowed: boolean } | null | undefined>(undefined);
+    const iFollowRef = useRef(iFollow);
+    iFollowRef.current = iFollow;
 
     useEffect(() => {
+        // Pas tellen als bekend is of jij deze persoon volgt; anders klopt de correctie niet.
+        if (!loaded) return;
         let cancelled = false;
+        setCounted(undefined);
         Promise.all([
             getCountFromServer(collection(db, 'users', uid, 'followers')),
             getCountFromServer(collection(db, 'users', uid, 'following')),
         ])
             .then(([followers, following]) => {
-                if (!cancelled) setCounts({ followers: followers.data().count, following: following.data().count });
+                if (!cancelled) {
+                    setCounted({ followers: followers.data().count, following: following.data().count, iFollowed: iFollowRef.current });
+                }
             })
             .catch((error) => {
                 console.error('Fout bij tellen van volgers:', error);
-                if (!cancelled) setCounts(null);
+                if (!cancelled) setCounted(null);
             });
         return () => {
             cancelled = true;
         };
-    }, [uid, iFollow]);
+    }, [uid, loaded]);
 
-    return counts;
+    if (!counted) return counted;
+    return {
+        followers: counted.followers + Number(iFollow) - Number(counted.iFollowed),
+        following: counted.following,
+    };
 }

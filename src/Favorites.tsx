@@ -8,7 +8,7 @@ import { useT } from './i18n/LanguageProvider';
 
 // Jouw persoonlijke favorieten (FavoritesProvider) uit alle ontwerpen. Bewust geen
 // `where(documentId(), 'in', ids)`: dat kan maar 30 ids per query aan.
-const Favorites = ({ yarnInfo, intersections }: { yarnInfo: Yarn; intersections: Intersection[] }) => {
+const Favorites = () => {
     const t = useT();
     const { favoriteIds, loaded: favoritesLoaded } = useFavorites();
     const [snapshot, designsLoading, error] = useCollection(query(collection(db, 'amigurumi')));
@@ -25,8 +25,6 @@ const Favorites = ({ yarnInfo, intersections }: { yarnInfo: Yarn; intersections:
             amigurumis={amigurumis}
             loading={designsLoading || !favoritesLoaded}
             error={error}
-            yarnInfo={yarnInfo}
-            intersections={intersections}
             emptyMessage={t('favorites.empty')}
         />
     );

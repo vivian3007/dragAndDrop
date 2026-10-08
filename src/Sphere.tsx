@@ -1,6 +1,9 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {useLoader, useThree} from '@react-three/fiber';
 import TransformControlsThree from "./TransformControlsThree.tsx";
+import type { TransformControls as TransformControlsImpl } from 'three-stdlib';
+import { isGizmoAxisActive } from "./editor/types";
+import type { ShapeComponentProps } from "./editor/types";
 import * as THREE from 'three';
 import { WORLD_SCALE_FACTOR } from "./geometry/units";
 
@@ -15,18 +18,7 @@ function Sphere({
                                    setTransformMode,
                                    onDraggingChange,
                                    activeTransformControlsRef,
-                               }: {
-    id: string;
-    shape: any;
-    orbitControlsRef: React.MutableRefObject<any>;
-    isSelected: boolean;
-    onSelect: (id: string) => void;
-    onUpdateShape: (shape: any) => void;
-    transformMode: any;
-    setTransformMode: any;
-    onDraggingChange?: (isDragging: boolean) => void;
-    activeTransformControlsRef?: React.MutableRefObject<any>;
-}) {
+                               }: ShapeComponentProps) {
     const width = shape?.width ?? 50;
     const height = shape?.height ?? 50;
     const length = shape?.length ?? 50;
@@ -39,7 +31,7 @@ function Sphere({
     const zoom = shape?.zoom ?? 1;
     const { camera, size } = useThree();
     const meshRef = useRef<THREE.Mesh>(null);
-    const transformControlsRef = useRef<any>(null);
+    const transformControlsRef = useRef<TransformControlsImpl | null>(null);
     const [isDragging, setIsDragging] = useState(false);
 
     const handleDraggingChange = (value: boolean) => {
@@ -93,7 +85,7 @@ function Sphere({
         <>
             <group
                 onPointerDown={(e) => {
-                    if (activeTransformControlsRef?.current?.axis) {
+                    if (isGizmoAxisActive(activeTransformControlsRef)) {
                         return;
                     }
                     e.stopPropagation();

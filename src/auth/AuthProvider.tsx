@@ -73,9 +73,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export const useAuth = () => useContext(AuthContext);
 
-// Sleutels in localStorage die bij een gebruiker horen (bv. het laatst geopende ontwerp in
-// de editor). Bij uitloggen weg, zodat de volgende persoon op dezelfde computer niet in
-// andermans ontwerp terechtkomt. Taalkeuze e.d. blijven bewust staan.
+// Sleutels in localStorage die bij een gebruiker horen. 'amigurumi' (het laatst geopende
+// ontwerp) gebruikt de editor niet meer — die leest het ontwerp uit de URL — maar oude
+// browsers kunnen hem nog hebben, dus bij uitloggen ruimen we hem nog op.
 const USER_STORAGE_KEYS = ['amigurumi'];
 
 export async function logOut() {

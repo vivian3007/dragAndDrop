@@ -25,16 +25,12 @@ const PatternBrowser = ({
     amigurumis,
     loading,
     error,
-    yarnInfo,
-    intersections,
     actions,
     emptyMessage,
 }: {
     amigurumis: Amigurumi[];
     loading: boolean;
     error?: Error | null;
-    yarnInfo: Yarn;
-    intersections: Intersection[];
     // Extra knop(pen) in de filterbalk, bv. "Nieuw patroon".
     actions?: React.ReactNode;
     // Getoond als er überhaupt geen ontwerpen zijn (los van zoeken/filteren).
@@ -77,11 +73,11 @@ const PatternBrowser = ({
         try {
             const shapesSnapshot = await getDocs(query(collection(db, 'shapes'), where('amigurumi_id', '==', amigurumi.id)));
             const shapes = shapesSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Shape[];
-            navigate(`/${amigurumi.id}/pattern`, { state: { amigurumi, shapes, yarnInfo, intersections } });
+            navigate(`/${amigurumi.id}/pattern`, { state: { amigurumi, shapes } });
         } catch (error) {
             console.error('Fout bij het ophalen van shapes:', error);
         }
-    }, [navigate, yarnInfo, intersections]);
+    }, [navigate]);
 
     if (error) {
         return <Typography color="error">{t('patterns.loadError', { message: error.message })}</Typography>;

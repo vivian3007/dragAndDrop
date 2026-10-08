@@ -20,10 +20,10 @@ function ShapeSettings({
                                         shapeColor,
                                         setShapeColor,
                                     }: {
-    activeShape: any,
-    onUpdateShape: any,
+    activeShape: Shape | undefined,
+    onUpdateShape: (shape: Shape) => void,
     shapeColor: string,
-    setShapeColor: any,
+    setShapeColor: (color: string) => void,
 }) {
     const t = useT();
     const [width, setWidth] = useState<number | null>(null);
@@ -44,20 +44,16 @@ function ShapeSettings({
     // Bollen zijn in 3D 2× zo groot als hun width (straal vs diameter), zie pixelsPerCm.
     const pxPerCm = pixelsPerCm(activeShape?.type);
 
-    const handleUpdate = (updates: Partial<any>) => {
+    const handleUpdate = (updates: Partial<Shape>) => {
         if (activeShape) {
-            onUpdateShape({
-                id: activeShape.id,
-                ...activeShape,
-                ...updates
-            });
+            onUpdateShape({ ...activeShape, ...updates });
         }
     };
 
     useEffect(() => {
-        setX(activeShape?.x);
-        setY(activeShape?.y);
-        setZ(activeShape?.z);
+        setX(activeShape?.x ?? null);
+        setY(activeShape?.y ?? null);
+        setZ(activeShape?.z ?? null);
         setWidth(activeShape ? activeShape.width / pxPerCm * activeShape.zoom : 50);
         setHeight(activeShape ? activeShape.height / pxPerCm * activeShape.zoom : 50);
         setLength(activeShape ? activeShape.length / pxPerCm * activeShape.zoom : 50);
@@ -183,11 +179,7 @@ function ShapeSettings({
         setShapeColor(newColor);
         const current = activeShapeRef.current;
         if (current) {
-            onUpdateShape({
-                id: current.id,
-                ...current,
-                color: newColor
-            });
+            onUpdateShape({ ...current, color: newColor });
         }
     }, [onUpdateShape, setShapeColor]);
 

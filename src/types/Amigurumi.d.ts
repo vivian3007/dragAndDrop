@@ -18,7 +18,8 @@ interface Amigurumi {
     favoriteCount?: number;
     // Firebase-uid van de eigenaar. (Vroeger het e-mailadres; zie scripts/migrate-user-ids.mjs.)
     user_id: string;
-    createdAt?: any;
+    // Firestore-tijdstempel; bij het aanmaken nog een serverTimestamp()-placeholder.
+    createdAt?: import('firebase/firestore').Timestamp | import('firebase/firestore').FieldValue | Date | null;
     notes?: string | null;
     imageUrl?: string | null;
     // Herkomstketen, dichtstbijzijnde bron eerst: [direct origineel, origineel daarvan, ...].
