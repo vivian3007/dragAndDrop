@@ -9,7 +9,8 @@ import Sidebar from "./Sidebar.tsx";
 import { useShapeHistory } from "./useShapeHistory";
 import { saveShapeDoc } from "./shapeDocs";
 import { mirrorShape } from "./geometry/mirrorShape";
-import { attachToNearest, NudgeDirection, nudgeShape } from "./geometry/attach";
+import { attachToNearest, NudgeDirection, nudgeShape, snapIfTouching } from "./geometry/attach";
+import type { TransformMode } from "./editor/types";
 import * as THREE from "three";
 import { useEditorState } from "./editor/useEditorState";
 import { useT } from "./i18n/LanguageProvider";
@@ -125,6 +126,21 @@ const Editor = () => {
         toast.success(t("editor.attached", { name: target?.name || t(`shapes.${target?.type ?? "Sphere"}`) }));
     }, [droppedShapes, updateShape, t]);
 
+    // Na verplaatsen met de gizmo: raakt de vorm een andere, dan klikt hij er netjes op vast
+    // (niet na draaien of schalen: dat zou je eigen draaiing ongedaan maken). Een frame later,
+    // zodat de laatste positie van het slepen al in de state staat.
+    const shapesRef = useRef(droppedShapes);
+    shapesRef.current = droppedShapes;
+    const handleTransformEnd = useCallback((id: string, mode: TransformMode) => {
+        if (mode !== "translate") return;
+        requestAnimationFrame(() => {
+            const shape = shapesRef.current.find((s) => s.id === id);
+            if (!shape) return;
+            const snapped = snapIfTouching(shape, shapesRef.current);
+            if (snapped) updateShape(snapped.shape);
+        });
+    }, [updateShape]);
+
     // Pijltjes verschuiven de geselecteerde vorm, links/rechts/omhoog/omlaag zoals je het op
     // het scherm ziet (Shift = fijner). Zit hij aan een andere vorm vast, dan schuift hij
     // over dat oppervlak en blijft hij aangesloten; een losse vorm die een andere raakt, sluit
@@ -184,6 +200,7 @@ const Editor = () => {
         <div className="editor">
             <Sidebar
                 amigurumiId={amigurumiId}
+                shapes={droppedShapes}
                 setDroppedShapes={setShapesFromUser}
                 setActiveId={setActiveId}
                 threeJsContainerRef={threeJsContainerRef}
@@ -212,6 +229,7 @@ const Editor = () => {
                 setTransformMode={setTransformMode}
                 setShowGrid={setShowGrid}
                 showGrid={showGrid}
+                onTransformEnd={handleTransformEnd}
             />
             <Settingsbar
                 amigurumiId={amigurumiId}

@@ -6,6 +6,7 @@ import type {Camera} from "three";
 import { toast } from "react-toastify";
 import type { SetState } from "./editor/types";
 import { SHAPE_TYPES } from "./shapeTypes";
+import { snapIfTouching } from "./geometry/attach";
 import {setDoc, doc} from "firebase/firestore";
 import {db} from "../firebase-config.js";
 
@@ -26,8 +27,9 @@ const getEventCoordinates = (e: PointerLikeEvent) => {
     return { x: e.clientX, y: e.clientY };
 };
 
-function Shapebar({ amigurumiId, setDroppedShapes, setActiveId, threeJsContainerRef, dragging, setDragging, camera }: {
+function Shapebar({ amigurumiId, shapes, setDroppedShapes, setActiveId, threeJsContainerRef, dragging, setDragging, camera }: {
     amigurumiId: string;
+    shapes: Shape[];
     setDroppedShapes: SetState<Shape[]>;
     setActiveId: SetState<string | null>;
     threeJsContainerRef: React.RefObject<HTMLElement | null>;
@@ -111,11 +113,13 @@ function Shapebar({ amigurumiId, setDroppedShapes, setActiveId, threeJsContainer
                     zoom: 1,
                 };
 
-                setDroppedShapes((prevShapes) => [...prevShapes, newShape]);
-                setActiveId(newShape.id);
+                // Neergezet tegen (of in) een andere vorm: meteen netjes aansluiten.
+                const placed = { ...newShape, ...(snapIfTouching(newShape, shapes)?.shape ?? {}) };
+                setDroppedShapes((prevShapes) => [...prevShapes, placed]);
+                setActiveId(placed.id);
 
                 try {
-                    const { id, ...shapeData } = newShape;
+                    const { id, ...shapeData } = placed;
                     await setDoc(doc(db, "shapes", id), shapeData);
                 } catch (error) {
                     console.error("Fout bij opslaan van nieuwe vorm:", error);

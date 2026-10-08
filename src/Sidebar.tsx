@@ -4,8 +4,9 @@ import type { SetState, SetView, TransformMode } from "./editor/types";
 import Shapebar from "./Shapebar";
 import Toolbar from "./Toolbar";
 
-function Sidebar({ amigurumiId, setDroppedShapes, setActiveId, threeJsContainerRef, dragging, setDragging, camera, setView, setTransformMode, showGrid, setShowGrid, onUndo, onRedo, canUndo, canRedo }: {
+function Sidebar({ amigurumiId, shapes, setDroppedShapes, setActiveId, threeJsContainerRef, dragging, setDragging, camera, setView, setTransformMode, showGrid, setShowGrid, onUndo, onRedo, canUndo, canRedo }: {
     amigurumiId: string;
+    shapes: Shape[];
     setDroppedShapes: SetState<Shape[]>;
     setActiveId: SetState<string | null>;
     threeJsContainerRef: React.RefObject<HTMLElement | null>;
@@ -24,7 +25,7 @@ function Sidebar({ amigurumiId, setDroppedShapes, setActiveId, threeJsContainerR
 
     return (
         <nav className="Navbar">
-            <Shapebar amigurumiId={amigurumiId} setActiveId={setActiveId} threeJsContainerRef={threeJsContainerRef} dragging={dragging} setDragging={setDragging} camera={camera} setDroppedShapes={setDroppedShapes} />
+            <Shapebar amigurumiId={amigurumiId} shapes={shapes} setActiveId={setActiveId} threeJsContainerRef={threeJsContainerRef} dragging={dragging} setDragging={setDragging} camera={camera} setDroppedShapes={setDroppedShapes} />
             <Toolbar setView={setView} setTransformMode={setTransformMode} showGrid={showGrid} setShowGrid={setShowGrid} onUndo={onUndo} onRedo={onRedo} canUndo={canUndo} canRedo={canRedo} />
         </nav>
     );

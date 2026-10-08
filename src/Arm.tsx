@@ -20,6 +20,7 @@ function Arm({
                                          setTransformMode,
                                          onDraggingChange,
                                          activeTransformControlsRef,
+                                         onTransformEnd,
                                      }: ShapeComponentProps) {
 
     const width = shape?.width ?? 50;
@@ -90,7 +91,7 @@ function Arm({
                 </mesh>
             </group>
             {isSelected && (
-                <TransformControlsThree transformRef={transformControlsRef} object={meshRef.current} transformMode={transformMode} setTransformMode={setTransformMode} isSelected={isSelected} setIsDragging={handleDraggingChange} orbitControlsRef={orbitControlsRef} meshRef={meshRef} onUpdateShape={onUpdateShape} shape={shape} width={width} activeTransformControlsRef={activeTransformControlsRef} />
+                <TransformControlsThree transformRef={transformControlsRef} object={meshRef.current} transformMode={transformMode} setTransformMode={setTransformMode} isSelected={isSelected} setIsDragging={handleDraggingChange} orbitControlsRef={orbitControlsRef} meshRef={meshRef} onUpdateShape={onUpdateShape} shape={shape} width={width} activeTransformControlsRef={activeTransformControlsRef} onTransformEnd={() => onTransformEnd?.(id, transformMode)} />
             )}
         </>
     );

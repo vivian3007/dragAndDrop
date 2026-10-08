@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { attachToNearest, containsPoint, findAttachedTarget, nudgeShape, rimPoints } from "./attach";
+import { attachToNearest, containsPoint, findAttachedTarget, nudgeShape, rimPoints, snapIfTouching } from "./attach";
 import { makeShape } from "../patterns/testShapes";
 
 // Lijf: (uitgerekte) bol rond de oorsprong. Maten in opslag-eenheden (×0,01 = wereld).
@@ -166,5 +166,26 @@ describe("pijltjestoetsen (nudgeShape)", () => {
         for (let i = 0; i < 6 && !result.targetId; i++) result = nudgeShape(result.shape, [body, leg], "up", front);
         expect(result.targetId).toBe("lijf");
         expectRimInside(result.shape, body);
+    });
+});
+
+describe("vastklikken bij loslaten (snapIfTouching)", () => {
+    it("een poot die schuin in het lijf steekt, klikt er netjes op vast", () => {
+        const leg = makeShape({ id: "poot", type: "Cylinder", width: 75, height: 70, length: 75, x: 0.6, y: -1.5, rotation_z: 150 });
+        const result = snapIfTouching(leg, [body, leg])!;
+        expect(result.targetId).toBe("lijf");
+        expectRimInside(result.shape, body);
+    });
+
+    it("net naast het lijf losgelaten (binnen een halve cm): klikt ook vast", () => {
+        const head = makeShape({ id: "hoofd", type: "Sphere", width: 130, height: 120, length: 125, y: 2.6 });
+        const ear = attachToNearest(makeShape({ id: "oor", type: "Cone", width: 90, height: 70, length: 60, y: 4 }), [head])!.shape;
+        const lifted = { ...ear, y: ear.y + 0.12 };
+        expect(snapIfTouching(lifted, [head])?.targetId).toBe("hoofd");
+    });
+
+    it("ver weg losgelaten: blijft gewoon staan", () => {
+        const far = makeShape({ id: "los", type: "Cone", width: 50, height: 50, length: 50, x: 6 });
+        expect(snapIfTouching(far, [body, far])).toBeNull();
     });
 });

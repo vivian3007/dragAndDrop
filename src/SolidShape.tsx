@@ -24,6 +24,7 @@ function SolidShape({
     setTransformMode,
     onDraggingChange,
     activeTransformControlsRef,
+    onTransformEnd,
     type,
 }: ShapeComponentProps & { type: SolidShapeType }) {
     const width = shape?.width ?? 50;
@@ -83,7 +84,7 @@ function SolidShape({
                 </mesh>
             </group>
             {isSelected && (
-                <TransformControlsThree transformRef={transformControlsRef} object={meshRef.current} transformMode={transformMode} setTransformMode={setTransformMode} isSelected={isSelected} setIsDragging={handleDraggingChange} orbitControlsRef={orbitControlsRef} meshRef={meshRef} onUpdateShape={onUpdateShape} shape={shape} width={width} activeTransformControlsRef={activeTransformControlsRef} />
+                <TransformControlsThree transformRef={transformControlsRef} object={meshRef.current} transformMode={transformMode} setTransformMode={setTransformMode} isSelected={isSelected} setIsDragging={handleDraggingChange} orbitControlsRef={orbitControlsRef} meshRef={meshRef} onUpdateShape={onUpdateShape} shape={shape} width={width} activeTransformControlsRef={activeTransformControlsRef} onTransformEnd={() => onTransformEnd?.(id, transformMode)} />
             )}
         </>
     );

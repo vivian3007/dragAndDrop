@@ -34,6 +34,8 @@ export type ShapeComponentProps = {
     setTransformMode: (mode: TransformMode) => void;
     onDraggingChange?: (isDragging: boolean) => void;
     activeTransformControlsRef?: TransformControlsRef;
+    // Na loslaten van de gizmo (met de modus waarin gesleept werd), bv. om vast te klikken.
+    onTransformEnd?: (id: string, mode: TransformMode) => void;
 };
 
 // Heeft de gebruiker net een as van de verplaats/draai/schaal-gizmo vastgepakt? Dan telt een

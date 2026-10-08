@@ -303,17 +303,30 @@ export function nudgeShape(
     return { shape: moved, targetId: null };
 }
 
-// Een losse vorm "raakt" een andere vorm als z'n contactpunt binnen een kleine afstand van
-// het oppervlak ligt (zodat hij er bij het opschuiven niet doorheen springt).
-function touchingTarget(shape: Shape, others: Shape[]): Shape | null {
+// Een losse vorm "raakt" een andere vorm als z'n contactpunt binnen `tolerance` van het
+// oppervlak ligt (zodat hij er bij het opschuiven niet doorheen springt).
+function touchingTarget(shape: Shape, others: Shape[], tolerance = MOVE_STEP.normal * 0.75): Shape | null {
     for (const other of others) {
         if (other.id === shape.id) continue;
         const solid = new Solid(other);
         const point = contactPoint(shape, solid);
         const surface = solid.surfaceTowards(directionFrom(solid, point));
-        if (surface.distanceTo(point) < MOVE_STEP.normal * 0.75) return other;
+        if (surface.distanceTo(point) < tolerance) return other;
     }
     return null;
+}
+
+// Hoe dicht een losgelaten vorm bij een andere moet zijn om vast te klikken (wereld-eenheden,
+// ±0,5 cm): ruimer dan bij de pijltjes, want slepen met de muis is minder precies.
+const SNAP_TOLERANCE = 0.2;
+
+// Na slepen of neerzetten: raakt (of steekt) de vorm in een andere vorm, dan sluit hij er
+// netjes op aan. Anders null: dan blijft hij staan waar hij is losgelaten.
+export function snapIfTouching(shape: Shape, others: Shape[]): AttachResult | null {
+    const target = findAttachedTarget(shape, others) ?? touchingTarget(shape, others, SNAP_TOLERANCE);
+    if (!target) return null;
+    const solid = new Solid(target);
+    return { shape: attachTo(shape, solid, directionFrom(solid, attachPoint(shape))), targetId: target.id };
 }
 
 // Voor tests: de rand (onderkant) van een aangesloten arm/cilinder/kegel in wereldruimte, en

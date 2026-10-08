@@ -23,6 +23,7 @@ export default function ThreeJsField({
     showGrid,
     setShowGrid,
     setCamera,
+    onTransformEnd,
 }: {
     droppedShapes: Shape[];
     threeJsContainerRef: React.RefObject<HTMLCanvasElement | null>;
@@ -36,6 +37,7 @@ export default function ThreeJsField({
     showGrid: boolean;
     setShowGrid: SetState<boolean>;
     setCamera: (camera: THREE.Camera) => void;
+    onTransformEnd?: (id: string, mode: TransformMode) => void;
 }) {
     const orbitControlsRef = useRef<OrbitControlsImpl | null>(null);
     const activeTransformControlsRef = useRef<TransformControlsImpl | null>(null);
@@ -126,6 +128,7 @@ export default function ThreeJsField({
                                 setTransformMode={setTransformMode}
                                 onDraggingChange={setIsDragging}
                                 activeTransformControlsRef={activeTransformControlsRef}
+                                onTransformEnd={onTransformEnd}
                             />
                     );
                 })}

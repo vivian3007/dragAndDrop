@@ -5,7 +5,7 @@ import type { TransformControls as TransformControlsImpl } from "three-stdlib";
 import type { OrbitControlsRef, TransformControlsRef, TransformMode } from "./editor/types";
 import { sizeFromMeshScale } from "./geometry/units";
 
-export default function TransformControlsThree ({transformRef, object, transformMode, setTransformMode, setIsDragging, orbitControlsRef, meshRef, shape, width, onUpdateShape, isSelected, activeTransformControlsRef} : {
+export default function TransformControlsThree ({transformRef, object, transformMode, setTransformMode, setIsDragging, orbitControlsRef, meshRef, shape, width, onUpdateShape, isSelected, activeTransformControlsRef, onTransformEnd} : {
     transformRef: React.RefObject<TransformControlsImpl | null>;
     object: THREE.Object3D | null;
     transformMode: TransformMode;
@@ -18,6 +18,7 @@ export default function TransformControlsThree ({transformRef, object, transform
     onUpdateShape: (shape: Shape) => void;
     isSelected: boolean;
     activeTransformControlsRef?: TransformControlsRef;
+    onTransformEnd?: () => void;
 }) {
 
     useEffect(() => {
@@ -89,6 +90,7 @@ export default function TransformControlsThree ({transformRef, object, transform
             }}
             onMouseUp={() => {
                 setIsDragging(false);
+                onTransformEnd?.();
                 if (orbitControlsRef.current) {
                     orbitControlsRef.current.enabled = true;
                 }
