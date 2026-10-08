@@ -13,6 +13,7 @@ function Settingsbar({
                                         onUpdateShape,
                                         onDeleteShape,
                                         onMirrorShape,
+                                        onAttachShape,
                                         shapeColor,
                                         setShapeColor,
                                         droppedShapes,
@@ -24,6 +25,7 @@ function Settingsbar({
     onUpdateShape: (shape: Shape) => void,
     onDeleteShape: (id: string) => void,
     onMirrorShape: (id: string) => void,
+    onAttachShape: (id: string) => void,
     shapeColor: string,
     setShapeColor: (color: string) => void,
     droppedShapes: Shape[],
@@ -102,15 +104,27 @@ function Settingsbar({
             </div>
             <div className="settings-bar-footer" style={{marginBottom: 20, alignItems: "center", display: "flex", flexDirection: "column"}}>
                 {!showYarnSettings && activeShape && (
-                    <Button
-                        type="button"
-                        variant="outlined"
-                        color="inherit"
-                        sx={{width: 1, borderColor: "var(--color-primary)", color: "var(--color-primary)", marginBottom: "10px"}}
-                        onClick={() => onMirrorShape(activeShape.id)}
-                    >
-                        {t("editor.mirrorShape")}
-                    </Button>
+                    <div style={{ display: "flex", gap: 8, width: "100%", marginBottom: 10 }}>
+                        <Button
+                            type="button"
+                            variant="outlined"
+                            color="inherit"
+                            title={t("editor.attachShapeHint")}
+                            sx={{flex: 1, borderColor: "var(--color-primary)", color: "var(--color-primary)"}}
+                            onClick={() => onAttachShape(activeShape.id)}
+                        >
+                            {t("editor.attachShape")}
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outlined"
+                            color="inherit"
+                            sx={{flex: 1, borderColor: "var(--color-primary)", color: "var(--color-primary)"}}
+                            onClick={() => onMirrorShape(activeShape.id)}
+                        >
+                            {t("editor.mirrorShape")}
+                        </Button>
+                    </div>
                 )}
                 {!showYarnSettings && activeShape && (
                     <Button

@@ -9,6 +9,7 @@ import Sidebar from "./Sidebar.tsx";
 import { useShapeHistory } from "./useShapeHistory";
 import { saveShapeDoc } from "./shapeDocs";
 import { mirrorShape } from "./geometry/mirrorShape";
+import { attachToNearest } from "./geometry/attach";
 import { useEditorState } from "./editor/useEditorState";
 import { useT } from "./i18n/LanguageProvider";
 
@@ -108,6 +109,21 @@ const Editor = () => {
         });
     }, [droppedShapes, checkpoint, setDroppedShapes, setActiveId, t, amigurumiId]);
 
+    // Sluit de vorm netjes aan op de dichtstbijzijnde andere vorm (zie geometry/attach.ts).
+    // Via updateShape, dus met een undo-stap en gewoon opgeslagen.
+    const handleAttachShape = useCallback((id: string) => {
+        const source = droppedShapes.find((shape) => shape.id === id);
+        if (!source) return;
+        const result = attachToNearest(source, droppedShapes);
+        if (!result) {
+            toast.info(t("editor.attachNoTarget"));
+            return;
+        }
+        updateShape(result.shape);
+        const target = droppedShapes.find((shape) => shape.id === result.targetId);
+        toast.success(t("editor.attached", { name: target?.name || t(`shapes.${target?.type ?? "Sphere"}`) }));
+    }, [droppedShapes, updateShape, t]);
+
     // Ctrl/Cmd+Z = ongedaan maken, Ctrl/Cmd+Shift+Z of Ctrl+Y = opnieuw. Niet in invoervelden,
     // daar hoort Ctrl+Z bij de tekst.
     useEffect(() => {
@@ -175,6 +191,7 @@ const Editor = () => {
                 onUpdateShape={updateShape}
                 onDeleteShape={deleteShape}
                 onMirrorShape={handleMirrorShape}
+                onAttachShape={handleAttachShape}
                 shapeColor={shapeColor}
                 setShapeColor={setShapeColor}
                 droppedShapes={droppedShapes}
