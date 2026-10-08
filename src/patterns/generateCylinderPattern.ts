@@ -3,11 +3,15 @@ import { shapeDimensionCm } from "../geometry/units";
 import { maxStitchesForDiameter, STITCH_WIDTH_PER_ROW_HEIGHT } from "./stitchGeometry";
 
 // Cilinder, dicht aan beide kanten (bv. een lijf, poot of hoed): een platte bodem, rechte
-// zijkant en een platte bovenkant. In 3D (Cylinder.tsx) ligt de oorsprong in het midden van
+// zijkant en een platte bovenkant. In 3D (SolidShape.tsx) ligt de oorsprong in het midden van
 // de bodem, met lokale hoogte 0..1 en diameter 1 — net als de Arm.
 //
 // Bodem: meerderen tot de omtrek (die rondes liggen plat, dus tellen niet mee in de hoogte).
 // Zijkant: rechte rondes over de hele hoogte. Bovenkant: plat minderen tot 6.
+//
+// Wat het een cilinder maakt en geen langgerekte bol: de eerste en de laatste zijronde worden
+// in de achterste lus gehaakt (BLO). Daar knikt het werk 90°, zodat bodem en bovenkant plat
+// blijven met een scherpe rand. Zonder die rondes heeft het precies de opbouw van een bol.
 const generateCylinderPattern = (shape: Shape, yarnWeight: string, rowHeights: Record<string, number>, intersections: Intersection[], t: PatternTerms = englishPatternTerms) => {
     const rowHeightCm = rowHeights[yarnWeight] ?? rowHeights.Medium;
     const stitchWidthCm = rowHeightCm * STITCH_WIDTH_PER_ROW_HEIGHT;
@@ -52,8 +56,17 @@ const generateCylinderPattern = (shape: Shape, yarnWeight: string, rowHeights: R
 
     const startRow = incRows + 1;
     const endRow = incRows + sideRows;
-    const rowText = sideRows === 1 ? t.row(startRow) : t.row(`${startRow}-${endRow}`);
-    scArray.push(`${rowText}: ${t.sc(maxStitches)} (${maxStitches})`);
+    // Eerste zijronde in de achterste lus: de rand onderaan.
+    scArray.push(`${t.row(startRow)}: ${t.scBackLoop(maxStitches)} (${maxStitches})`);
+    if (sideRows >= 3) {
+        const middle = sideRows === 3 ? t.row(startRow + 1) : t.row(`${startRow + 1}-${endRow - 1}`);
+        scArray.push(`${middle}: ${t.sc(maxStitches)} (${maxStitches})`);
+    }
+    // Laatste zijronde in de achterste lus: de rand bovenaan, daarna plat minderen. (Bij één
+    // zijronde doet die ene ronde beide.)
+    if (sideRows >= 2) {
+        scArray.push(`${t.row(endRow)}: ${t.scBackLoop(maxStitches)} (${maxStitches})`);
+    }
 
     // Minderen tot 12; de slotronde "6 min (6)" op `lastRow` schrijft Pattern.tsx zelf.
     for (let stitches = maxStitches - 6, row = endRow + 1; stitches >= 12; stitches -= 6, row++) {

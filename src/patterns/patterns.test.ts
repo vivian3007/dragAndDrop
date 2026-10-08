@@ -175,6 +175,34 @@ describe.each([
     });
 });
 
+describe("generateCylinderPattern: platte bodem en bovenkant (achterste lus)", () => {
+    const sideRowsOf = (pattern: PatternPart) =>
+        pattern.scArray.flatMap((line) => Array.from({ length: rowSpan(line) }, () => line));
+
+    it("de eerste en de laatste zijronde zijn in de achterste lus, de rest niet", () => {
+        const pattern = generateCylinderPattern(shapeOfCm("Cylinder", { width: 4, height: 6, length: 4 }), "Medium", ROW_HEIGHTS, []);
+        const sides = sideRowsOf(pattern);
+        expect(sides.length).toBeGreaterThanOrEqual(3);
+        expect(sides[0]).toMatch(/BLO/);
+        expect(sides[sides.length - 1]).toMatch(/BLO/);
+        sides.slice(1, -1).forEach((line) => expect(line).not.toMatch(/BLO/));
+    });
+
+    it("bij één of twee zijrondes: alle zijrondes in de achterste lus", () => {
+        for (const height of [0.4, 0.9]) {
+            const pattern = generateCylinderPattern(shapeOfCm("Cylinder", { width: 4, height, length: 4 }), "Medium", ROW_HEIGHTS, []);
+            const sides = sideRowsOf(pattern);
+            expect(sides.length).toBeLessThanOrEqual(2);
+            sides.forEach((line) => expect(line).toMatch(/BLO/));
+        }
+    });
+
+    it("een bol heeft geen rondes in de achterste lus", () => {
+        const ball = generateSpherePattern(shapeOfCm("Sphere", { width: 4, height: 6, length: 4 }), "Medium", ROW_HEIGHTS, []);
+        [...ball.incArray, ...ball.scArray, ...ball.decArray].forEach((line) => expect(line).not.toMatch(/BLO/));
+    });
+});
+
 describe("generateCylinderPattern: verhoudingen", () => {
     it("een hogere cilinder krijgt meer zijrondes, niet meer steken", () => {
         const low = generateCylinderPattern(shapeOfCm("Cylinder", { width: 4, height: 3, length: 4 }), "Medium", ROW_HEIGHTS, []);

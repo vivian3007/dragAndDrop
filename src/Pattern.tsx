@@ -252,6 +252,9 @@ const Pattern = () => {
                                     <dt>{t("pattern.abbr.inc")}</dt><dd>{t("pattern.abbr.incMeaning")}</dd>
                                     <dt>{t("pattern.abbr.dec")}</dt><dd>{t("pattern.abbr.decMeaning")}</dd>
                                     <dt>{t("pattern.abbr.magicRing")}</dt><dd>{t("pattern.abbr.magicRingMeaning")}</dd>
+                                    {patterns.some((pattern) => pattern.type === "Cylinder") && (
+                                        <><dt>{t("pattern.abbr.backLoop")}</dt><dd>{t("pattern.abbr.backLoopMeaning")}</dd></>
+                                    )}
                                 </dl>
                                 <h3 className="pattern-legend-subtitle">{t("pattern.howToRead")}</h3>
                                 <dl className="pattern-legend-group">

@@ -12,6 +12,7 @@ export function usePatternTerms(): PatternTerms {
             sc: (count) => intl.formatMessage({ id: "pattern.stitch.sc" }, { count }),
             inc: (count) => intl.formatMessage({ id: "pattern.stitch.inc" }, { count }),
             dec: (count) => intl.formatMessage({ id: "pattern.stitch.dec" }, { count }),
+            scBackLoop: (count) => intl.formatMessage({ id: "pattern.stitch.scBackLoop" }, { count }),
         }),
         [intl]
     );

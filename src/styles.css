@@ -474,15 +474,20 @@ body {
     border-radius: 24px / 8px;
 }
 
+/* In de vormenbalk is een open kant gestippeld (Arm en Kegel: de onderkant). */
 .draggable-shape.Cone {
     width: 56px;
     height: 56px;
     border: none;
-    background: no-repeat center / contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'%3E%3Cpath d='M28 3 L53 53 L3 53 Z' fill='%23FFFFFF' stroke='%232A1E1B' stroke-width='3' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background: no-repeat center / contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'%3E%3Cpath d='M28 3 L53 53 L3 53 Z' fill='%23FFFFFF'/%3E%3Cpath d='M3 53 L28 3 L53 53' fill='none' stroke='%232A1E1B' stroke-width='3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M3 53 L53 53' stroke='%232A1E1B' stroke-width='3' stroke-dasharray='5 4'/%3E%3C/svg%3E");
 }
 
 .draggable-shape.Cone:hover {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'%3E%3Cpath d='M28 3 L53 53 L3 53 Z' fill='%23FFFFFF' stroke='%237D3A45' stroke-width='3' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'%3E%3Cpath d='M28 3 L53 53 L3 53 Z' fill='%23FFFFFF'/%3E%3Cpath d='M3 53 L28 3 L53 53' fill='none' stroke='%237D3A45' stroke-width='3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M3 53 L53 53' stroke='%237D3A45' stroke-width='3' stroke-dasharray='5 4'/%3E%3C/svg%3E");
+}
+
+.draggable-shape.Arm {
+    border-bottom-style: dashed;
 }
 
 .draggables {

@@ -7,6 +7,9 @@ export type PatternTerms = {
     sc: (count: number) => string;
     inc: (count: number) => string;
     dec: (count: number) => string;
+    // Vasten alleen in de achterste lus (BLO): daardoor knikt het werk en krijg je een
+    // scherpe rand, bv. tussen de platte bodem en de zijkant van een cilinder.
+    scBackLoop: (count: number) => string;
 };
 
 // Meerderingsronde van `previous` naar `previous + 6` steken: in elk van de zes delen één
@@ -24,4 +27,5 @@ export const englishPatternTerms: PatternTerms = {
     sc: (count) => `${count}sc`,
     inc: (count) => `${count}inc`,
     dec: (count) => `${count}dec`,
+    scBackLoop: (count) => `${count}sc BLO`,
 };

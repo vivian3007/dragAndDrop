@@ -3,7 +3,7 @@ import { shapeDimensionCm } from "../geometry/units";
 import { maxStitchesForDiameter, STITCH_WIDTH_PER_ROW_HEIGHT } from "./stitchGeometry";
 
 // Kegel (bv. een oor, snuit, hoorn of puntmuts): gehaakt vanaf de punt, steeds iets breder,
-// tot de open onderkant die aan een andere vorm wordt genaaid. In 3D (Cone.tsx) ligt de
+// tot de open onderkant die aan een andere vorm wordt genaaid. In 3D (SolidShape.tsx) ligt de
 // oorsprong in het midden van de onderkant en de punt op lokale hoogte 1.
 //
 // Er wordt langs de schuine zijde gehaakt. De meerderingen worden zo gelijk mogelijk over de
