@@ -48,6 +48,21 @@ await design('testkonijn', 'maker', 'Testkonijn', ['Dier'], [
     { type: 'Sphere', name: 'Hoofd', x: 0, y: 0, width: 90, height: 110, length: 90, color: '#eeeeee' },
 ]);
 
+// Een complete beer met alle vormtypen, om de editor en de patroonpagina te laten zien.
+// Posities en maten in wereld-eenheden / opslag-eenheden, zoals de editor ze bewaart.
+const brown = '#b07a4f';
+await design('demobeer', 'tester', 'Demobeer', ['Dier', 'Beer', 'Demo'], [
+    { type: 'Sphere', name: 'Lijf', x: 0, y: 0, width: 150, height: 170, length: 140, color: brown },
+    { type: 'Sphere', name: 'Hoofd', x: 0, y: 2.6, width: 130, height: 120, length: 125, color: brown },
+    { type: 'Sphere', name: 'Snuit', x: 0, y: 2.3, z: 1.05, width: 55, height: 45, length: 45, color: '#e8cfa9' },
+    { type: 'Cone', name: 'Linkeroor', x: -0.85, y: 3.35, width: 90, height: 70, length: 60, rotation_z: 25, color: brown },
+    { type: 'Cone', name: 'Rechteroor', x: 0.85, y: 3.35, width: 90, height: 70, length: 60, rotation_z: -25, color: brown },
+    { type: 'Arm', name: 'Linkerarm', x: -1.1, y: 0.4, width: 55, height: 120, length: 55, rotation_z: 60, color: brown },
+    { type: 'Arm', name: 'Rechterarm', x: 1.1, y: 0.4, width: 55, height: 120, length: 55, rotation_z: -60, color: brown },
+    { type: 'Cylinder', name: 'Linkerpoot', x: -0.7, y: -2.1, width: 75, height: 70, length: 75, color: '#8a5a3a' },
+    { type: 'Cylinder', name: 'Rechterpoot', x: 0.7, y: -2.1, width: 75, height: 70, length: 75, color: '#8a5a3a' },
+]);
+
 // Genoeg extra ontwerpen om "Meer laden" op Home te zien (24 per keer).
 const animals = ['Kat', 'Hond', 'Uil', 'Vos', 'Egel', 'Panda', 'Koala', 'Pinguïn', 'Schildpad', 'Walvis'];
 for (let i = 0; i < 30; i++) {

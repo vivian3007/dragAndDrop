@@ -314,14 +314,28 @@ const Pattern = () => {
                                                 <RowLine text={t("pattern.stuffLightly")} />
                                             )}
                                         </ul>
-                                        <div
-                                            className={`shape ${pattern.type}`}
-                                            style={{
-                                                backgroundColor: pattern.color,
-                                                width: `${scaledWidth}px`,
-                                                height: `${scaledHeight}px`,
-                                            }}
-                                        ></div>
+                                        {pattern.type === "Cone" ? (
+                                            // Een driehoek met rand kan niet met CSS-randen; daarom SVG.
+                                            <svg
+                                                className="shape-svg"
+                                                width={scaledWidth}
+                                                height={scaledHeight}
+                                                viewBox="0 0 100 100"
+                                                preserveAspectRatio="none"
+                                                aria-hidden="true"
+                                            >
+                                                <polygon points="50,3 97,97 3,97" fill={pattern.color} stroke="var(--color-text)" strokeWidth="3" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+                                            </svg>
+                                        ) : (
+                                            <div
+                                                className={`shape ${pattern.type}`}
+                                                style={{
+                                                    backgroundColor: pattern.color,
+                                                    width: `${scaledWidth}px`,
+                                                    height: `${scaledHeight}px`,
+                                                }}
+                                            ></div>
+                                        )}
                                     </div>
                                 </Card>
                             );
