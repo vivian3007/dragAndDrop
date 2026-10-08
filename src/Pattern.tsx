@@ -12,6 +12,7 @@ import { useT } from "./i18n/LanguageProvider";
 import { usePatternTerms } from "./i18n/usePatternTerms";
 import { ROW_HEIGHTS } from "./patterns/estimateYarn";
 import { rowRanges, yarnUsage, type YarnUse } from "./patterns/yarnUsage";
+import { mainConnections } from "./patterns/assembly";
 import { colorName } from "./patterns/colorNames";
 
 // three.js pas laden als de preview echt in beeld komt.
@@ -388,7 +389,8 @@ const Pattern = () => {
                                 // Ogen krijgen een eigen regel (tussen welke rondes, hoe ver uit elkaar).
                                 const eyeIds = new Set(shapes.filter(isEye).map((shape) => shape.id));
                                 const placements = eyePlacements(shapes, allIntersectionRows, rowHeights[yarnWeight] ?? rowHeights.Medium);
-                                const connections = allIntersectionRows.filter((row) => !eyeIds.has(row.shapeId1) && !eyeIds.has(row.shapeId2));
+                                // Elk onderdeel aan één ander: het grootste dat het raakt (patterns/assembly.ts).
+                                const connections = mainConnections(allIntersectionRows.filter((row) => !eyeIds.has(row.shapeId1) && !eyeIds.has(row.shapeId2)), shapes);
                                 const eyeLines = placements.map((placement) => {
                                     const other = placements.find((p) => p !== placement && p.target.id === placement.target.id);
                                     const base = t("pattern.placeEye", {
@@ -406,12 +408,18 @@ const Pattern = () => {
                                 }
                                 return connections.length > 0 || eyeLines.length > 0 ? (
                                     [...eyeLines.map((text, idx) => <RowLine key={`eye-${idx}`} text={text} />), ...connections.map((intersection, idx) => {
-                                        const shape1 = shapes.find((shape) => shape.id === intersection.shapeId1)?.name ?? t("pattern.unknownShape", { id: intersection.shapeId1 });
-                                        const shape2 = shapes.find((shape) => shape.id === intersection.shapeId2)?.name ?? t("pattern.unknownShape", { id: intersection.shapeId2 });
+                                        const nameOf = (id: string) => {
+                                            const shape = shapes.find((candidate) => candidate.id === id);
+                                            return shape ? shape.name || t(`shapes.${shape.type}`) : t("pattern.unknownShape", { id });
+                                        };
+                                        const shape1 = nameOf(intersection.shapeId1);
+                                        const shape2 = nameOf(intersection.shapeId2);
                                         return (
                                             <RowLine
                                                 key={idx}
-                                                text={t("pattern.connect", { part1: shape1, part2: shape2, top: intersection.topRow, bottom: intersection.bottomRow })}
+                                                text={intersection.topRow === intersection.bottomRow
+                                                    ? t("pattern.connectAtRow", { part1: shape1, part2: shape2, row: intersection.topRow })
+                                                    : t("pattern.connect", { part1: shape1, part2: shape2, top: Math.min(intersection.topRow, intersection.bottomRow), bottom: Math.max(intersection.topRow, intersection.bottomRow) })}
                                             />
                                         );
                                     })]

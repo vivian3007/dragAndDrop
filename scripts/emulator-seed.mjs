@@ -55,24 +55,26 @@ const brown = '#b07a4f';
 // Volledige vorm met de standaardwaarden die de editor ook gebruikt.
 const full = (shape) => ({ zoom: 1, rotation_x: 0, rotation_y: 0, rotation_z: 0, z: 0, ...shape });
 
-// Ogen, buiklapje en mutsje worden met de echte aansluit-functie van de editor geplaatst
-// (src/geometry/attach.ts), zodat ze precies goed zitten — daarom draait dit script via tsx.
+// Alle onderdelen worden met de echte aansluit-functie van de editor geplaatst
+// (src/geometry/attach.ts, zelfde als de knop Aansluiten), zodat ze precies op elkaar
+// aansluiten — daarom draait dit script via tsx. De x/y/z hieronder is alleen de richting
+// van waaruit het onderdeel tegen z'n doel geschoven wordt.
 const body = full({ id: 'lijf', type: 'Sphere', name: 'Lijf', x: 0, y: 0, width: 150, height: 170, length: 140, color: brown,
     // Rode sjaal om de hals (kleurwissel bovenaan het lijf).
     stripes: [{ from: 0.1, to: 0.2, color: '#c0392b' }] });
-const head = full({ id: 'hoofd', type: 'Sphere', name: 'Hoofd', x: 0, y: 2.6, width: 130, height: 120, length: 125, color: brown });
 const attached = (shape, targets) => attachToNearest(full(shape), targets).shape;
+const head = attached({ id: 'hoofd', type: 'Sphere', name: 'Hoofd', x: 0, y: 2.6, width: 130, height: 120, length: 125, color: brown }, [body]);
 const demoShapes = [
     body,
     head,
-    full({ id: 'snuit', type: 'Sphere', name: 'Snuit', x: 0, y: 2.3, z: 1.05, width: 55, height: 45, length: 45, color: '#e8cfa9' }),
-    full({ id: 'oorL', type: 'Cone', name: 'Linkeroor', x: -0.85, y: 3.35, width: 90, height: 70, length: 60, rotation_z: 25, color: brown }),
-    full({ id: 'oorR', type: 'Cone', name: 'Rechteroor', x: 0.85, y: 3.35, width: 90, height: 70, length: 60, rotation_z: -25, color: brown }),
+    attached({ id: 'snuit', type: 'Sphere', name: 'Snuit', x: 0, y: 2.3, z: 1.05, width: 55, height: 45, length: 45, color: '#e8cfa9' }, [head]),
+    attached({ id: 'oorL', type: 'Cone', name: 'Linkeroor', x: -0.85, y: 3.35, width: 90, height: 70, length: 60, rotation_z: 25, color: brown }, [head]),
+    attached({ id: 'oorR', type: 'Cone', name: 'Rechteroor', x: 0.85, y: 3.35, width: 90, height: 70, length: 60, rotation_z: -25, color: brown }, [head]),
     // Lichte pootjes: het kapje van de arm in een andere kleur.
-    full({ id: 'armL', type: 'Dome', name: 'Linkerarm', x: -1.1, y: 0.4, width: 55, height: 120, length: 55, rotation_z: 60, color: brown, stripes: [{ from: 0, to: 0.25, color: '#e8cfa9' }] }),
-    full({ id: 'armR', type: 'Dome', name: 'Rechterarm', x: 1.1, y: 0.4, width: 55, height: 120, length: 55, rotation_z: -60, color: brown, stripes: [{ from: 0, to: 0.25, color: '#e8cfa9' }] }),
-    full({ id: 'pootL', type: 'Cylinder', name: 'Linkerpoot', x: -0.7, y: -2.1, width: 75, height: 70, length: 75, color: '#8a5a3a' }),
-    full({ id: 'pootR', type: 'Cylinder', name: 'Rechterpoot', x: 0.7, y: -2.1, width: 75, height: 70, length: 75, color: '#8a5a3a' }),
+    attached({ id: 'armL', type: 'Dome', name: 'Linkerarm', x: -1.1, y: 0.4, width: 55, height: 120, length: 55, rotation_z: 60, color: brown, stripes: [{ from: 0, to: 0.25, color: '#e8cfa9' }] }, [body]),
+    attached({ id: 'armR', type: 'Dome', name: 'Rechterarm', x: 1.1, y: 0.4, width: 55, height: 120, length: 55, rotation_z: -60, color: brown, stripes: [{ from: 0, to: 0.25, color: '#e8cfa9' }] }, [body]),
+    attached({ id: 'pootL', type: 'Cylinder', name: 'Linkerpoot', x: -0.7, y: -2.1, width: 75, height: 70, length: 75, color: '#8a5a3a' }, [body]),
+    attached({ id: 'pootR', type: 'Cylinder', name: 'Rechterpoot', x: 0.7, y: -2.1, width: 75, height: 70, length: 75, color: '#8a5a3a' }, [body]),
     // Veiligheidsoogjes van 10 mm, boven de snuit.
     attached({ id: 'oogL', type: 'Eye', name: 'Linkeroog', x: -0.28, y: 2.85, z: 1.2, width: 18.9, height: 18.9, length: 18.9, color: '#111111' }, [head]),
     attached({ id: 'oogR', type: 'Eye', name: 'Rechteroog', x: 0.28, y: 2.85, z: 1.2, width: 18.9, height: 18.9, length: 18.9, color: '#111111' }, [head]),

@@ -195,6 +195,7 @@
   "pattern.changeColor": "Wissel naar kleur {letter}",
   "pattern.colourLetter": "Kleur {letter}",
   "pattern.connect": "Verbind {part1} met {part2}: tussen ronde {top} en {bottom}",
+  "pattern.connectAtRow": "Verbind {part1} met {part2}: bij ronde {row}",
   "pattern.defaultTitle": "Patroon",
   "pattern.eyeSpacing": "{count, plural, one {# steek} other {# steken}} van {other}",
   "pattern.eyesBeforeClosing": "Zet de ogen vast voordat je het onderdeel vult en dichtmaakt",

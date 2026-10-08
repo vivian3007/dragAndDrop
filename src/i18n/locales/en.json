@@ -195,6 +195,7 @@
   "pattern.changeColor": "Change to colour {letter}",
   "pattern.colourLetter": "Colour {letter}",
   "pattern.connect": "Connect {part1} to {part2}: between row {top} and {bottom}",
+  "pattern.connectAtRow": "Connect {part1} to {part2}: at row {row}",
   "pattern.defaultTitle": "Pattern",
   "pattern.eyeSpacing": "{count, plural, one {# stitch} other {# stitches}} from {other}",
   "pattern.eyesBeforeClosing": "Fix the eyes in place before you stuff and close the part",
