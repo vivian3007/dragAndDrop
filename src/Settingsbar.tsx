@@ -127,6 +127,9 @@ function Settingsbar({
                     </div>
                 )}
                 {!showYarnSettings && activeShape && (
+                    <p className="settings-bar-tip">{t("editor.arrowKeysTip")}</p>
+                )}
+                {!showYarnSettings && activeShape && (
                     <Button
                         type="button"
                         variant="contained"

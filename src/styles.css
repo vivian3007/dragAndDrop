@@ -452,6 +452,16 @@ body {
     position: fixed;
 }
 
+/* Korte uitleg onder de vormknoppen in de editor (pijltjestoetsen). */
+.settings-bar-tip {
+    margin: -4px 0 10px;
+    font-size: 0.75rem;
+    line-height: 1.35;
+    color: var(--color-text);
+    opacity: 0.75;
+    text-align: center;
+}
+
 .palette-item {
     display: flex;
     flex-direction: column;

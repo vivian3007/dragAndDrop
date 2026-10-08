@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { attachToNearest, containsPoint, rimPoints } from "./attach";
+import { attachToNearest, containsPoint, findAttachedTarget, nudgeShape, rimPoints } from "./attach";
 import { makeShape } from "../patterns/testShapes";
 
 // Lijf: (uitgerekte) bol rond de oorsprong. Maten in opslag-eenheden (×0,01 = wereld).
@@ -78,5 +78,71 @@ describe("aansluiten: overige gevallen", () => {
 
     it("zonder andere vormen: niets te doen", () => {
         expect(attachToNearest(body, [body])).toBeNull();
+    });
+});
+
+describe("pijltjestoetsen (nudgeShape)", () => {
+    // Camera recht van voren (zoals de editor begint): rechts = +x, omhoog = +y.
+    const front = { right: new THREE.Vector3(1, 0, 0), up: new THREE.Vector3(0, 1, 0) };
+    const head = makeShape({ id: "hoofd", type: "Sphere", width: 130, height: 120, length: 125, y: 2.6 });
+    const loose = makeShape({ id: "oor", type: "Cone", width: 90, height: 70, length: 60, x: 0.3, y: 3.8 });
+    const ear = attachToNearest(loose, [head])!.shape;
+    const position = (shape: Shape) => new THREE.Vector3(shape.x, shape.y, shape.z);
+
+    it("een aangesloten oor zit vast aan het hoofd", () => {
+        expect(findAttachedTarget(ear, [head, ear])?.id).toBe("hoofd");
+    });
+
+    it("→ schuift het oor naar rechts over het hoofd, en het blijft rondom aangesloten", () => {
+        let moved = ear;
+        for (let i = 0; i < 5; i++) moved = nudgeShape(moved, [head], "right", front).shape;
+        expect(moved.x).toBeGreaterThan(ear.x);
+        expectRimInside(moved, head);
+        expect(findAttachedTarget(moved, [head])?.id).toBe("hoofd");
+    });
+
+    it("↓ schuift het oor omlaag, ← weer naar links", () => {
+        const down = nudgeShape(ear, [head], "down", front).shape;
+        expect(down.y).toBeLessThan(ear.y);
+        const left = nudgeShape(ear, [head], "left", front).shape;
+        expect(left.x).toBeLessThan(ear.x);
+        expectRimInside(down, head);
+        expectRimInside(left, head);
+    });
+
+    it("heen en terug: weer op dezelfde plek", () => {
+        const back = nudgeShape(nudgeShape(ear, [head], "up", front).shape, [head], "down", front).shape;
+        // Niet exact (de draaias hangt af van waar hij zit), maar veel kleiner dan een stap.
+        expect(position(back).distanceTo(position(ear))).toBeLessThan(0.02);
+    });
+
+    it("met Shift (fijn) een kleinere stap", () => {
+        const normal = position(nudgeShape(ear, [head], "right", front).shape).distanceTo(position(ear));
+        const fine = position(nudgeShape(ear, [head], "right", front, true).shape).distanceTo(position(ear));
+        expect(fine).toBeLessThan(normal / 2);
+    });
+
+    it("rechts volgt de camera: van achteren gezien is rechts de andere kant op", () => {
+        const back = { right: new THREE.Vector3(-1, 0, 0), up: new THREE.Vector3(0, 1, 0) };
+        const fromFront = nudgeShape(ear, [head], "right", front).shape;
+        const fromBack = nudgeShape(ear, [head], "right", back).shape;
+        expect(Math.sign(fromFront.x - ear.x)).toBe(-Math.sign(fromBack.x - ear.x));
+    });
+
+    it("een losse vorm schuift recht op", () => {
+        const far = makeShape({ id: "los", type: "Sphere", width: 50, height: 50, length: 50, x: 6, y: 0 });
+        const result = nudgeShape(far, [head, far], "up", front);
+        expect(result.targetId).toBeNull();
+        expect(result.shape.y).toBeCloseTo(0.15, 6);
+        expect(result.shape.x).toBe(6);
+    });
+
+    it("een losse poot die het lijf raakt, klikt er netjes tegenaan", () => {
+        // Net onder het lijf (onderkant ±-1,7), één stap omhoog raakt hij.
+        const leg = makeShape({ id: "poot", type: "Cylinder", width: 75, height: 70, length: 75, x: 0.5, y: -2.4, rotation_z: 180 });
+        let result = nudgeShape(leg, [body, leg], "up", front);
+        for (let i = 0; i < 6 && !result.targetId; i++) result = nudgeShape(result.shape, [body, leg], "up", front);
+        expect(result.targetId).toBe("lijf");
+        expectRimInside(result.shape, body);
     });
 });

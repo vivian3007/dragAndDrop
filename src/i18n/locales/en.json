@@ -52,6 +52,7 @@
   "detail.viewPattern": "View pattern",
   "detail.viewSource": "View",
   "dialog.close": "Close",
+  "editor.arrowKeysTip": "Move with the arrow keys (Shift = finer). An attached shape slides over the surface; a loose shape snaps on as soon as it touches another.",
   "editor.attachNoTarget": "There is no other shape to attach to.",
   "editor.attachShape": "Attach",
   "editor.attachShapeHint": "Place this shape neatly against the nearest shape so it joins it all the way around",

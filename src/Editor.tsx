@@ -9,7 +9,8 @@ import Sidebar from "./Sidebar.tsx";
 import { useShapeHistory } from "./useShapeHistory";
 import { saveShapeDoc } from "./shapeDocs";
 import { mirrorShape } from "./geometry/mirrorShape";
-import { attachToNearest } from "./geometry/attach";
+import { attachToNearest, NudgeDirection, nudgeShape } from "./geometry/attach";
+import * as THREE from "three";
 import { useEditorState } from "./editor/useEditorState";
 import { useT } from "./i18n/LanguageProvider";
 
@@ -123,6 +124,33 @@ const Editor = () => {
         const target = droppedShapes.find((shape) => shape.id === result.targetId);
         toast.success(t("editor.attached", { name: target?.name || t(`shapes.${target?.type ?? "Sphere"}`) }));
     }, [droppedShapes, updateShape, t]);
+
+    // Pijltjes verschuiven de geselecteerde vorm, links/rechts/omhoog/omlaag zoals je het op
+    // het scherm ziet (Shift = fijner). Zit hij aan een andere vorm vast, dan schuift hij
+    // over dat oppervlak en blijft hij aangesloten; een losse vorm die een andere raakt, sluit
+    // er vanzelf op aan (zie nudgeShape). Snel achter elkaar drukken is één undo-stap.
+    useEffect(() => {
+        const directions: Record<string, NudgeDirection> = {
+            ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down",
+        };
+        const handleKeyDown = (event: KeyboardEvent) => {
+            const direction = directions[event.key];
+            if (!direction || !activeId || event.ctrlKey || event.metaKey || event.altKey) return;
+            const activeElement = document.activeElement as HTMLElement | null;
+            if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.isContentEditable)) return;
+            const shape = droppedShapes.find((s) => s.id === activeId);
+            if (!shape) return;
+            event.preventDefault();
+            const quaternion = camera?.quaternion ?? new THREE.Quaternion();
+            const view = {
+                right: new THREE.Vector3(1, 0, 0).applyQuaternion(quaternion),
+                up: new THREE.Vector3(0, 1, 0).applyQuaternion(quaternion),
+            };
+            updateShape(nudgeShape(shape, droppedShapes, direction, view, event.shiftKey).shape);
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [activeId, droppedShapes, camera, updateShape]);
 
     // Ctrl/Cmd+Z = ongedaan maken, Ctrl/Cmd+Shift+Z of Ctrl+Y = opnieuw. Niet in invoervelden,
     // daar hoort Ctrl+Z bij de tekst.
