@@ -160,8 +160,8 @@ export default function calculateIntersections(
                 const shapeA = shapeById.get(meshesArray[i].id);
                 const shapeB = shapeById.get(meshesArray[j].id);
 
-                // Oog = ook een bol (zie patterns/eyes.ts).
-                const isRound = (shape?: Shape) => shape?.type === "Sphere" || shape?.type === "Eye";
+                // Oog en open bol = ook een bol (zie patterns/eyes.ts, geometry/sphereOpening.ts).
+                const isRound = (shape?: Shape) => shape?.type === "Sphere" || shape?.type === "OpenSphere" || shape?.type === "Eye";
                 if (isRound(shapeA) && isRound(shapeB)) {
                     const radiusA = getSphereWorldRadius(meshA);
                     const radiusB = getSphereWorldRadius(meshB);

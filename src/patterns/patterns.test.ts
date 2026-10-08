@@ -304,7 +304,7 @@ describe("halve bol met buis", () => {
 
 describe("generatePattern (register)", () => {
     it("kent alle vormtypen en geeft null voor een onbekend type", () => {
-        for (const type of ["Sphere", "Arm", "Cylinder", "Cone", "Disc", "Dome"]) {
+        for (const type of ["Sphere", "OpenSphere", "Arm", "Cylinder", "Cone", "Disc", "Dome"]) {
             expect(generatePattern(shapeOfCm(type, { width: 3, height: 3, length: 3 }), "Medium", ROW_HEIGHTS, [])).not.toBeNull();
         }
         expect(generatePattern(shapeOfCm("Driehoek", { width: 3, height: 3, length: 3 }), "Medium", ROW_HEIGHTS, [])).toBeNull();

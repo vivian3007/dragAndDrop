@@ -11,6 +11,7 @@ import { applyStripes } from "./colorChanges";
 // garenschatting altijd dezelfde vormen kennen.
 const generators = {
     Sphere: generateSpherePattern,
+    OpenSphere: generateSpherePattern,
     Arm: generateArmPattern,
     Cylinder: generateCylinderPattern,
     Cone: generateConePattern,

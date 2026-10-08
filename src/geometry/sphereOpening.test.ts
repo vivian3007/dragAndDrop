@@ -8,17 +8,18 @@ import { ROW_HEIGHTS } from "../patterns/estimateYarn";
 import { makeShape, shapeOfCm } from "../patterns/testShapes";
 
 describe("bol met opening", () => {
-    it("alleen voor een bol, en nooit helemaal open", () => {
-        expect(sphereOpening({ type: "Sphere", opening: 0.5 })).toBe(0.5);
-        expect(sphereOpening({ type: "Cylinder", opening: 0.5 })).toBe(0);
-        expect(sphereOpening({ type: "Sphere", opening: 3 })).toBeLessThan(1);
+    it("alleen voor de open bol; nooit dicht of helemaal open", () => {
+        expect(sphereOpening({ type: "OpenSphere", opening: 0.5 })).toBe(0.5);
+        expect(sphereOpening({ type: "Sphere", opening: 0.5 })).toBe(0);
+        expect(sphereOpening({ type: "OpenSphere", opening: 3 })).toBeLessThan(1);
+        expect(sphereOpening({ type: "OpenSphere", opening: null })).toBeGreaterThan(0);
         expect(sphereEndAngle(0)).toBe(Math.PI);
         expect(Math.sin(sphereEndAngle(0.6))).toBeCloseTo(0.6, 10);
     });
 
     it("patroon: minderen tot de opening, niet dichtnaaien", () => {
         const closed = generateSpherePattern(shapeOfCm("Sphere", { width: 6, height: 6, length: 6 }), "Medium", ROW_HEIGHTS, []);
-        const open = generateSpherePattern(shapeOfCm("Sphere", { width: 6, height: 6, length: 6 }, { opening: 0.5 }), "Medium", ROW_HEIGHTS, []);
+        const open = generateSpherePattern(shapeOfCm("OpenSphere", { width: 6, height: 6, length: 6 }, { opening: 0.5 }), "Medium", ROW_HEIGHTS, []);
         expect(closed.closed).toBe(true);
         expect(open.closed).toBe(false);
         const max = Math.max(...open.incArray.map((row) => row.stitches));
@@ -29,7 +30,7 @@ describe("bol met opening", () => {
     });
 
     it("kleurwissels lopen tot de rand van de opening", () => {
-        const shape = makeShape({ type: "Sphere", opening: 0.6 });
+        const shape = makeShape({ type: "OpenSphere", opening: 0.6 });
         const rim = new THREE.Vector3(0.6, Math.cos(sphereEndAngle(0.6)), 0);
         expect(crochetFraction(shape, rim)).toBeCloseTo(1, 6);
         expect(crochetFraction(shape, new THREE.Vector3(0, 1, 0))).toBeCloseTo(0, 6);
@@ -37,7 +38,7 @@ describe("bol met opening", () => {
 
     it("aansluiten: de opening naar het hoofd, de rand op het oppervlak", () => {
         const head = makeShape({ id: "hoofd", type: "Sphere", width: 130, height: 120, length: 125 });
-        const snout = makeShape({ id: "snuit", type: "Sphere", width: 55, height: 45, length: 45, z: 2, y: -0.2, opening: 0.6 });
+        const snout = makeShape({ id: "snuit", type: "OpenSphere", width: 55, height: 45, length: 45, z: 2, y: -0.2, opening: 0.6 });
         const result = attachToNearest(snout, [head])!;
         expect(result.targetId).toBe("hoofd");
         expect(findAttachedTarget(result.shape, [head])?.id).toBe("hoofd");
@@ -55,7 +56,7 @@ describe("bol met opening", () => {
 
 describe("open bol: haakrichting", () => {
     it("een platte snuit wordt naar de opening toe gehaakt, met breedte × lengte als doorsnede", () => {
-        const snout = shapeOfCm("Sphere", { width: 3.2, height: 1.7, length: 2.5 }, { opening: 0.75 });
+        const snout = shapeOfCm("OpenSphere", { width: 3.2, height: 1.7, length: 2.5 }, { opening: 0.75 });
         const pattern = generateSpherePattern(snout, "Medium", ROW_HEIGHTS, []);
         const wide = generateSpherePattern({ ...snout, height: snout.width }, "Medium", ROW_HEIGHTS, []);
         // Zelfde doorsnede (breedte × lengte), dus evenveel steken; ondieper = minder rondes.

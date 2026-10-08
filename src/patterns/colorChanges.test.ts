@@ -58,7 +58,7 @@ describe("kleurwissels", () => {
     });
 
     it("werkt voor elk vormtype", () => {
-        for (const type of ["Sphere", "Arm", "Cylinder", "Cone", "Disc", "Dome"]) {
+        for (const type of ["Sphere", "OpenSphere", "Arm", "Cylinder", "Cone", "Disc", "Dome"]) {
             const shape = shapeOfCm(type, { width: 4, height: 6, length: 4 }, { stripes: [{ from: 0.5, to: 1, color: white }] });
             const pattern = applyStripes(generatePattern(shape, "Medium", ROW_HEIGHTS, [])!, shape.stripes);
             const all = [...pattern.incArray, ...pattern.scArray, ...pattern.decArray];

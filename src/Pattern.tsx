@@ -190,7 +190,7 @@ const Pattern = () => {
         } else {
             // Bol met opening (snuit, lijf voor het hoofd): stevig vullen, de opening tegen het
             // andere onderdeel naaien.
-            lines.push({ text: t(pattern.flat ? "pattern.fastenOffFlat" : pattern.type === "Sphere" ? "pattern.stuffOpening" : "pattern.stuffLightly") });
+            lines.push({ text: t(pattern.flat ? "pattern.fastenOffFlat" : pattern.type === "OpenSphere" ? "pattern.stuffOpening" : "pattern.stuffLightly") });
         }
         return lines;
     };

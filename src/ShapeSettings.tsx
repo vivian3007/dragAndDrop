@@ -402,7 +402,7 @@ function ShapeSettings({
                             <h3 className="shape-settings-title">{t("shapeSettings.color")}</h3>
                             <ColorPicker color={shapeColor} onColorChange={handleColorChange} />
                         </div>
-                        {activeShape.type === "Sphere" && (
+                        {activeShape.type === "OpenSphere" && (
                             <div className="shape-settings-group">
                                 <h3 className="shape-settings-title">{t("opening.title")}</h3>
                                 <SphereOpeningEditor shape={activeShape} onChange={handleUpdate} />

@@ -383,6 +383,18 @@ body {
     /*border: 0;*/
 }
 
+.OpenSphere {
+    width: 56px;
+    height: 56px;
+    background-color: #FFFFFF;
+    border-radius: 50%;
+}
+
+/* Open bol: de opening gestippeld, zoals de open kanten van de andere vormen. */
+.draggable-shape.OpenSphere {
+    border-bottom-style: dashed;
+}
+
 .square {
     width: 120px;
     height: 120px;

@@ -68,7 +68,7 @@ describe("mirrorShape", () => {
 });
 
 describe("meshScaleOf / sizeFromMeshScale (schalen met de gizmo)", () => {
-    it.each(["Sphere", "Arm", "Cylinder", "Cone", "Disc", "Dome"])("%s: heen en terug geeft dezelfde maat", (type) => {
+    it.each(["Sphere", "OpenSphere", "Arm", "Cylinder", "Cone", "Disc", "Dome"])("%s: heen en terug geeft dezelfde maat", (type) => {
         const shape = makeShape({ type, width: 80, height: 150, length: 60, zoom: 1.3 });
         const [x, y, z] = meshScaleOf(shape);
         const size = sizeFromMeshScale(shape, { x, y, z });
