@@ -8,6 +8,9 @@ import type { SetState } from "./editor/types";
 import {setDoc, doc} from "firebase/firestore";
 import {db} from "../firebase-config.js";
 
+// De vormen die je in de editor kunt slepen (zie patterns/generators.ts voor hun patronen).
+const PALETTE = ["Sphere", "Arm", "Cylinder", "Cone"] as const;
+
 // Muis of vinger, als React-event of als gewoon DOM-event (de window-listeners hieronder).
 type PointerLikeEvent = MouseEvent | TouchEvent | React.MouseEvent | React.TouchEvent;
 
@@ -30,14 +33,6 @@ function Shapebar({ amigurumiId, setDroppedShapes, setActiveId, threeJsContainer
     setDragging: SetState<boolean>;
     camera: Camera | null;
 }) {
-    const shapes = [
-        { type: "Sphere", label: "Head" },
-        { type: "Arm", label: "body" },
-        { type: "Sphere", label: "Sphere" },
-        { type: "Sphere", label: "Sphere" },
-        { type: "Sphere", label: "Square" },
-        { type: "Sphere", label: "Sphere" },
-    ];
 
     const t = useT();
     const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -153,15 +148,23 @@ function Shapebar({ amigurumiId, setDroppedShapes, setActiveId, threeJsContainer
 
             <h1 className="shapes-text">{t("shapebar.title")}</h1>
             <div className={"draggables"}>
-                {shapes.map((shape, index) => {
-                    return (
-                        <div key={`${shape.type}-${index}`} className={`draggable-shape ${shape.type}`}
-                             onMouseDown={(e) => handleMouseDown(e, shape.type)} onMouseMove={handleMouseMove}
-                             onMouseUp={handleMouseUp} onTouchStart={(e) => {
-                            handleMouseDown(e, shape.type)
-                        }} onTouchMove={handleMouseMove} onTouchEnd={handleMouseUp}></div>
-                    );
-                })}
+                {PALETTE.map((type) => (
+                    <div key={type} className="palette-item">
+                        <div
+                            className={`draggable-shape ${type}`}
+                            role="button"
+                            aria-label={t(`shapes.${type}`)}
+                            title={t(`shapes.${type}.hint`)}
+                            onMouseDown={(e) => handleMouseDown(e, type)}
+                            onMouseMove={handleMouseMove}
+                            onMouseUp={handleMouseUp}
+                            onTouchStart={(e) => handleMouseDown(e, type)}
+                            onTouchMove={handleMouseMove}
+                            onTouchEnd={handleMouseUp}
+                        />
+                        <span className="palette-label">{t(`shapes.${type}`)}</span>
+                    </div>
+                ))}
             </div>
             {dragging && currentShape && (
                 <div

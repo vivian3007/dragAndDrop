@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import {CSG} from "three-csg-ts";
 import type { ShapeMesh } from "./editor/types";
+import { isSolidShapeType } from "./geometry/solidGeometry";
 import {computeSphereSphereIntersection} from "./geometry/sphereIntersection";
 import {ARM_TOTAL_LOCAL_LENGTH} from "./geometry/armGeometry";
 
@@ -18,7 +19,7 @@ function getCsgProxyGeometry(geometry: THREE.BufferGeometry): THREE.BufferGeomet
     const params = (geometry as THREE.BufferGeometry & { parameters?: Record<string, number | boolean | undefined> }).parameters as
         | (Record<string, number | undefined> & { openEnded?: boolean })
         | undefined;
-    if (!params) {
+    if (!params || geometry.userData.skipCsgProxy) {
         return geometry;
     }
 
@@ -302,9 +303,13 @@ export default function calculateIntersections(
                                 // lengte incl. bolvormig kapje (scale.y * ARM_TOTAL_LOCAL_LENGTH) als
                                 // referentie (fractie 0..1, basis naar kapje) — zie Arm.tsx voor de
                                 // T·R·S-opbouw en geometry/armGeometry.ts voor de kapje-afleiding.
+                                // Cilinder en kegel: zelfde opbouw als de Arm, maar lokale hoogte 1
+                                // (zie geometry/solidGeometry.ts).
                                 const referenceSize = self.shape?.type === "Arm"
                                     ? self.mesh.scale.y * ARM_TOTAL_LOCAL_LENGTH
-                                    : getSphereWorldRadius(self.mesh);
+                                    : isSolidShapeType(self.shape?.type)
+                                        ? self.mesh.scale.y
+                                        : getSphereWorldRadius(self.mesh);
 
                                 const axisHighFraction = new THREE.Vector3(highestPoint.x, highestPoint.y, highestPoint.z)
                                     .sub(self.mesh.position).dot(upAxisWorld) / referenceSize;

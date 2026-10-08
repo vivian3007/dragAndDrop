@@ -1,5 +1,4 @@
-import generateSpherePattern from "./generateSpherePattern";
-import generateArmPattern from "./generateArmPattern";
+import { generatePattern } from "./generators";
 
 // Rijhoogte in cm per garendikte. Gedeeld door de patroonpagina (rij-aantallen) en de
 // garenschatting hieronder.
@@ -51,9 +50,8 @@ export function estimateYarnByColor(
     const weightKey = yarnWeightKey(weight);
     const rawByColor: Record<string, number> = {};
     shapes.forEach((shape) => {
-        const generate = shape.type === "Arm" ? generateArmPattern : shape.type === "Sphere" ? generateSpherePattern : null;
-        if (!generate) return;
-        const pattern = generate(shape, weightKey, ROW_HEIGHTS, []);
+        const pattern = generatePattern(shape, weightKey, ROW_HEIGHTS, []);
+        if (!pattern) return;
         const color = shape.color ?? "#cccccc";
         rawByColor[color] = (rawByColor[color] ?? 0) + estimateYarnMeters(pattern.stitchCount, ROW_HEIGHTS[weightKey]);
     });

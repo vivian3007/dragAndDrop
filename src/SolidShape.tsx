@@ -1,24 +1,29 @@
-import React, {useEffect, useRef, useState} from 'react';
-import {useLoader} from '@react-three/fiber';
-import TransformControlsThree from "./TransformControlsThree.tsx";
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useLoader } from '@react-three/fiber';
+import * as THREE from 'three';
 import type { TransformControls as TransformControlsImpl } from 'three-stdlib';
+import TransformControlsThree from "./TransformControlsThree.tsx";
 import { isGizmoAxisActive } from "./editor/types";
 import type { ShapeComponentProps } from "./editor/types";
-import * as THREE from 'three';
 import { meshScaleOf } from "./geometry/units";
+import { createSolidGeometry, SolidShapeType } from "./geometry/solidGeometry";
 
-function Sphere({
-                                   id,
-                                   shape,
-                                   orbitControlsRef,
-                                   isSelected,
-                                   onSelect,
-                                   onUpdateShape,
-                                   transformMode,
-                                   setTransformMode,
-                                   onDraggingChange,
-                                   activeTransformControlsRef,
-                               }: ShapeComponentProps) {
+// Cilinder of kegel in de editor en de patroonpreview. Zelfde gedrag als Sphere.tsx
+// (selecteren, de gizmo, schaal uit width/height/length × zoom); alleen de geometrie
+// verschilt (zie geometry/solidGeometry.ts).
+function SolidShape({
+    id,
+    shape,
+    orbitControlsRef,
+    isSelected,
+    onSelect,
+    onUpdateShape,
+    transformMode,
+    setTransformMode,
+    onDraggingChange,
+    activeTransformControlsRef,
+    type,
+}: ShapeComponentProps & { type: SolidShapeType }) {
     const width = shape?.width ?? 50;
     const height = shape?.height ?? 50;
     const length = shape?.length ?? 50;
@@ -33,6 +38,9 @@ function Sphere({
     const transformControlsRef = useRef<TransformControlsImpl | null>(null);
     const [isDragging, setIsDragging] = useState(false);
 
+    const geometry = useMemo(() => createSolidGeometry(type), [type]);
+    useEffect(() => () => geometry.dispose(), [geometry]);
+
     const handleDraggingChange = (value: boolean) => {
         setIsDragging(value);
         onDraggingChange?.(value);
@@ -40,36 +48,23 @@ function Sphere({
 
     const texture = useLoader(THREE.TextureLoader, '/textures/stitch-texture.jpg');
 
-    // const meshRendered = useContext(RenderContext)
-    // const [hasRendered, setHasRendered] = useState(false);
-
-    // useFrame(() => {
-    //     if (meshRef.current && !hasRendered) {
-    //         meshRendered(id);
-    //         setHasRendered(true);
-    //     }
-    // });
-
     useEffect(() => {
         if (meshRef.current) {
-            meshRef.current.uuid = id; // Ensure mesh uuid matches shape.id
+            meshRef.current.uuid = id; // zodat de mesh in de scene bij de vorm te vinden is
         }
     }, [id]);
 
     useEffect(() => {
-        // Schaal uit de vormmaat (zie meshScaleOf).
-        const [scaleX, scaleY, scaleZ] = meshScaleOf({ type: 'Sphere', width, height, length, zoom });
-
         if (meshRef.current && !isDragging) {
-            meshRef.current.scale.set(scaleX, scaleY, scaleZ);
+            meshRef.current.scale.set(...meshScaleOf({ type, width, height, length, zoom }));
             meshRef.current.position.set(x, y, z);
             meshRef.current.rotation.set(
                 rotation_x * (Math.PI / 180),
                 rotation_y * (Math.PI / 180),
-                rotation_z * (Math.PI / 180)
+                rotation_z * (Math.PI / 180),
             );
         }
-    }, [width, height, length, zoom, x, y, z, rotation_x, rotation_y, rotation_z, isSelected, isDragging]);
+    }, [type, width, height, length, zoom, x, y, z, rotation_x, rotation_y, rotation_z, isDragging]);
 
     return (
         <>
@@ -82,13 +77,8 @@ function Sphere({
                     onSelect(id);
                 }}
             >
-                <mesh ref={meshRef} scale={[1, 1, 1]}>
-                    {/*position={[x, y, z]*/}
-                    <sphereGeometry args={[1, 32, 32]} />
-                    <meshBasicMaterial
-                        map={texture}
-                        color={shape?.color ?? 'white'}
-                    />
+                <mesh ref={meshRef} geometry={geometry}>
+                    <meshBasicMaterial map={texture} color={shape?.color ?? 'white'} />
                 </mesh>
             </group>
             {isSelected && (
@@ -98,9 +88,11 @@ function Sphere({
     );
 }
 
-export default React.memo(Sphere, (prev, next) =>
+const areEqual = (prev: ShapeComponentProps, next: ShapeComponentProps) =>
     prev.shape === next.shape &&
     prev.isSelected === next.isSelected &&
     prev.transformMode === next.transformMode &&
-    prev.id === next.id
-);
+    prev.id === next.id;
+
+export const Cylinder = React.memo((props: ShapeComponentProps) => <SolidShape {...props} type="Cylinder" />, areEqual);
+export const Cone = React.memo((props: ShapeComponentProps) => <SolidShape {...props} type="Cone" />, areEqual);

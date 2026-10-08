@@ -1,12 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
-import {useLoader, useThree} from '@react-three/fiber';
+import {useLoader} from '@react-three/fiber';
 import * as THREE from 'three';
 import TransformControlsThree from "./TransformControlsThree.tsx";
 import type { TransformControls as TransformControlsImpl } from 'three-stdlib';
 import { isGizmoAxisActive } from "./editor/types";
 import type { ShapeComponentProps } from "./editor/types";
-import { ARM_TOTAL_LOCAL_LENGTH } from "./geometry/armGeometry";
-import { WORLD_SCALE_FACTOR } from "./geometry/units";
+import { meshScaleOf } from "./geometry/units";
 
 function Arm({
                                          id,
@@ -32,7 +31,6 @@ function Arm({
     const rotation_z = shape?.rotation_z ?? 0;
     const zoom = shape?.zoom ?? 1;
     const color = shape?.color ?? 'white';
-    const { camera, size } = useThree();
     const meshRef = useRef<THREE.Mesh>(null);
     const transformControlsRef = useRef<TransformControlsImpl | null>(null);
     const [isDragging, setIsDragging] = useState(false);
@@ -51,20 +49,9 @@ function Arm({
     }, [id]);
 
     useEffect(() => {
-        const canvasWidth = size.width;
-        const canvasHeight = size.height;
-
-        const scaledWidth = width * zoom;
-        // `height` (zoals de gebruiker die invoert, in cm) staat voor de TOTALE zichtbare
-        // armlengte (cilinder + bolvormig kapje), niet alleen de cilinder. Los scaleY op
-        // zodat ARM_TOTAL_LOCAL_LENGTH * scaleY gelijk is aan de gewenste totale wereldlengte.
-        const scaledHeight = (height * zoom) / ARM_TOTAL_LOCAL_LENGTH;
-        const scaledLength = length * zoom;
-
-        const scaleFactor = WORLD_SCALE_FACTOR;
-        const scaleX = (scaledWidth / canvasWidth) * canvasWidth * scaleFactor;
-        const scaleY = (scaledHeight / canvasHeight) * canvasHeight * scaleFactor;
-        const scaleZ = (scaledLength / canvasWidth) * canvasWidth * scaleFactor;
+        // `height` staat voor de TOTALE zichtbare armlengte (cilinder + bolvormig kapje);
+        // meshScaleOf deelt daarvoor door ARM_TOTAL_LOCAL_LENGTH.
+        const [scaleX, scaleY, scaleZ] = meshScaleOf({ type: 'Arm', width, height, length, zoom });
 
         if (meshRef.current && !isDragging) {
             meshRef.current.scale.set(scaleX, scaleY, scaleZ);
@@ -75,7 +62,7 @@ function Arm({
                 rotation_z * (Math.PI / 180)
             );
         }
-    }, [camera, size, width, height, length, zoom, x, y, z, rotation_x, rotation_y, rotation_z, isSelected, isDragging]);
+    }, [width, height, length, zoom, x, y, z, rotation_x, rotation_y, rotation_z, isSelected, isDragging]);
 
 
     return (
@@ -101,7 +88,7 @@ function Arm({
                 </mesh>
             </group>
             {isSelected && (
-                <TransformControlsThree transformRef={transformControlsRef} object={meshRef.current} transformMode={transformMode} setTransformMode={setTransformMode} isSelected={isSelected} setIsDragging={handleDraggingChange} orbitControlsRef={orbitControlsRef} meshRef={meshRef} size={size} onUpdateShape={onUpdateShape} shape={shape} width={width} activeTransformControlsRef={activeTransformControlsRef} />
+                <TransformControlsThree transformRef={transformControlsRef} object={meshRef.current} transformMode={transformMode} setTransformMode={setTransformMode} isSelected={isSelected} setIsDragging={handleDraggingChange} orbitControlsRef={orbitControlsRef} meshRef={meshRef} onUpdateShape={onUpdateShape} shape={shape} width={width} activeTransformControlsRef={activeTransformControlsRef} />
             )}
         </>
     );

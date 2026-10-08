@@ -3,8 +3,9 @@ import React, {useEffect} from "react";
 import type * as THREE from "three";
 import type { TransformControls as TransformControlsImpl } from "three-stdlib";
 import type { OrbitControlsRef, TransformControlsRef, TransformMode } from "./editor/types";
+import { sizeFromMeshScale } from "./geometry/units";
 
-export default function TransformControlsThree ({transformRef, object, transformMode, setTransformMode, setIsDragging, orbitControlsRef, meshRef, shape, size, width, onUpdateShape, isSelected, activeTransformControlsRef} : {
+export default function TransformControlsThree ({transformRef, object, transformMode, setTransformMode, setIsDragging, orbitControlsRef, meshRef, shape, width, onUpdateShape, isSelected, activeTransformControlsRef} : {
     transformRef: React.RefObject<TransformControlsImpl | null>;
     object: THREE.Object3D | null;
     transformMode: TransformMode;
@@ -13,7 +14,6 @@ export default function TransformControlsThree ({transformRef, object, transform
     orbitControlsRef: OrbitControlsRef;
     meshRef: React.RefObject<THREE.Mesh | null>;
     shape: Shape;
-    size: { width: number; height: number };
     width: number;
     onUpdateShape: (shape: Shape) => void;
     isSelected: boolean;
@@ -107,23 +107,10 @@ export default function TransformControlsThree ({transformRef, object, transform
                         updatedShape.rotation_y = mesh.rotation.y * (180 / Math.PI);
                         updatedShape.rotation_z = mesh.rotation.z * (180 / Math.PI);
                     } else if (transformMode === 'scale') {
-                        const canvasWidth = size.width;
-                        const canvasHeight = size.height;
-                        const scaleFactor = 0.01;
-
-                        const scaleX = mesh.scale.x;
-                        const scaleY = mesh.scale.y;
-                        const scaleZ = mesh.scale.z;
-
-                        const scaledWidth = (scaleX / scaleFactor) * canvasWidth / canvasWidth;
-                        const scaledHeight = (scaleY / scaleFactor) * canvasHeight / canvasHeight;
-                        const scaledLength = (scaleZ / scaleFactor) * canvasWidth / canvasWidth;
-                        const newZoom = scaleX / (width * scaleFactor);
-
-                        updatedShape.width = scaledWidth / newZoom;
-                        updatedShape.height = scaledHeight / newZoom;
-                        updatedShape.length = scaledLength / newZoom;
-                        updatedShape.zoom = newZoom;
+                        // Terug van mesh-schaal naar vormmaat (zie sizeFromMeshScale). Voorheen
+                        // werd de lokale hoogte van de Arm (1,5) vergeten, waardoor de hoogte van
+                        // een arm bij het schalen naar ⅔ sprong.
+                        Object.assign(updatedShape, sizeFromMeshScale({ type: shape.type, width }, mesh.scale));
                     }
 
                     onUpdateShape(updatedShape);

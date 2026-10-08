@@ -447,6 +447,39 @@ body {
     position: fixed;
 }
 
+.palette-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.palette-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+/* Cilinder: recht met afgeronde hoeken. Kegel: een driehoek als SVG (een gewone rand werkt
+   niet op een schuine vorm); de lijnkleur is --color-text, de hover-kleur --color-primary. */
+.Cylinder {
+    width: 48px;
+    height: 56px;
+    background-color: #FFFFFF;
+    border-radius: 24px / 8px;
+}
+
+.draggable-shape.Cone {
+    width: 56px;
+    height: 56px;
+    border: none;
+    background: no-repeat center / contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'%3E%3Cpath d='M28 3 L53 53 L3 53 Z' fill='%23FFFFFF' stroke='%232A1E1B' stroke-width='3' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+.draggable-shape.Cone:hover {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'%3E%3Cpath d='M28 3 L53 53 L3 53 Z' fill='%23FFFFFF' stroke='%237D3A45' stroke-width='3' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
 .draggables {
     display: grid;
     grid-template-columns: repeat(2, 1fr);

@@ -3,8 +3,7 @@ import {useLocation, useNavigate, useParams} from "react-router-dom";
 import {Button, Card, Skeleton} from "@mui/material";
 import {collection, doc, getDoc, getDocs, query, where} from "firebase/firestore";
 import {db} from "../firebase-config.js";
-import generateSpherePattern from "./patterns/generateSpherePattern";
-import generateArmPattern from "./patterns/generateArmPattern";
+import { generatePattern, PatternPart } from "./patterns/generators";
 import { computePatternHeightCm, computePatternWidthCm } from "./geometry/patternBounds";
 import { useIntl } from "react-intl";
 import { useT } from "./i18n/LanguageProvider";
@@ -40,8 +39,6 @@ const RowLine = ({ text }: { text: string }) => {
 const NO_SHAPES: Shape[] = [];
 const NO_INTERSECTIONS: Intersection[] = [];
 
-// Uitgewerkt patroon van één vorm.
-type PatternPart = ReturnType<typeof generateSpherePattern> | ReturnType<typeof generateArmPattern>;
 
 // Patroonpagina (/:amigurumi_id/pattern). Vanuit een overzicht of de editor komen ontwerp en
 // vormen mee in de navigatie-state, zodat de pagina meteen staat; na herladen of via een
@@ -110,16 +107,9 @@ const Pattern = () => {
 
     useEffect(() => {
         if (shapes && shapes.length > 0) {
-            const newPatterns = shapes.map((singleShape) => {
-                switch (singleShape.type) {
-                    case "Sphere":
-                        return generateSpherePattern(singleShape, yarnWeight, rowHeights, intersections, terms);
-                    case "Arm":
-                        return generateArmPattern(singleShape, yarnWeight, rowHeights, intersections, terms);
-                    default:
-                        return null;
-                }
-            }).filter((pattern): pattern is PatternPart => pattern !== null);
+            const newPatterns = shapes
+                .map((singleShape) => generatePattern(singleShape, yarnWeight, rowHeights, intersections, terms))
+                .filter((pattern): pattern is PatternPart => pattern !== null);
             setPatterns(newPatterns);
         } else {
             setPatterns([]);
@@ -303,22 +293,19 @@ const Pattern = () => {
                                     <div className="pattern-card-body">
                                         <ul className="pattern-row-list">
                                             <RowLine text={`${terms.row(1)}: ${t("pattern.magicRingStart", { stitches: terms.sc(6) })} (6)`} />
-                                            {pattern.incRows >= 2 ? (
-                                                <RowLine text={`${terms.row(2)}: ${terms.inc(6)} (12)`} />
-                                            ) : null}
                                             {pattern.incArray.map((row, idx) => (
                                                 <RowLine key={idx} text={row} />
                                             ))}
                                             {pattern.scArray.map((row, idx) => (
                                                 <RowLine key={idx} text={row} />
                                             ))}
-                                            {pattern.type !== "Arm" ? (
+                                            {pattern.closed ? (
                                                 <RowLine text={t("pattern.startStuffing")} />
                                             ) : null}
                                             {pattern.decArray.map((row, idx) => (
                                                 <RowLine key={idx} text={row} />
                                             ))}
-                                            {pattern.type !== "Arm" ? (
+                                            {pattern.closed ? (
                                                 <>
                                                     <RowLine text={`${terms.row(pattern.lastRow)}: ${terms.dec(6)} (6)`} />
                                                     <RowLine text={t("pattern.sewClosed")} />

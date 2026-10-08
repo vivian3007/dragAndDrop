@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { computePatternBounds, computePatternHeightCm, computePatternWidthCm } from "./patternBounds";
 import { mirrorShape } from "./mirrorShape";
+import { meshScaleOf, sizeFromMeshScale } from "./units";
 import { makeShape, shapeOfCm } from "../patterns/testShapes";
 
 describe("patternBounds", () => {
@@ -16,6 +17,16 @@ describe("patternBounds", () => {
         expect(computePatternHeightCm([arm])).toBeCloseTo(8, 6);
         expect(computePatternWidthCm([turned])).toBeCloseTo(8, 6);
         expect(computePatternHeightCm([turned])).toBeCloseTo(2, 6);
+    });
+
+    it("cilinder en kegel: breedte is de diameter, hoogte van onderkant tot boven", () => {
+        for (const type of ["Cylinder", "Cone"]) {
+            const shape = shapeOfCm(type, { width: 4, height: 6, length: 4 }, { y: 1 });
+            expect(computePatternWidthCm([shape])).toBeCloseTo(4, 6);
+            expect(computePatternHeightCm([shape])).toBeCloseTo(6, 6);
+            // De oorsprong is de onderkant: y=1 is de bodem, niet het midden.
+            expect(computePatternBounds([shape])!.min[1]).toBeCloseTo(1, 6);
+        }
     });
 
     it("twee vormen naast elkaar: de omhullende van beide", () => {
@@ -50,5 +61,23 @@ describe("mirrorShape", () => {
         const twice = mirrorShape(once, [body, once]);
         expect(twice.x).toBeCloseTo(arm.x, 10);
         expect(twice.rotation_z).toBeCloseTo(arm.rotation_z, 10);
+    });
+});
+
+describe("meshScaleOf / sizeFromMeshScale (schalen met de gizmo)", () => {
+    it.each(["Sphere", "Arm", "Cylinder", "Cone"])("%s: heen en terug geeft dezelfde maat", (type) => {
+        const shape = makeShape({ type, width: 80, height: 150, length: 60, zoom: 1.3 });
+        const [x, y, z] = meshScaleOf(shape);
+        const size = sizeFromMeshScale(shape, { x, y, z });
+        expect(size.width * size.zoom).toBeCloseTo(shape.width * shape.zoom, 8);
+        expect(size.height * size.zoom).toBeCloseTo(shape.height * shape.zoom, 8);
+        expect(size.length * size.zoom).toBeCloseTo(shape.length * shape.zoom, 8);
+    });
+
+    it("een arm twee keer zo groot schalen: de hoogte verdubbelt ook (sprong vroeger naar ⅔)", () => {
+        const arm = makeShape({ type: "Arm", width: 80, height: 150, length: 80, zoom: 1 });
+        const [x, y, z] = meshScaleOf(arm);
+        const size = sizeFromMeshScale(arm, { x: x * 2, y: y * 2, z: z * 2 });
+        expect(size.height * size.zoom).toBeCloseTo(300, 8);
     });
 });

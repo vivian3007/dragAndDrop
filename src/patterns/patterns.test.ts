@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import generateSpherePattern from "./generateSpherePattern";
 import generateArmPattern from "./generateArmPattern";
+import generateCylinderPattern from "./generateCylinderPattern";
+import generateConePattern from "./generateConePattern";
+import { generatePattern, PatternPart } from "./generators";
 import { halfEllipsePerimeter, maxStitchesForDiameter, STITCH_WIDTH_PER_ROW_HEIGHT } from "./stitchGeometry";
 import { estimateYarnByColor, estimateYarnMeters, ROW_HEIGHTS, skeinsNeeded, yarnWeightKey } from "./estimateYarn";
 import { pixelsPerCm, shapeDimensionCm } from "../geometry/units";
@@ -9,15 +12,21 @@ import { rowSpan, shapeOfCm, stitchesOf } from "./testShapes";
 const medium = ROW_HEIGHTS.Medium;
 
 // Alle rondes van een patroon zoals de patroonpagina ze toont, als steekaantallen per ronde:
-// ronde 1 (6) en 2 (12) en — bij een bol — de slotronde (6) schrijft Pattern.tsx zelf.
-function stitchesPerRow(pattern: ReturnType<typeof generateSpherePattern> | ReturnType<typeof generateArmPattern>, closed: boolean): number[] {
+// ronde 1 (magische ring, 6) en — bij een gesloten vorm — de slotronde (6) schrijft
+// Pattern.tsx zelf.
+function stitchesPerRow(pattern: PatternPart): number[] {
     const rows = [6];
-    if (pattern.incRows >= 2) rows.push(12);
     for (const line of [...pattern.incArray, ...pattern.scArray, ...pattern.decArray]) {
         for (let i = 0; i < rowSpan(line); i++) rows.push(stitchesOf(line));
     }
-    if (closed) rows.push(6);
+    if (pattern.closed) rows.push(6);
     return rows;
+}
+
+// Elke ronde verschilt hooguit 6 steken van de vorige (één meerdering of mindering per deel).
+function expectSmoothSteps(rows: number[]) {
+    rows.slice(1).forEach((stitches, i) => expect(Math.abs(stitches - rows[i])).toBeLessThanOrEqual(6));
+    rows.forEach((stitches) => expect(stitches % 6).toBe(0));
 }
 
 describe("stitchGeometry", () => {
@@ -58,7 +67,7 @@ describe.each([
     ["platte bol", shapeOfCm("Sphere", { width: 10, height: 3, length: 10 })],
 ])("generateSpherePattern: %s", (_label, shape) => {
     const pattern = generateSpherePattern(shape, "Medium", ROW_HEIGHTS, []);
-    const rows = stitchesPerRow(pattern, true);
+    const rows = stitchesPerRow(pattern);
 
     it("telt precies het opgegeven aantal rondes", () => {
         expect(rows.length).toBe(pattern.rows);
@@ -121,7 +130,7 @@ describe.each([
     ["dunne lange arm", shapeOfCm("Arm", { width: 1, height: 15, length: 1 })],
 ])("generateArmPattern: %s", (_label, shape) => {
     const pattern = generateArmPattern(shape, "Medium", ROW_HEIGHTS, []);
-    const rows = stitchesPerRow(pattern, false);
+    const rows = stitchesPerRow(pattern);
 
     it("is aan de onderkant open: geen minderingsrondes", () => {
         expect(pattern.decArray).toEqual([]);
@@ -137,6 +146,75 @@ describe.each([
 
     it("het totaal aantal steken is de som van alle rondes", () => {
         expect(pattern.stitchCount).toBe(rows.reduce((sum, n) => sum + n, 0));
+    });
+});
+
+describe.each([
+    ["cilinder 4 × 6 cm", shapeOfCm("Cylinder", { width: 4, height: 6, length: 4 })],
+    ["platte brede cilinder", shapeOfCm("Cylinder", { width: 8, height: 1, length: 8 })],
+    ["dunne hoge cilinder", shapeOfCm("Cylinder", { width: 1.5, height: 10, length: 1.5 })],
+])("generateCylinderPattern: %s", (_label, shape) => {
+    const pattern = generateCylinderPattern(shape, "Medium", ROW_HEIGHTS, []);
+    const rows = stitchesPerRow(pattern);
+
+    it("is dicht en telt precies het opgegeven aantal rondes", () => {
+        expect(pattern.closed).toBe(true);
+        expect(rows.length).toBe(pattern.rows);
+    });
+
+    it("platte bodem, rechte zijkant op de volle omtrek, platte bovenkant tot 6", () => {
+        expectSmoothSteps(rows);
+        const max = Math.max(...rows);
+        expect(rows.slice(0, pattern.incRows)).toEqual(Array.from({ length: pattern.incRows }, (_, i) => (i + 1) * 6));
+        expect(rows.filter((n) => n === max).length).toBeGreaterThan(1);
+        expect(rows[rows.length - 1]).toBe(6);
+    });
+
+    it("het totaal aantal steken is de som van alle rondes", () => {
+        expect(pattern.stitchCount).toBe(rows.reduce((sum, n) => sum + n, 0));
+    });
+});
+
+describe("generateCylinderPattern: verhoudingen", () => {
+    it("een hogere cilinder krijgt meer zijrondes, niet meer steken", () => {
+        const low = generateCylinderPattern(shapeOfCm("Cylinder", { width: 4, height: 3, length: 4 }), "Medium", ROW_HEIGHTS, []);
+        const high = generateCylinderPattern(shapeOfCm("Cylinder", { width: 4, height: 9, length: 4 }), "Medium", ROW_HEIGHTS, []);
+        expect(high.incRows).toBe(low.incRows);
+        expect(high.rows).toBeGreaterThan(low.rows);
+    });
+});
+
+describe.each([
+    ["kegel 3 × 4 cm (oor)", shapeOfCm("Cone", { width: 3, height: 4, length: 3 })],
+    ["spitse kegel (hoorn)", shapeOfCm("Cone", { width: 1.5, height: 6, length: 1.5 })],
+    ["platte brede kegel", shapeOfCm("Cone", { width: 10, height: 1, length: 10 })],
+])("generateConePattern: %s", (_label, shape) => {
+    const pattern = generateConePattern(shape, "Medium", ROW_HEIGHTS, []);
+    const rows = stitchesPerRow(pattern);
+
+    it("is aan de onderkant open en telt precies het opgegeven aantal rondes", () => {
+        expect(pattern.closed).toBe(false);
+        expect(rows.length).toBe(pattern.rows);
+    });
+
+    it("loopt van de punt (6) gelijkmatig op naar de onderkant, nooit smaller", () => {
+        expectSmoothSteps(rows);
+        expect(rows[0]).toBe(6);
+        rows.slice(1).forEach((stitches, i) => expect(stitches).toBeGreaterThanOrEqual(rows[i]));
+        expect(rows[rows.length - 1]).toBe(Math.max(...rows));
+    });
+
+    it("het totaal aantal steken is de som van alle rondes", () => {
+        expect(pattern.stitchCount).toBe(rows.reduce((sum, n) => sum + n, 0));
+    });
+});
+
+describe("generatePattern (register)", () => {
+    it("kent alle vormtypen en geeft null voor een onbekend type", () => {
+        for (const type of ["Sphere", "Arm", "Cylinder", "Cone"]) {
+            expect(generatePattern(shapeOfCm(type, { width: 3, height: 3, length: 3 }), "Medium", ROW_HEIGHTS, [])).not.toBeNull();
+        }
+        expect(generatePattern(shapeOfCm("Driehoek", { width: 3, height: 3, length: 3 }), "Medium", ROW_HEIGHTS, [])).toBeNull();
     });
 });
 
@@ -170,6 +248,14 @@ describe("estimateYarn", () => {
         expect(Object.keys(byColor).sort()).toEqual(["#00ff00", "#ff0000"]);
         expect(total).toBe(byColor["#ff0000"] + byColor["#00ff00"]);
         Object.values(byColor).forEach((meters) => expect(Number.isInteger(meters)).toBe(true));
+    });
+
+    it("nieuwe vormen tellen mee in de garenschatting", () => {
+        const { total } = estimateYarnByColor([
+            shapeOfCm("Cylinder", { width: 4, height: 6, length: 4 }, { id: "a" }),
+            shapeOfCm("Cone", { width: 3, height: 4, length: 3 }, { id: "b" }),
+        ], "Medium");
+        expect(total).toBeGreaterThan(0);
     });
 
     it("een grotere vorm kost meer garen", () => {

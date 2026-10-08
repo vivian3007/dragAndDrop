@@ -3,6 +3,7 @@ import { Canvas, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import Sphere from './Sphere.tsx';
 import Arm from './Arm.tsx';
+import { Cone, Cylinder } from './SolidShape';
 import { computePatternBox } from './geometry/patternBox';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import type { ShapeComponentProps } from './editor/types';
@@ -12,6 +13,8 @@ import { useT } from './i18n/LanguageProvider';
 const shapeComponents: Record<string, React.ComponentType<ShapeComponentProps>> = {
     Sphere,
     Arm,
+    Cylinder,
+    Cone,
 };
 
 const noop = () => {};

@@ -1,4 +1,4 @@
-import {englishPatternTerms, PatternTerms} from "./patternTerms";
+import {englishPatternTerms, increaseRow, PatternTerms} from "./patternTerms";
 import { shapeDimensionCm } from "../geometry/units";
 import { halfEllipsePerimeter, maxStitchesForDiameter, STITCH_WIDTH_PER_ROW_HEIGHT } from "./stitchGeometry";
 
@@ -66,9 +66,9 @@ const generateArmPattern = (singleShape: Shape, yarnWeight: string, rowHeights: 
         rowArray.push(i);
     }
 
-    // Ronde 1 (6) en ronde 2 (12) schrijft Pattern.tsx zelf; vanaf ronde 3 komen ze hier vandaan.
-    for (let row = 3; row <= incRows; row++) {
-        incArray.push(`${t.row(row)}: [${t.inc(1)}, ${t.sc(row - 2)}] * 6 (${row * 6})`);
+    // Ronde 1 (magische ring, 6) schrijft Pattern.tsx zelf; vanaf ronde 2 komen ze hier vandaan.
+    for (let row = 2; row <= incRows; row++) {
+        incArray.push(increaseRow(t, row, (row - 1) * 6));
     }
 
     if (scRows > 0) {
@@ -94,6 +94,8 @@ const generateArmPattern = (singleShape: Shape, yarnWeight: string, rowHeights: 
         rotation_z: singleShape.rotation_z,
         rows,
         incRows,
+        // Aan de onderkant open (wordt aan het lijf genaaid): geen slotronde.
+        closed: false,
         lastRow: rows,
         stitchCount,
         incArray,

@@ -8,11 +8,14 @@ import { OrbitControls } from '@react-three/drei';
 import { GridHelper } from 'three';
 import Sphere from './Sphere';
 import Arm from './Arm';
+import { Cone, Cylinder } from './SolidShape';
 import SceneController from "./SceneController.tsx";
 
 const shapeComponents: Record<string, React.ComponentType<ShapeComponentProps>> = {
     Sphere,
     Arm,
+    Cylinder,
+    Cone,
 };
 
 export default function ThreeJsField({

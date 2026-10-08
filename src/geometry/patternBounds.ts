@@ -15,6 +15,10 @@ function getLocalBounds(shape: Shape): Bounds {
     if (shape.type === "Arm") {
         return { min: [-0.5, 0, -0.5], max: [0.5, ARM_TOTAL_LOCAL_LENGTH, 0.5] };
     }
+    // Cilinder en kegel: diameter 1, hoogte 0..1 (zie geometry/solidGeometry.ts).
+    if (shape.type === "Cylinder" || shape.type === "Cone") {
+        return { min: [-0.5, 0, -0.5], max: [0.5, 1, 0.5] };
+    }
     // Sphere: eenheidsbol (radius 1) rond de oorsprong.
     return { min: [-1, -1, -1], max: [1, 1, 1] };
 }

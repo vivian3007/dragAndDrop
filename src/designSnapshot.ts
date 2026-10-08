@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { ARM_TOTAL_LOCAL_LENGTH } from './geometry/armGeometry';
 import { computePatternBox } from './geometry/patternBox';
+import { createSolidGeometry, isSolidShapeType } from './geometry/solidGeometry';
 import { WORLD_SCALE_FACTOR } from './geometry/units';
 
 // Maakt een stilstaand plaatje van een ontwerp, als fallback voor kaarten zonder foto.
@@ -56,7 +57,10 @@ function buildShape(shape: Shape, texture: THREE.Texture): THREE.Object3D {
             (shape.length ?? 50) * zoom * WORLD_SCALE_FACTOR,
         );
     } else {
-        object.add(new THREE.Mesh(new THREE.SphereGeometry(1, 32, 32), material));
+        // Bol: eenheidsbol; cilinder en kegel: zie geometry/solidGeometry.ts. Alle drie met
+        // dezelfde schaal (width/height/length × zoom).
+        const geometry = isSolidShapeType(shape.type) ? createSolidGeometry(shape.type) : new THREE.SphereGeometry(1, 32, 32);
+        object.add(new THREE.Mesh(geometry, material));
         object.scale.set(
             (shape.width ?? 50) * zoom * WORLD_SCALE_FACTOR,
             (shape.height ?? 50) * zoom * WORLD_SCALE_FACTOR,
