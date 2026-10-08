@@ -74,9 +74,9 @@ export const YARN_MATERIAL = {
 // maken compenseert dat, zodat de gekozen kleur herkenbaar blijft.
 const COLOR_BOOST = 1.35;
 
-export function yarnColor(color: string | null | undefined): THREE.Color {
-    return new THREE.Color(color ?? "#ffffff").multiplyScalar(COLOR_BOOST);
-}
+// De echte kleuren zitten per hoekpunt (vertex colors, zie geometry/stripes.ts); de
+// materiaalkleur doet alleen die ophelping.
+export const YARN_TINT = new THREE.Color(1, 1, 1).multiplyScalar(COLOR_BOOST);
 
 // Zacht, warm licht: een hemellicht (licht van boven, warme weerkaatsing van onder), een
 // hoofdlicht schuin van voren-boven en een zwak invullicht van achteren.

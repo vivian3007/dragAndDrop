@@ -6,7 +6,8 @@ import type { ShapeComponentProps } from "./editor/types";
 import * as THREE from 'three';
 import { meshScaleOf } from "./geometry/units";
 import { useStitchTexture } from "./editor/useStitchTexture";
-import { YARN_MATERIAL, yarnColor } from "./geometry/yarnLook";
+import { YARN_MATERIAL, YARN_TINT } from "./geometry/yarnLook";
+import { useStripedGeometry } from "./editor/useStripedGeometry";
 
 function Sphere({
                                    id,
@@ -40,6 +41,7 @@ function Sphere({
     };
 
     const texture = useStitchTexture(shape);
+    const geometry = useStripedGeometry(() => new THREE.SphereGeometry(1, 64, 48), shape);
 
     // const meshRendered = useContext(RenderContext)
     // const [hasRendered, setHasRendered] = useState(false);
@@ -83,10 +85,8 @@ function Sphere({
                     onSelect(id);
                 }}
             >
-                <mesh ref={meshRef} scale={[1, 1, 1]}>
-                    {/*position={[x, y, z]*/}
-                    <sphereGeometry args={[1, 64, 48]} />
-                    <meshStandardMaterial map={texture} bumpMap={texture} {...YARN_MATERIAL} color={yarnColor(shape?.color)} />
+                <mesh ref={meshRef} scale={[1, 1, 1]} geometry={geometry}>
+                    <meshStandardMaterial map={texture} bumpMap={texture} {...YARN_MATERIAL} vertexColors color={YARN_TINT} />
                 </mesh>
             </group>
             {isSelected && (

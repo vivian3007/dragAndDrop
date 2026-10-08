@@ -5,8 +5,8 @@ import generateCylinderPattern from "./generateCylinderPattern";
 import generateConePattern from "./generateConePattern";
 import generateDiscPattern from "./generateDiscPattern";
 import generateDomePattern from "./generateDomePattern";
-import { generatePattern, PatternPart } from "./generators";
-import { englishPatternTerms, formatRow } from "./patternTerms";
+import { generatePattern } from "./generators";
+import { englishPatternTerms, formatRow, PatternRow } from "./patternTerms";
 import { halfEllipsePerimeter, maxStitchesForDiameter, STITCH_WIDTH_PER_ROW_HEIGHT } from "./stitchGeometry";
 import { estimateYarnByColor, estimateYarnMeters, ROW_HEIGHTS, skeinsNeeded, yarnWeightKey } from "./estimateYarn";
 import { pixelsPerCm, shapeDimensionCm } from "../geometry/units";
@@ -17,7 +17,9 @@ const medium = ROW_HEIGHTS.Medium;
 // Alle rondes van een patroon zoals de patroonpagina ze toont, als steekaantallen per ronde:
 // ronde 1 (magische ring, 6) en — bij een gesloten vorm — de slotronde (6) schrijft
 // Pattern.tsx zelf.
-function stitchesPerRow(pattern: PatternPart): number[] {
+type RowsOf = { incArray: PatternRow[]; scArray: PatternRow[]; decArray: PatternRow[]; closed: boolean };
+
+function stitchesPerRow(pattern: RowsOf): number[] {
     const rows = [6];
     for (const line of [...pattern.incArray, ...pattern.scArray, ...pattern.decArray]) {
         for (let i = line.from; i <= line.to; i++) rows.push(line.stitches);
@@ -179,7 +181,7 @@ describe.each([
 });
 
 describe("generateCylinderPattern: platte bodem en bovenkant (achterste lus)", () => {
-    const sideRowsOf = (pattern: PatternPart) =>
+    const sideRowsOf = (pattern: RowsOf) =>
         pattern.scArray.flatMap((line) => Array.from({ length: line.to - line.from + 1 }, () => line.instruction));
 
     it("de eerste en de laatste zijronde zijn in de achterste lus, de rest niet", () => {

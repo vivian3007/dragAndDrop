@@ -16,5 +16,7 @@ interface Shape {
     rotation_y: number;
     rotation_z: number;
     zoom: number;
+    // Kleurwissels (banen in een andere kleur), zie patterns/colorChanges.ts.
+    stripes?: { from: number; to: number; color: string }[] | null;
     mesh?: unknown;
 }

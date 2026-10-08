@@ -75,6 +75,7 @@ export function useEditorState(amigurumiId: string) {
                 rotation_y: updatedShape.rotation_y,
                 rotation_z: updatedShape.rotation_z,
                 zoom: updatedShape.zoom,
+                stripes: updatedShape.stripes ?? [],
             });
         } catch (error) {
             console.error("Fout bij opslaan van vorm:", error);

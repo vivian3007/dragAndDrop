@@ -359,6 +359,15 @@ body {
     border: 3px solid var(--color-text);
 }
 
+/* Kleurwissel-regel in een patroon: iets nadrukkelijker dan een gewone ronde. */
+.pattern-row-color {
+    font-weight: 600;
+}
+
+.pattern-row-color .pattern-color-swatch {
+    vertical-align: middle;
+}
+
 .shape-svg {
     flex-shrink: 0;
     overflow: visible;
@@ -460,6 +469,39 @@ body {
     color: var(--color-text);
     opacity: 0.75;
     text-align: center;
+}
+
+/* Kleurwissels in de vorminstellingen (StripeEditor.tsx). */
+.stripe-editor-hint {
+    margin: 0 0 6px;
+    font-size: 0.75rem;
+    opacity: 0.75;
+}
+
+.stripe-row {
+    display: flex;
+    align-items: center;
+}
+
+.stripe-color {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 2px solid var(--color-text);
+    border-radius: 50%;
+    overflow: hidden;
+    cursor: pointer;
+    background: none;
+}
+
+.stripe-color::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.stripe-color::-webkit-color-swatch {
+    border: none;
+    border-radius: 50%;
 }
 
 .palette-item {

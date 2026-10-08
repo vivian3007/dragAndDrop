@@ -3,6 +3,8 @@ import { computePatternBounds, computePatternHeightCm, computePatternWidthCm } f
 import { mirrorShape } from "./mirrorShape";
 import { meshScaleOf, sizeFromMeshScale } from "./units";
 import { stitchRepeat } from "./yarnLook";
+import { crochetFraction, paintStripes } from "./stripes";
+import * as THREE from "three";
 import { makeShape, shapeOfCm } from "../patterns/testShapes";
 
 describe("patternBounds", () => {
@@ -96,5 +98,42 @@ describe("stitchRepeat (steken in 3D op echte maat)", () => {
         const high = stitchRepeat(shapeOfCm("Cylinder", { width: 4, height: 6, length: 4 }));
         expect(high[0]).toBeCloseTo(low[0], 6);
         expect(high[1]).toBeCloseTo(low[1] * 3, 6);
+    });
+});
+
+describe("kleurwissels in 3D (stripes.ts)", () => {
+    const at = (shape: Shape, x: number, y: number, z = 0) => crochetFraction(shape, new THREE.Vector3(x, y, z));
+
+    it("bol: top = ronde 1, onderkant = laatste ronde", () => {
+        const ball = makeShape({ type: "Sphere" });
+        expect(at(ball, 0, 1)).toBeCloseTo(0, 6);
+        expect(at(ball, 1, 0)).toBeCloseTo(0.5, 6);
+        expect(at(ball, 0, -1)).toBeCloseTo(1, 6);
+    });
+
+    it("kegel: punt = begin, rand = eind", () => {
+        const cone = makeShape({ type: "Cone" });
+        expect(at(cone, 0, 1)).toBeCloseTo(0, 6);
+        expect(at(cone, 0.5, 0)).toBe(1);
+    });
+
+    it("cilinder: midden bodem → zijkant → midden bovenkant, oplopend", () => {
+        const cyl = makeShape({ type: "Cylinder", width: 100, height: 200, length: 100 });
+        const path = [at(cyl, 0, 0), at(cyl, 0.5, 0), at(cyl, 0.5, 0.5), at(cyl, 0.5, 1), at(cyl, 0, 1)];
+        expect(path[0]).toBeCloseTo(0, 6);
+        expect(path[path.length - 1]).toBeCloseTo(1, 6);
+        path.slice(1).forEach((f, i) => expect(f).toBeGreaterThan(path[i]));
+    });
+
+    it("een gekleurde top kleurt de bovenkant van de bol, niet de onderkant", () => {
+        const ball = makeShape({ type: "Sphere", color: "#000000", stripes: [{ from: 0, to: 0.25, color: "#ffffff" }] });
+        const geometry = paintStripes(new THREE.SphereGeometry(1, 16, 12), ball);
+        const position = geometry.attributes.position;
+        const color = geometry.attributes.color;
+        for (let i = 0; i < position.count; i++) {
+            const y = position.getY(i);
+            if (y > 0.8) expect(color.getX(i)).toBeCloseTo(1, 4);
+            if (y < 0) expect(color.getX(i)).toBeCloseTo(0, 4);
+        }
     });
 });

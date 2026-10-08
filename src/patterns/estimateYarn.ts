@@ -1,4 +1,5 @@
 import { generatePattern } from "./generators";
+import { stitchesWithColor } from "./colorChanges";
 
 // Rijhoogte in cm per garendikte. Gedeeld door de patroonpagina (rij-aantallen) en de
 // garenschatting hieronder.
@@ -52,8 +53,10 @@ export function estimateYarnByColor(
     shapes.forEach((shape) => {
         const pattern = generatePattern(shape, weightKey, ROW_HEIGHTS, []);
         if (!pattern) return;
-        const color = shape.color ?? "#cccccc";
-        rawByColor[color] = (rawByColor[color] ?? 0) + estimateYarnMeters(pattern.stitchCount, ROW_HEIGHTS[weightKey]);
+        // Per ronde in z'n eigen kleur, zodat kleurwissels apart meetellen.
+        for (const { stitches, color } of stitchesWithColor(pattern, shape.color ?? "#cccccc")) {
+            rawByColor[color] = (rawByColor[color] ?? 0) + estimateYarnMeters(stitches, ROW_HEIGHTS[weightKey]);
+        }
     });
     const byColor = Object.fromEntries(
         Object.entries(rawByColor).map(([color, meters]) => [color, Math.max(1, Math.ceil(meters))]),

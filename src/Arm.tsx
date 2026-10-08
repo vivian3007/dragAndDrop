@@ -6,7 +6,8 @@ import { isGizmoAxisActive } from "./editor/types";
 import type { ShapeComponentProps } from "./editor/types";
 import { meshScaleOf } from "./geometry/units";
 import { useStitchTexture } from "./editor/useStitchTexture";
-import { YARN_MATERIAL, yarnColor } from "./geometry/yarnLook";
+import { YARN_MATERIAL, YARN_TINT } from "./geometry/yarnLook";
+import { useStripedGeometry } from "./editor/useStripedGeometry";
 
 function Arm({
                                          id,
@@ -31,7 +32,6 @@ function Arm({
     const rotation_y = shape?.rotation_y ?? 0;
     const rotation_z = shape?.rotation_z ?? 0;
     const zoom = shape?.zoom ?? 1;
-    const color = shape?.color ?? 'white';
     const meshRef = useRef<THREE.Mesh>(null);
     const transformControlsRef = useRef<TransformControlsImpl | null>(null);
     const [isDragging, setIsDragging] = useState(false);
@@ -42,6 +42,9 @@ function Arm({
     };
 
     const texture = useStitchTexture(shape);
+    // Open cilinder (lichaam) en kapje, elk verschoven binnen de arm; zie Arm-opbouw hieronder.
+    const bodyGeometry = useStripedGeometry(() => new THREE.CylinderGeometry(0.5, 0.5, 1, 48, 1, true), shape, 0.5);
+    const capGeometry = useStripedGeometry(() => new THREE.SphereGeometry(0.5, 48, 24), shape, 1);
 
     useEffect(() => {
         if (meshRef.current) {
@@ -78,13 +81,11 @@ function Arm({
                 }}
             >
                 <mesh position={[0, 0.5, 0]} ref={meshRef}>
-                    <mesh position={[0, 0.5, 0]}>
-                        <cylinderGeometry args={[0.5, 0.5, 1, 48, 1, true]} />
-                        <meshStandardMaterial map={texture} bumpMap={texture} {...YARN_MATERIAL} color={yarnColor(color)} side={THREE.DoubleSide} />
+                    <mesh position={[0, 0.5, 0]} geometry={bodyGeometry}>
+                        <meshStandardMaterial map={texture} bumpMap={texture} {...YARN_MATERIAL} vertexColors color={YARN_TINT} side={THREE.DoubleSide} />
                     </mesh>
-                    <mesh position={[0, 1, 0]}>
-                        <sphereGeometry args={[0.5, 48, 24]} />
-                        <meshStandardMaterial map={texture} bumpMap={texture} {...YARN_MATERIAL} color={yarnColor(color)} side={THREE.DoubleSide} />
+                    <mesh position={[0, 1, 0]} geometry={capGeometry}>
+                        <meshStandardMaterial map={texture} bumpMap={texture} {...YARN_MATERIAL} vertexColors color={YARN_TINT} side={THREE.DoubleSide} />
                     </mesh>
                 </mesh>
             </group>

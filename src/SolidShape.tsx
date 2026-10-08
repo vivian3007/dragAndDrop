@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import type { TransformControls as TransformControlsImpl } from 'three-stdlib';
 import TransformControlsThree from "./TransformControlsThree.tsx";
@@ -6,7 +6,8 @@ import { isGizmoAxisActive } from "./editor/types";
 import type { ShapeComponentProps } from "./editor/types";
 import { meshScaleOf } from "./geometry/units";
 import { useStitchTexture } from "./editor/useStitchTexture";
-import { YARN_MATERIAL, yarnColor } from "./geometry/yarnLook";
+import { YARN_MATERIAL, YARN_TINT } from "./geometry/yarnLook";
+import { useStripedGeometry } from "./editor/useStripedGeometry";
 import { createSolidGeometry, SolidShapeType } from "./geometry/solidGeometry";
 
 // Cilinder of kegel in de editor en de patroonpreview. Zelfde gedrag als Sphere.tsx
@@ -39,8 +40,7 @@ function SolidShape({
     const transformControlsRef = useRef<TransformControlsImpl | null>(null);
     const [isDragging, setIsDragging] = useState(false);
 
-    const geometry = useMemo(() => createSolidGeometry(type), [type]);
-    useEffect(() => () => geometry.dispose(), [geometry]);
+    const geometry = useStripedGeometry(() => createSolidGeometry(type), { ...shape, type });
 
     const handleDraggingChange = (value: boolean) => {
         setIsDragging(value);
@@ -79,7 +79,7 @@ function SolidShape({
                 }}
             >
                 <mesh ref={meshRef} geometry={geometry}>
-                    <meshStandardMaterial map={texture} bumpMap={texture} {...YARN_MATERIAL} color={yarnColor(shape?.color)} />
+                    <meshStandardMaterial map={texture} bumpMap={texture} {...YARN_MATERIAL} vertexColors color={YARN_TINT} />
                 </mesh>
             </group>
             {isSelected && (

@@ -5,6 +5,7 @@ import generateConePattern from "./generateConePattern";
 import generateDiscPattern from "./generateDiscPattern";
 import generateDomePattern from "./generateDomePattern";
 import { englishPatternTerms, PatternTerms } from "./patternTerms";
+import { applyStripes } from "./colorChanges";
 
 // Welke patroongenerator bij welk vormtype hoort. Eén plek, zodat de patroonpagina en de
 // garenschatting altijd dezelfde vormen kennen.
@@ -17,7 +18,10 @@ const generators = {
     Dome: generateDomePattern,
 };
 
-export type PatternPart = ReturnType<(typeof generators)[keyof typeof generators]>;
+type GeneratedPattern = ReturnType<(typeof generators)[keyof typeof generators]>;
+
+// Het uitgewerkte patroon van één vorm, met de kleurwissels erin verwerkt (zie colorChanges.ts).
+export type PatternPart = ReturnType<typeof applyStripes<GeneratedPattern>>;
 
 // Het uitgewerkte patroon van één vorm, of null voor een onbekend vormtype.
 export function generatePattern(
@@ -28,5 +32,5 @@ export function generatePattern(
     t: PatternTerms = englishPatternTerms,
 ): PatternPart | null {
     const generate = generators[shape.type as keyof typeof generators];
-    return generate ? generate(shape, yarnWeight, rowHeights, intersections, t) : null;
+    return generate ? applyStripes(generate(shape, yarnWeight, rowHeights, intersections, t), shape.stripes) : null;
 }

@@ -4,7 +4,7 @@ import {Button, Card, Skeleton} from "@mui/material";
 import {collection, doc, getDoc, getDocs, query, where} from "firebase/firestore";
 import {db} from "../firebase-config.js";
 import { generatePattern, PatternPart } from "./patterns/generators";
-import { formatRow } from "./patterns/patternTerms";
+import { formatRow, PatternRow } from "./patterns/patternTerms";
 import { computePatternHeightCm, computePatternWidthCm } from "./geometry/patternBounds";
 import { useIntl } from "react-intl";
 import { useT } from "./i18n/LanguageProvider";
@@ -18,6 +18,15 @@ const PatternPreview3D = lazy(() => import("./PatternPreview3D.tsx"));
 // dubbele punten van alle rijen in de lijst netjes onder elkaar uitlijnen
 // (zie .pattern-row-list in styles.css). Regels zonder ":" (bv. "Sew closed")
 // krijgen de volle breedte.
+// "Wissel naar …" met een kleurvakje (kleurwissels, zie patterns/colorChanges.ts).
+const ColorChangeLine = ({ text, color }: { text: string; color: string }) => (
+    <li className="pattern-row-line pattern-row-color">
+        <span className="pattern-row-text--full">
+            {text} <span className="pattern-color-swatch" style={{ backgroundColor: color }} aria-label={color} />
+        </span>
+    </li>
+);
+
 const RowLine = ({ text }: { text: string }) => {
     const colonIndex = text.indexOf(":");
     if (colonIndex === -1) {
@@ -126,11 +135,47 @@ const Pattern = () => {
     const widthCm = computePatternWidthCm(shapes);
 
     // Eén regel per kleur, met de onderdelen die in die kleur gehaakt worden.
+    // Ook de kleuren van kleurwissels, bij het onderdeel waarin ze zitten.
     const partsByColor = shapes.reduce<Record<string, string[]>>((acc, shape) => {
-        const color = shape.color ?? "#cccccc";
-        (acc[color] ??= []).push(shape.name ?? shape.type);
+        const colors = new Set([shape.color ?? "#cccccc", ...(shape.stripes ?? []).map((stripe) => stripe.color)]);
+        colors.forEach((color) => (acc[color] ??= []).push(shape.name ?? shape.type));
         return acc;
     }, {});
+
+    // Alle regels van één onderdeel, met "wissel naar …" waar de kleur verandert. Ronde 1
+    // (magische ring) en de slotronde zitten niet in de generator-uitvoer.
+    const patternLines = (pattern: PatternPart): { text: string; color?: string }[] => {
+        const baseColor = pattern.color ?? "#cccccc";
+        const lines: { text: string; color?: string }[] = [];
+        let current = baseColor;
+        if (pattern.startColor) {
+            lines.push({ text: t("pattern.startInColor"), color: pattern.startColor });
+            current = pattern.startColor;
+        }
+        lines.push({ text: `${terms.row(1)}: ${t("pattern.magicRingStart", { stitches: terms.sc(6) })} (6)` });
+        const switchTo = (color: string) => {
+            if (color !== current) {
+                lines.push({ text: t("pattern.changeColor"), color });
+                current = color;
+            }
+        };
+        const addRows = (rows: PatternRow[]) => rows.forEach((row) => {
+            switchTo(row.color ?? baseColor);
+            lines.push({ text: formatRow(terms, row) });
+        });
+        addRows(pattern.incArray);
+        addRows(pattern.scArray);
+        if (pattern.closed) lines.push({ text: t("pattern.startStuffing") });
+        addRows(pattern.decArray);
+        if (pattern.closed) {
+            switchTo(pattern.closingColor ?? baseColor);
+            lines.push({ text: `${terms.row(pattern.lastRow)}: ${terms.dec(6)} (6)` });
+            lines.push({ text: t("pattern.sewClosed") });
+        } else {
+            lines.push({ text: t(pattern.flat ? "pattern.fastenOffFlat" : "pattern.stuffLightly") });
+        }
+        return lines;
+    };
 
     // Geschatte hoeveelheid garen per kleur, op basis van het aantal steken per onderdeel.
     const { byColor: metersByColor, total: totalMeters } = estimateYarnByColor(shapes, yarnInfo?.weight);
@@ -296,28 +341,12 @@ const Pattern = () => {
                                     </h2>
                                     <div className="pattern-card-body">
                                         <ul className="pattern-row-list">
-                                            <RowLine text={`${terms.row(1)}: ${t("pattern.magicRingStart", { stitches: terms.sc(6) })} (6)`} />
-                                            {pattern.incArray.map((row, idx) => (
-                                                <RowLine key={idx} text={formatRow(terms, row)} />
-                                            ))}
-                                            {pattern.scArray.map((row, idx) => (
-                                                <RowLine key={idx} text={formatRow(terms, row)} />
-                                            ))}
-                                            {pattern.closed ? (
-                                                <RowLine text={t("pattern.startStuffing")} />
-                                            ) : null}
-                                            {pattern.decArray.map((row, idx) => (
-                                                <RowLine key={idx} text={formatRow(terms, row)} />
-                                            ))}
-                                            {pattern.closed ? (
-                                                <>
-                                                    <RowLine text={`${terms.row(pattern.lastRow)}: ${terms.dec(6)} (6)`} />
-                                                    <RowLine text={t("pattern.sewClosed")} />
-                                                </>
-                                            ) : pattern.flat ? (
-                                                <RowLine text={t("pattern.fastenOffFlat")} />
-                                            ) : (
-                                                <RowLine text={t("pattern.stuffLightly")} />
+                                            {patternLines(pattern).map((line, idx) =>
+                                                line.color ? (
+                                                    <ColorChangeLine key={idx} text={line.text} color={line.color} />
+                                                ) : (
+                                                    <RowLine key={idx} text={line.text} />
+                                                )
                                             )}
                                         </ul>
                                         {pattern.type === "Cone" ? (

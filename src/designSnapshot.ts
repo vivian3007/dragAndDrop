@@ -3,7 +3,8 @@ import { ARM_TOTAL_LOCAL_LENGTH } from './geometry/armGeometry';
 import { computePatternBox } from './geometry/patternBox';
 import { createSolidGeometry, isSolidShapeType } from './geometry/solidGeometry';
 import { WORLD_SCALE_FACTOR } from './geometry/units';
-import { addYarnLights, STITCH_TEXTURE_URL, stitchTextureFor, YARN_MATERIAL, yarnColor } from './geometry/yarnLook';
+import { addYarnLights, STITCH_TEXTURE_URL, stitchTextureFor, YARN_MATERIAL, YARN_TINT } from './geometry/yarnLook';
+import { paintStripes } from './geometry/stripes';
 
 // Maakt een stilstaand plaatje van een ontwerp, als fallback voor kaarten zonder foto.
 // Bewust geen <Canvas> per kaart: browsers staan maar ~16 WebGL-contexten tegelijk toe,
@@ -44,14 +45,14 @@ function buildShape(shape: Shape, baseTexture: THREE.Texture): THREE.Object3D {
     const zoom = shape.zoom ?? 1;
     const texture = stitchTextureFor(baseTexture, shape);
     const material = new THREE.MeshStandardMaterial({
-        map: texture, bumpMap: texture, ...YARN_MATERIAL, color: yarnColor(shape.color), side: THREE.DoubleSide,
+        map: texture, bumpMap: texture, ...YARN_MATERIAL, vertexColors: true, color: YARN_TINT, side: THREE.DoubleSide,
     });
     const object = new THREE.Group();
 
     if (shape.type === 'Arm') {
-        const cylinder = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 1, 48, 1, true), material);
+        const cylinder = new THREE.Mesh(paintStripes(new THREE.CylinderGeometry(0.5, 0.5, 1, 48, 1, true), shape, 0.5), material);
         cylinder.position.y = 0.5;
-        const cap = new THREE.Mesh(new THREE.SphereGeometry(0.5, 48, 24), material);
+        const cap = new THREE.Mesh(paintStripes(new THREE.SphereGeometry(0.5, 48, 24), shape, 1), material);
         cap.position.y = 1;
         object.add(cylinder, cap);
         object.scale.set(
@@ -63,7 +64,7 @@ function buildShape(shape: Shape, baseTexture: THREE.Texture): THREE.Object3D {
         // Bol: eenheidsbol; cilinder en kegel: zie geometry/solidGeometry.ts. Alle drie met
         // dezelfde schaal (width/height/length × zoom).
         const geometry = isSolidShapeType(shape.type) ? createSolidGeometry(shape.type) : new THREE.SphereGeometry(1, 64, 48);
-        object.add(new THREE.Mesh(geometry, material));
+        object.add(new THREE.Mesh(paintStripes(geometry, shape), material));
         object.scale.set(
             (shape.width ?? 50) * zoom * WORLD_SCALE_FACTOR,
             (shape.height ?? 50) * zoom * WORLD_SCALE_FACTOR,

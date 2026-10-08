@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import {Checkbox} from "@mui/material";
 import { HexColorPicker } from "react-colorful";
+import StripeEditor from "./editor/StripeEditor";
 import { pixelsPerCm } from "./geometry/units";
 import { useT } from "./i18n/LanguageProvider";
 
@@ -397,6 +398,10 @@ function ShapeSettings({
                         <div className="shape-settings-group">
                             <h3 className="shape-settings-title">{t("shapeSettings.color")}</h3>
                             <ColorPicker color={shapeColor} onColorChange={handleColorChange} />
+                        </div>
+                        <div className="shape-settings-group">
+                            <h3 className="shape-settings-title">{t("stripes.title")}</h3>
+                            <StripeEditor shape={activeShape} onChange={(stripes) => handleUpdate({ stripes })} />
                         </div>
                     </form>
                     ) : (

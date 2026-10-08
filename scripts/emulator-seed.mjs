@@ -52,13 +52,15 @@ await design('testkonijn', 'maker', 'Testkonijn', ['Dier'], [
 // Posities en maten in wereld-eenheden / opslag-eenheden, zoals de editor ze bewaart.
 const brown = '#b07a4f';
 await design('demobeer', 'tester', 'Demobeer', ['Dier', 'Beer', 'Demo'], [
-    { type: 'Sphere', name: 'Lijf', x: 0, y: 0, width: 150, height: 170, length: 140, color: brown },
+    // Rode sjaal om de hals (kleurwissel bovenaan het lijf).
+    { type: 'Sphere', name: 'Lijf', x: 0, y: 0, width: 150, height: 170, length: 140, color: brown, stripes: [{ from: 0.1, to: 0.2, color: '#c0392b' }] },
     { type: 'Sphere', name: 'Hoofd', x: 0, y: 2.6, width: 130, height: 120, length: 125, color: brown },
     { type: 'Sphere', name: 'Snuit', x: 0, y: 2.3, z: 1.05, width: 55, height: 45, length: 45, color: '#e8cfa9' },
     { type: 'Cone', name: 'Linkeroor', x: -0.85, y: 3.35, width: 90, height: 70, length: 60, rotation_z: 25, color: brown },
     { type: 'Cone', name: 'Rechteroor', x: 0.85, y: 3.35, width: 90, height: 70, length: 60, rotation_z: -25, color: brown },
-    { type: 'Arm', name: 'Linkerarm', x: -1.1, y: 0.4, width: 55, height: 120, length: 55, rotation_z: 60, color: brown },
-    { type: 'Arm', name: 'Rechterarm', x: 1.1, y: 0.4, width: 55, height: 120, length: 55, rotation_z: -60, color: brown },
+    // Lichte pootjes: het kapje van de arm in een andere kleur.
+    { type: 'Arm', name: 'Linkerarm', x: -1.1, y: 0.4, width: 55, height: 120, length: 55, rotation_z: 60, color: brown, stripes: [{ from: 0, to: 0.25, color: '#e8cfa9' }] },
+    { type: 'Arm', name: 'Rechterarm', x: 1.1, y: 0.4, width: 55, height: 120, length: 55, rotation_z: -60, color: brown, stripes: [{ from: 0, to: 0.25, color: '#e8cfa9' }] },
     { type: 'Cylinder', name: 'Linkerpoot', x: -0.7, y: -2.1, width: 75, height: 70, length: 75, color: '#8a5a3a' },
     { type: 'Cylinder', name: 'Rechterpoot', x: 0.7, y: -2.1, width: 75, height: 70, length: 75, color: '#8a5a3a' },
 ]);
