@@ -19,6 +19,8 @@ const PatternFilters = ({
     onTagsChange,
     sortBy,
     onSortChange,
+    sortOptions,
+    freeSoloTags = false,
     actions,
 }: {
     searchTerm: string;
@@ -28,6 +30,10 @@ const PatternFilters = ({
     onTagsChange: (tags: string[]) => void;
     sortBy: SortOption;
     onSortChange: (sort: SortOption) => void;
+    // Welke sorteringen te kiezen zijn (standaard alle).
+    sortOptions?: SortOption[];
+    // Ook tags toestaan die niet in de lijst staan (als niet alle tags bekend zijn).
+    freeSoloTags?: boolean;
     actions?: React.ReactNode;
 }) => {
     const hasActions = Boolean(actions);
@@ -101,6 +107,7 @@ const PatternFilters = ({
             />
             <Autocomplete
                 multiple
+                freeSolo={freeSoloTags}
                 size="small"
                 options={availableTags}
                 value={selectedTags}
@@ -133,8 +140,8 @@ const PatternFilters = ({
                 size="small"
                 sx={{ ...fieldSx, gridArea: 'sort', minWidth: 0, width: '100%' }}
             >
-                {Object.entries(sortLabelIds).map(([value, labelId]) => (
-                    <MenuItem key={value} value={value}>{t(labelId)}</MenuItem>
+                {(sortOptions ?? (Object.keys(sortLabelIds) as SortOption[])).map((value) => (
+                    <MenuItem key={value} value={value}>{t(sortLabelIds[value])}</MenuItem>
                 ))}
             </TextField>
             {actions && (

@@ -11,6 +11,7 @@ import ImageDropzone from './ImageDropzone.tsx';
 import { uploadPatternImage } from './uploadImage.ts';
 import { useT } from './i18n/LanguageProvider';
 import { buildCopiedFrom, saveAmigurumiCopy } from './copyAmigurumi.ts';
+import { searchFields } from './searchTerms.js';
 
 // Dient als "nieuw patroon aanmaken" (navigeert na opslaan naar de editor),
 // "patroon-details bewerken" (via editingAmigurumi, blijft in de details-dialoog) én
@@ -123,6 +124,8 @@ const NewPattern = ({
                     yarn_id: formData.yarn_id.trim() || null,
                     notes: formData.notes.trim() || null,
                     imageUrl,
+                    // Zoekvelden lopen mee met naam en tags (zie searchTerms.js).
+                    ...searchFields(formData.name.trim(), formData.tags),
                 };
                 await updateDoc(doc(db, 'amigurumi', editingAmigurumi.id), updatedFields);
                 onSaved?.({ ...editingAmigurumi, ...updatedFields });
@@ -139,6 +142,8 @@ const NewPattern = ({
                     createdAt: serverTimestamp(),
                     notes: formData.notes.trim() || null,
                     imageUrl,
+                    favoriteCount: 0,
+                    ...searchFields(formData.name.trim(), formData.tags),
                 };
 
                 if (isCopying && copySource) {

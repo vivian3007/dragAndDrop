@@ -224,6 +224,8 @@
   "patterns.deleteError": "Kon dit patroon niet verwijderen.",
   "patterns.empty": "Geen patronen gevonden.",
   "patterns.loadError": "Fout bij het ophalen van patronen: {message}",
+  "patterns.loadMore": "Meer laden",
+  "patterns.loadingMore": "Laden…",
   "patterns.loginRequired": "Log in om je patronen te bekijken.",
   "patterns.new": "Nieuw patroon",
   "patterns.noResults": "Geen patronen gevonden voor deze zoekopdracht/filter.",

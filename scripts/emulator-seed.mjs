@@ -8,6 +8,7 @@
 //   tester@test.nl / testwachtwoord123   (@tester, met het ontwerp "Testbeer")
 //   maker@test.nl  / testwachtwoord123   (@maker, met het ontwerp "Testkonijn")
 import { admin, resetEmulator } from './emulator-tests/helpers.mjs';
+import { searchFields } from '../src/searchTerms.js';
 
 const PASSWORD = 'testwachtwoord123';
 
@@ -26,7 +27,8 @@ async function design(id, ownerUid, name, tags, shapes) {
         name: 'Katoen', weight: 'Medium', mPerSkein: 100, hooksize: 3.5, material: 'Katoen', color: '#c8a27c', user_id: ownerUid,
     });
     await db.doc(`amigurumi/${id}`).set({
-        name, tags, height: 12, yarn_id: yarnId, user_id: ownerUid, notes: null, imageUrl: null, createdAt: new Date(),
+        name, tags, height: 12, yarn_id: yarnId, user_id: ownerUid, notes: null, imageUrl: null,
+        createdAt: new Date(), favoriteCount: 0, ...searchFields(name, tags),
     });
     for (const [i, shape] of shapes.entries()) {
         await db.doc(`shapes/${id}-shape-${i}`).set({
@@ -46,5 +48,14 @@ await design('testkonijn', 'maker', 'Testkonijn', ['Dier'], [
     { type: 'Sphere', name: 'Hoofd', x: 0, y: 0, width: 90, height: 110, length: 90, color: '#eeeeee' },
 ]);
 
-console.log('Emulator gevuld: @tester (Testbeer) en @maker (Testkonijn).');
+// Genoeg extra ontwerpen om "Meer laden" op Home te zien (24 per keer).
+const animals = ['Kat', 'Hond', 'Uil', 'Vos', 'Egel', 'Panda', 'Koala', 'Pinguïn', 'Schildpad', 'Walvis'];
+for (let i = 0; i < 30; i++) {
+    const name = `${animals[i % animals.length]} ${Math.floor(i / animals.length) + 1}`;
+    await design(`extra-${i}`, 'maker', name, i % 2 ? ['Dier', 'Klein'] : ['dier'], [
+        { type: 'Sphere', name: 'Lijf', x: 0, y: 0, width: 80 + i, height: 80, length: 80, color: '#dddddd' },
+    ]);
+}
+
+console.log('Emulator gevuld: @tester (Testbeer), @maker (Testkonijn + 30 extra ontwerpen).');
 process.exit();

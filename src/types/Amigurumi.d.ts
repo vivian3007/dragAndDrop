@@ -16,6 +16,10 @@ interface Amigurumi {
     yarn_id: string | null;
     // Hoe vaak het ontwerp favoriet is (zie FavoritesProvider). Ontbreekt = 0.
     favoriteCount?: number;
+    // Voor zoeken en sorteren op de server (zie src/searchTerms.js).
+    searchTerms?: string[];
+    nameLower?: string;
+    tagsLower?: string[];
     // Firebase-uid van de eigenaar. (Vroeger het e-mailadres; zie scripts/migrate-user-ids.mjs.)
     user_id: string;
     // Firestore-tijdstempel; bij het aanmaken nog een serverTimestamp()-placeholder.

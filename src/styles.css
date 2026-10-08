@@ -1479,6 +1479,13 @@ body {
     color: var(--color-primary-hover);
 }
 
+/* "Meer laden" onder de kaarten op Home (PatternBrowser.tsx). */
+.load-more {
+    display: flex;
+    justify-content: center;
+    margin: 24px 0 40px;
+}
+
 /* Gewone link midden in een zin (bv. "Ontdek mensen op Home"). */
 .inline-link {
     color: var(--color-primary);

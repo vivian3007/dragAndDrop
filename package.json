@@ -10,7 +10,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "emulators": "npx -y firebase-tools@15.29.0 emulators:start --only firestore,auth --project demo-stitchify",
-    "test:emulator": "node scripts/emulator-tests/migration.test.mjs && node scripts/emulator-tests/firestore-rules.test.mjs"
+    "test:emulator": "node scripts/emulator-tests/migration.test.mjs && node scripts/emulator-tests/firestore-rules.test.mjs && node scripts/emulator-tests/search-fields.test.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

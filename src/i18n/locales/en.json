@@ -224,6 +224,8 @@
   "patterns.deleteError": "Could not delete this pattern.",
   "patterns.empty": "No patterns found.",
   "patterns.loadError": "Could not load patterns: {message}",
+  "patterns.loadMore": "Load more",
+  "patterns.loadingMore": "Loading…",
   "patterns.loginRequired": "Log in to see your patterns.",
   "patterns.new": "New pattern",
   "patterns.noResults": "No patterns found for this search/filter.",
