@@ -8,6 +8,7 @@ import { meshScaleOf } from "./geometry/units";
 import { useStitchTexture } from "./editor/useStitchTexture";
 import { YARN_MATERIAL, YARN_TINT } from "./geometry/yarnLook";
 import { useStripedGeometry } from "./editor/useStripedGeometry";
+import { sphereEndAngle, sphereOpening } from "./geometry/sphereOpening";
 
 function Sphere({
                                    id,
@@ -42,7 +43,8 @@ function Sphere({
     };
 
     const texture = useStitchTexture(shape);
-    const geometry = useStripedGeometry(() => new THREE.SphereGeometry(1, 64, 48), shape);
+    // Een bol met opening houdt op vóór de onderpool (zie geometry/sphereOpening.ts).
+    const geometry = useStripedGeometry(() => new THREE.SphereGeometry(1, 64, 48, 0, Math.PI * 2, 0, sphereEndAngle(sphereOpening(shape))), shape);
 
     // const meshRendered = useContext(RenderContext)
     // const [hasRendered, setHasRendered] = useState(false);
@@ -91,7 +93,7 @@ function Sphere({
                         // Veiligheidsoogje: glad en glanzend, geen garen.
                         <meshPhysicalMaterial color={shape.color ?? "#111111"} roughness={0.15} clearcoat={1} clearcoatRoughness={0.05} />
                     ) : (
-                        <meshStandardMaterial map={texture} bumpMap={texture} {...YARN_MATERIAL} vertexColors color={YARN_TINT} />
+                        <meshStandardMaterial map={texture} bumpMap={texture} {...YARN_MATERIAL} vertexColors color={YARN_TINT} side={sphereOpening(shape) > 0 ? THREE.DoubleSide : THREE.FrontSide} />
                     )}
                 </mesh>
             </group>

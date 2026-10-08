@@ -59,15 +59,17 @@ const full = (shape) => ({ zoom: 1, rotation_x: 0, rotation_y: 0, rotation_z: 0,
 // (src/geometry/attach.ts, zelfde als de knop Aansluiten), zodat ze precies op elkaar
 // aansluiten — daarom draait dit script via tsx. De x/y/z hieronder is alleen de richting
 // van waaruit het onderdeel tegen z'n doel geschoven wordt.
+// Lijf: bovenaan open voor het hoofd (omgedraaid, dus van onder naar boven gehaakt), met een
+// rode sjaal om de hals (kleurwissel vlak onder de opening).
 const body = full({ id: 'lijf', type: 'Sphere', name: 'Lijf', x: 0, y: 0, width: 150, height: 170, length: 140, color: brown,
-    // Rode sjaal om de hals (kleurwissel bovenaan het lijf).
-    stripes: [{ from: 0.1, to: 0.2, color: '#c0392b' }] });
+    rotation_x: 180, opening: 0.45, stripes: [{ from: 0.86, to: 0.94, color: '#c0392b' }] });
 const attached = (shape, targets) => attachToNearest(full(shape), targets).shape;
 const head = attached({ id: 'hoofd', type: 'Sphere', name: 'Hoofd', x: 0, y: 2.6, width: 130, height: 120, length: 125, color: brown }, [body]);
 const demoShapes = [
     body,
     head,
-    attached({ id: 'snuit', type: 'Sphere', name: 'Snuit', x: 0, y: 2.3, z: 1.05, width: 55, height: 45, length: 45, color: '#e8cfa9' }, [head]),
+    // Snuit: een bolletje dat aan de achterkant open is; de opening gaat tegen het hoofd.
+    attached({ id: 'snuit', type: 'Sphere', name: 'Snuit', x: 0, y: 2.3, z: 1.05, width: 60, height: 32, length: 48, opening: 0.75, color: '#e8cfa9' }, [head]),
     attached({ id: 'oorL', type: 'Cone', name: 'Linkeroor', x: -0.85, y: 3.35, width: 90, height: 70, length: 60, rotation_z: 25, color: brown }, [head]),
     attached({ id: 'oorR', type: 'Cone', name: 'Rechteroor', x: 0.85, y: 3.35, width: 90, height: 70, length: 60, rotation_z: -25, color: brown }, [head]),
     // Lichte pootjes: het kapje van de arm in een andere kleur.

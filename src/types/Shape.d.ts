@@ -18,5 +18,8 @@ interface Shape {
     zoom: number;
     // Kleurwissels (banen in een andere kleur), zie patterns/colorChanges.ts.
     stripes?: { from: number; to: number; color: string }[] | null;
+    // Alleen bol: breedte van de opening als deel van de breedste doorsnede (0/leeg = dicht),
+    // zie geometry/sphereOpening.ts.
+    opening?: number | null;
     mesh?: unknown;
 }

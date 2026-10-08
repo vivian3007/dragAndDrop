@@ -188,7 +188,9 @@ const Pattern = () => {
             lines.push({ text: `${terms.row(pattern.lastRow)}: ${terms.dec(6)} (6)` });
             lines.push({ text: t("pattern.sewClosed") });
         } else {
-            lines.push({ text: t(pattern.flat ? "pattern.fastenOffFlat" : "pattern.stuffLightly") });
+            // Bol met opening (snuit, lijf voor het hoofd): stevig vullen, de opening tegen het
+            // andere onderdeel naaien.
+            lines.push({ text: t(pattern.flat ? "pattern.fastenOffFlat" : pattern.type === "Sphere" ? "pattern.stuffOpening" : "pattern.stuffLightly") });
         }
         return lines;
     };

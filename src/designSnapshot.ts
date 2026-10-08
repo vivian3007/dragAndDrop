@@ -5,6 +5,7 @@ import { createSolidGeometry, isSolidShapeType } from './geometry/solidGeometry'
 import { WORLD_SCALE_FACTOR } from './geometry/units';
 import { addYarnLights, STITCH_TEXTURE_URL, stitchTextureFor, YARN_MATERIAL, YARN_TINT } from './geometry/yarnLook';
 import { paintStripes } from './geometry/stripes';
+import { sphereEndAngle, sphereOpening } from './geometry/sphereOpening';
 
 // Maakt een stilstaand plaatje van een ontwerp, als fallback voor kaarten zonder foto.
 // Bewust geen <Canvas> per kaart: browsers staan maar ~16 WebGL-contexten tegelijk toe,
@@ -63,7 +64,9 @@ function buildShape(shape: Shape, baseTexture: THREE.Texture): THREE.Object3D {
     } else {
         // Bol: eenheidsbol; cilinder en kegel: zie geometry/solidGeometry.ts. Alle drie met
         // dezelfde schaal (width/height/length × zoom).
-        const geometry = isSolidShapeType(shape.type) ? createSolidGeometry(shape.type, shape) : new THREE.SphereGeometry(1, 64, 48);
+        const geometry = isSolidShapeType(shape.type)
+            ? createSolidGeometry(shape.type, shape)
+            : new THREE.SphereGeometry(1, 64, 48, 0, Math.PI * 2, 0, sphereEndAngle(sphereOpening(shape)));
         const eyeMaterial = new THREE.MeshPhysicalMaterial({ color: shape.color ?? '#111111', roughness: 0.15, clearcoat: 1 });
         object.add(new THREE.Mesh(paintStripes(geometry, shape), shape.type === 'Eye' ? eyeMaterial : material));
         object.scale.set(

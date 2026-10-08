@@ -5,6 +5,7 @@ import { stripeFromRows, stripeRows, type Stripe } from "../patterns/colorChange
 import { generatePattern } from "../patterns/generators";
 import { ROW_HEIGHTS, yarnWeightKey } from "../patterns/estimateYarn";
 import { useT } from "../i18n/LanguageProvider";
+import { sphereOpening } from "../geometry/sphereOpening";
 
 // Kleurwissels van een vorm: banen in een andere kleur, elk met een kleur en een reeks rondes
 // ("ronde 4 t/m 6"), zoals in het patroon. Opgeslagen als fractie van de haakvolgorde (zie
@@ -29,7 +30,7 @@ const StripeEditor = ({ shape, yarnWeight, onChange }: { shape: Shape; yarnWeigh
 
     return (
         <div className="stripe-editor">
-            <p className="stripe-editor-hint">{t(`stripes.direction.${shape.type}`, { rows: totalRows })}</p>
+            <p className="stripe-editor-hint">{t(`stripes.direction.${sphereOpening(shape) > 0 ? "SphereOpen" : shape.type}`, { rows: totalRows })}</p>
             {stripes.map((stripe, index) => {
                 const { from, to } = stripeRows(stripe, totalRows);
                 return (

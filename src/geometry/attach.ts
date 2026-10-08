@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { meshScaleOf } from "./units";
 import { ARM_TOTAL_LOCAL_LENGTH } from "./armGeometry";
 import { domeCapFraction, insideDome } from "./domeShape";
+import { sphereOpening } from "./sphereOpening";
 
 // "Aansluiten": een vorm netjes tegen de dichtstbijzijnde andere vorm zetten, zodat hij er
 // rondom op aansluit — zoals een aangenaaid been, oor of snuit.
@@ -169,6 +170,8 @@ function attachTo(shape: Shape, solid: Solid, direction: THREE.Vector3): Shape {
     const surface = solid.surfaceTowards(direction);
     const normal = solid.normalTowards(direction);
 
+    if (sphereOpening(shape) > 0) return attachOpenSphere(shape, solid, surface, normal);
+
     if (!isLimb(shape)) {
         // Bol: middelpunt langs de normaal naar buiten, een stukje in de andere vorm gezakt.
         const [sx, sy, sz] = meshScaleOf(shape);
@@ -207,6 +210,32 @@ function attachTo(shape: Shape, solid: Solid, direction: THREE.Vector3): Shape {
     return { ...shape, x: origin.x, y: origin.y, z: origin.z, ...toDegrees(rotation) };
 }
 
+// Bol met opening (snuit): de opening naar de andere vorm, de rand van de opening op het
+// oppervlak — net als de open onderkant van een arm, maar het midden zit verder naar buiten.
+function attachOpenSphere(shape: Shape, solid: Solid, surface: THREE.Vector3, normal: THREE.Vector3): Shape {
+    const opening = sphereOpening(shape);
+    // De opening zit aan de lokale onderkant: lokale y-as langs de normaal.
+    const rotation = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal);
+    const [sx, sy, sz] = meshScaleOf(shape);
+    const t1 = new THREE.Vector3(1, 0, 0).applyQuaternion(rotation);
+    const t2 = new THREE.Vector3(0, 0, 1).applyQuaternion(rotation);
+    const inward = normal.clone().negate();
+
+    let sink = 0;
+    for (let i = 0; i < RIM_SAMPLES; i++) {
+        const angle = (i / RIM_SAMPLES) * Math.PI * 2;
+        const rim = surface.clone()
+            .addScaledVector(t1, Math.cos(angle) * opening * sx * RIM_MARGIN)
+            .addScaledVector(t2, Math.sin(angle) * opening * sz * RIM_MARGIN);
+        sink = Math.max(sink, solid.depthUntilInside(rim, inward));
+    }
+
+    // Van het vlak van de opening naar het middelpunt van de bol.
+    const rimToCenter = sy * Math.sqrt(1 - opening * opening);
+    const center = surface.clone().addScaledVector(inward, sink).addScaledVector(normal, rimToCenter);
+    return { ...shape, x: center.x, y: center.y, z: center.z, ...toDegrees(rotation) };
+}
+
 function directionFrom(solid: Solid, point: THREE.Vector3): THREE.Vector3 {
     const direction = point.clone().sub(solid.center);
     return direction.lengthSq() < 1e-9 ? new THREE.Vector3(0, 1, 0) : direction;
@@ -233,6 +262,11 @@ export function attachToNearest(shape: Shape, others: Shape[]): AttachResult | n
 function contactPoint(shape: Shape, other: Solid): THREE.Vector3 {
     const point = attachPoint(shape);
     if (isLimb(shape)) return point;
+    const opening = sphereOpening(shape);
+    if (opening > 0) {
+        // Het midden van de opening, een klein stukje erbuiten (eigen ruimte: bol met straal 1).
+        return new THREE.Vector3(0, -(Math.sqrt(1 - opening * opening) + 0.1), 0).applyMatrix4(worldMatrix(shape));
+    }
     const [sx, sy, sz] = meshScaleOf(shape);
     const towards = other.center.clone().sub(point);
     if (towards.lengthSq() < 1e-9) return point;

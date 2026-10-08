@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useRef, useState } from "react";
 import {Checkbox} from "@mui/material";
 import { HexColorPicker } from "react-colorful";
 import StripeEditor from "./editor/StripeEditor";
+import SphereOpeningEditor from "./editor/SphereOpeningEditor";
 import { pixelsPerCm } from "./geometry/units";
 import { useT } from "./i18n/LanguageProvider";
 
@@ -401,6 +402,12 @@ function ShapeSettings({
                             <h3 className="shape-settings-title">{t("shapeSettings.color")}</h3>
                             <ColorPicker color={shapeColor} onColorChange={handleColorChange} />
                         </div>
+                        {activeShape.type === "Sphere" && (
+                            <div className="shape-settings-group">
+                                <h3 className="shape-settings-title">{t("opening.title")}</h3>
+                                <SphereOpeningEditor shape={activeShape} onChange={handleUpdate} />
+                            </div>
+                        )}
                         {activeShape.type !== "Eye" && (
                             <div className="shape-settings-group">
                                 <h3 className="shape-settings-title">{t("stripes.title")}</h3>

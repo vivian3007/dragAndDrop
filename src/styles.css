@@ -484,6 +484,21 @@ body {
     align-items: center;
 }
 
+.opening-buttons {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.opening-buttons .MuiButton-outlined {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.opening-buttons .MuiButton-contained {
+    background-color: var(--color-primary);
+}
+
 .stripe-range {
     flex: 1;
     min-width: 0;

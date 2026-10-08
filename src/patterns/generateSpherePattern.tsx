@@ -1,6 +1,7 @@
 import { decreaseRow, englishPatternTerms, evenRows, increaseRow, PatternRow, PatternTerms } from "./patternTerms";
 import { shapeDimensionCm } from "../geometry/units";
 import { maxStitchesForDiameter, STITCH_WIDTH_PER_ROW_HEIGHT } from "./stitchGeometry";
+import { sphereEndAngle, sphereOpening } from "../geometry/sphereOpening";
 
 const generateSpherePattern = (singleShape: Shape, yarnWeight: string, rowHeights: Record<string, number>, intersections: Intersection[], t: PatternTerms = englishPatternTerms) => {
     const rowHeightCm = rowHeights[yarnWeight] ?? rowHeights.Medium;
@@ -10,11 +11,16 @@ const generateSpherePattern = (singleShape: Shape, yarnWeight: string, rowHeight
     // Er wordt gehaakt langs de langste as (ook als dat de diepte is); de doorsnede daar
     // loodrecht op is het gemiddelde van de twee andere assen (een "cirkel met
     // gelijkwaardige omtrek").
-    const [crossA, crossB, axisCm] = [
-        shapeDimensionCm(singleShape, "width"),
-        shapeDimensionCm(singleShape, "height"),
-        shapeDimensionCm(singleShape, "length"),
-    ].sort((a, b) => a - b);
+    // Met een opening (geometry/sphereOpening.ts) wordt er altijd naar de opening toe gehaakt:
+    // langs de eigen hoogte-as, met breedte en lengte als doorsnede.
+    const isOpen = sphereOpening(singleShape) > 0;
+    const [crossA, crossB, axisCm] = isOpen
+        ? [shapeDimensionCm(singleShape, "width"), shapeDimensionCm(singleShape, "length"), shapeDimensionCm(singleShape, "height")]
+        : [
+            shapeDimensionCm(singleShape, "width"),
+            shapeDimensionCm(singleShape, "height"),
+            shapeDimensionCm(singleShape, "length"),
+        ].sort((a, b) => a - b);
     const crossCm = (crossA + crossB) / 2;
 
     // Steken: de omtrek op het breedste punt. Rondes: de gangbare opbouw van een
@@ -25,7 +31,13 @@ const generateSpherePattern = (singleShape: Shape, yarnWeight: string, rowHeight
     // dan gaan er af.
     const maxStitches = maxStitchesForDiameter(crossCm, stitchWidthCm);
     const incRows = maxStitches / 6; // ronde 1 (6) t/m ronde M/6 (M)
-    const decRows = maxStitches / 6 - 1; // M-6 t/m 6
+    // Met een opening (geometry/sphereOpening.ts) minder je maar tot de steken van de opening
+    // en blijft de bol open; anders tot 6 en naai je dicht.
+    const opening = sphereOpening(singleShape);
+    const closed = opening === 0;
+    const openingStitches = closed ? 6 : Math.min(maxStitches, Math.max(6, Math.round((opening * maxStitches) / 6) * 6));
+    const decRows = (maxStitches - openingStitches) / 6; // M-6 t/m de opening (of 6)
+    const endAngle = sphereEndAngle(opening);
     const scRows = Math.max(0, maxStitches / 6 + Math.round((axisCm - crossCm) / rowHeightCm));
     const rows = incRows + scRows + decRows;
 
@@ -52,7 +64,7 @@ const generateSpherePattern = (singleShape: Shape, yarnWeight: string, rowHeight
         // van een lineaire mapping. Dit maakt de rijverdeling dichter bij de polen en
         // ruimer bij de evenaar, zoals bij een echte bol.
         const theta = Math.acos(clamped);
-        const rowFractionFromTop = theta / Math.PI; // 0 = boven, 1 = onder
+        const rowFractionFromTop = Math.min(1, theta / endAngle); // 0 = boven, 1 = onder (of de opening)
         return Math.min(rows, Math.max(1, Math.round(rowFractionFromTop * (rows - 1)) + 1));
     };
 
@@ -106,8 +118,10 @@ const generateSpherePattern = (singleShape: Shape, yarnWeight: string, rowHeight
         scArray.push(evenRows(t, startRow, endRow, maxStitches));
     }
 
-    // Minderen tot 12; de slotronde "6 min (6)" op `lastRow` schrijft Pattern.tsx zelf.
-    for (let stitches = maxStitches - 6, row = incRows + scRows + 1; stitches >= 12; stitches -= 6, row++) {
+    // Minderen tot 12; de slotronde "6 min (6)" op `lastRow` schrijft Pattern.tsx zelf. Met een
+    // opening tot en met de steken van de opening.
+    const lastDecrease = closed ? 12 : openingStitches;
+    for (let stitches = maxStitches - 6, row = incRows + scRows + 1; stitches >= lastDecrease; stitches -= 6, row++) {
         decArray.push(decreaseRow(t, row, stitches));
     }
     const lastRow = rows;
@@ -117,7 +131,7 @@ const generateSpherePattern = (singleShape: Shape, yarnWeight: string, rowHeight
     let stitchCount = 0;
     for (let row = 1; row <= incRows; row++) stitchCount += row * 6;
     stitchCount += scRows * maxStitches;
-    for (let stitches = maxStitches - 6; stitches >= 6; stitches -= 6) stitchCount += stitches;
+    for (let stitches = maxStitches - 6; stitches >= openingStitches; stitches -= 6) stitchCount += stitches;
 
     return {
         type: singleShape.type,
@@ -131,7 +145,7 @@ const generateSpherePattern = (singleShape: Shape, yarnWeight: string, rowHeight
         rows,
         incRows,
         // Dicht: Pattern.tsx zet er "begin met vullen" en de slotronde (6 min) bij.
-        closed: true,
+        closed,
         flat: false,
         lastRow,
         stitchCount,
