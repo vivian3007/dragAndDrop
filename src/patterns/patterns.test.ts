@@ -3,6 +3,8 @@ import generateSpherePattern from "./generateSpherePattern";
 import generateArmPattern from "./generateArmPattern";
 import generateCylinderPattern from "./generateCylinderPattern";
 import generateConePattern from "./generateConePattern";
+import generateDiscPattern from "./generateDiscPattern";
+import generateDomePattern from "./generateDomePattern";
 import { generatePattern, PatternPart } from "./generators";
 import { englishPatternTerms, formatRow } from "./patternTerms";
 import { halfEllipsePerimeter, maxStitchesForDiameter, STITCH_WIDTH_PER_ROW_HEIGHT } from "./stitchGeometry";
@@ -238,9 +240,58 @@ describe.each([
     });
 });
 
+describe("generateDiscPattern: plat rondje", () => {
+    const disc = shapeOfCm("Disc", { width: 4, height: 0.3, length: 4 });
+    const pattern = generateDiscPattern(disc, "Medium", ROW_HEIGHTS, []);
+    const rows = stitchesPerRow(pattern);
+
+    it("alleen meerderingsrondes, plat en open", () => {
+        expect(pattern.flat).toBe(true);
+        expect(pattern.closed).toBe(false);
+        expect(rows).toEqual(Array.from({ length: pattern.rows }, (_, i) => (i + 1) * 6));
+    });
+
+    it("de doorsnede bepaalt het aantal rondes, de dikte niet", () => {
+        const thick = generateDiscPattern(shapeOfCm("Disc", { width: 4, height: 2, length: 4 }), "Medium", ROW_HEIGHTS, []);
+        const wide = generateDiscPattern(shapeOfCm("Disc", { width: 8, height: 0.3, length: 8 }), "Medium", ROW_HEIGHTS, []);
+        expect(thick.rows).toBe(pattern.rows);
+        expect(wide.rows).toBeGreaterThan(pattern.rows);
+    });
+
+    it("het totaal aantal steken is de som van alle rondes", () => {
+        expect(pattern.stitchCount).toBe(rows.reduce((sum, n) => sum + n, 0));
+    });
+});
+
+describe.each([
+    ["halve bol 6 × 3 cm (muts)", shapeOfCm("Dome", { width: 6, height: 3, length: 6 })],
+    ["hoge koepel", shapeOfCm("Dome", { width: 4, height: 5, length: 4 })],
+    ["platte koepel", shapeOfCm("Dome", { width: 8, height: 1, length: 8 })],
+])("generateDomePattern: %s", (_label, shape) => {
+    const pattern = generateDomePattern(shape, "Medium", ROW_HEIGHTS, []);
+    const rows = stitchesPerRow(pattern);
+
+    it("open onderkant, niet plat, juist aantal rondes", () => {
+        expect(pattern.closed).toBe(false);
+        expect(pattern.flat).toBe(false);
+        expect(rows.length).toBe(pattern.rows);
+    });
+
+    it("meerdert per ronde met 6 en haakt daarna recht door tot de rand", () => {
+        const max = Math.max(...rows);
+        const peak = rows.indexOf(max);
+        rows.slice(0, peak + 1).forEach((stitches, i) => expect(stitches).toBe((i + 1) * 6));
+        rows.slice(peak).forEach((stitches) => expect(stitches).toBe(max));
+    });
+
+    it("het totaal aantal steken is de som van alle rondes", () => {
+        expect(pattern.stitchCount).toBe(rows.reduce((sum, n) => sum + n, 0));
+    });
+});
+
 describe("generatePattern (register)", () => {
     it("kent alle vormtypen en geeft null voor een onbekend type", () => {
-        for (const type of ["Sphere", "Arm", "Cylinder", "Cone"]) {
+        for (const type of ["Sphere", "Arm", "Cylinder", "Cone", "Disc", "Dome"]) {
             expect(generatePattern(shapeOfCm(type, { width: 3, height: 3, length: 3 }), "Medium", ROW_HEIGHTS, [])).not.toBeNull();
         }
         expect(generatePattern(shapeOfCm("Driehoek", { width: 3, height: 3, length: 3 }), "Medium", ROW_HEIGHTS, [])).toBeNull();

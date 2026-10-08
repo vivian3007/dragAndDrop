@@ -95,6 +95,7 @@ const generateArmPattern = (singleShape: Shape, yarnWeight: string, rowHeights: 
         incRows,
         // Aan de onderkant open (wordt aan het lijf genaaid): geen slotronde.
         closed: false,
+        flat: false,
         lastRow: rows,
         stitchCount,
         incArray,

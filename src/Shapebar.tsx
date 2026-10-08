@@ -9,7 +9,10 @@ import {setDoc, doc} from "firebase/firestore";
 import {db} from "../firebase-config.js";
 
 // De vormen die je in de editor kunt slepen (zie patterns/generators.ts voor hun patronen).
-const PALETTE = ["Sphere", "Arm", "Cylinder", "Cone"] as const;
+const PALETTE = ["Sphere", "Arm", "Cylinder", "Cone", "Disc", "Dome"] as const;
+
+// Dikte van een plat rondje (een laag vasten), in opslag-eenheden (zie units.ts): ±0,3 cm.
+const DISC_THICKNESS = 0.3 * 37.8;
 
 // Muis of vinger, als React-event of als gewoon DOM-event (de window-listeners hieronder).
 type PointerLikeEvent = MouseEvent | TouchEvent | React.MouseEvent | React.TouchEvent;
@@ -95,7 +98,8 @@ function Shapebar({ amigurumiId, setDroppedShapes, setActiveId, threeJsContainer
                     z: 0,
                     length: width,
                     width: width,
-                    height: height,
+                    // Plat rondje: de dikte van een laag garen; halve bol: half zo hoog als breed.
+                    height: currentShape === "Disc" ? DISC_THICKNESS : currentShape === "Dome" ? width / 2 : height,
                     color: "#FFFFFF",
                     name: null,
                     rotation_x: 0,

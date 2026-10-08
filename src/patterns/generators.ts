@@ -2,6 +2,8 @@ import generateSpherePattern from "./generateSpherePattern";
 import generateArmPattern from "./generateArmPattern";
 import generateCylinderPattern from "./generateCylinderPattern";
 import generateConePattern from "./generateConePattern";
+import generateDiscPattern from "./generateDiscPattern";
+import generateDomePattern from "./generateDomePattern";
 import { englishPatternTerms, PatternTerms } from "./patternTerms";
 
 // Welke patroongenerator bij welk vormtype hoort. Eén plek, zodat de patroonpagina en de
@@ -11,6 +13,8 @@ const generators = {
     Arm: generateArmPattern,
     Cylinder: generateCylinderPattern,
     Cone: generateConePattern,
+    Disc: generateDiscPattern,
+    Dome: generateDomePattern,
 };
 
 export type PatternPart = ReturnType<(typeof generators)[keyof typeof generators]>;

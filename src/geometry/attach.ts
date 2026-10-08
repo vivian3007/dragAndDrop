@@ -43,7 +43,10 @@ function insideLocal(type: string, p: THREE.Vector3): boolean {
         case "Arm":
             return (p.y >= 0 && p.y <= 1 && radial <= 0.5) || p.distanceTo(new THREE.Vector3(0, 1, 0)) <= 0.5;
         case "Cylinder":
+        case "Disc":
             return p.y >= 0 && p.y <= 1 && radial <= 0.5;
+        case "Dome":
+            return p.y >= 0 && (radial / 0.5) ** 2 + p.y ** 2 <= 1;
         case "Cone":
             return p.y >= 0 && p.y <= 1 && radial <= 0.5 * (1 - p.y);
         default:
@@ -57,7 +60,10 @@ function localCenter(type: string): THREE.Vector3 {
         case "Arm":
             return new THREE.Vector3(0, ARM_TOTAL_LOCAL_LENGTH / 3, 0);
         case "Cylinder":
+        case "Disc":
             return new THREE.Vector3(0, 0.5, 0);
+        case "Dome":
+            return new THREE.Vector3(0, 0.35, 0);
         case "Cone":
             return new THREE.Vector3(0, 0.3, 0);
         default:
@@ -152,7 +158,8 @@ function toDegrees(quaternion: THREE.Quaternion) {
 
 export type AttachResult = { shape: Shape; targetId: string };
 
-const isLimb = (shape: Shape) => ["Arm", "Cylinder", "Cone"].includes(shape.type);
+// Vormen die met hun (open of platte) onderkant aansluiten; een bol sluit aan met z'n ronding.
+const isLimb = (shape: Shape) => ["Arm", "Cylinder", "Cone", "Disc", "Dome"].includes(shape.type);
 
 // Zet `shape` tegen `target`, in de richting `direction` vanuit het middelpunt van `target`.
 function attachTo(shape: Shape, solid: Solid, direction: THREE.Vector3): Shape {

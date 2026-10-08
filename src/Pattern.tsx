@@ -314,6 +314,8 @@ const Pattern = () => {
                                                     <RowLine text={`${terms.row(pattern.lastRow)}: ${terms.dec(6)} (6)`} />
                                                     <RowLine text={t("pattern.sewClosed")} />
                                                 </>
+                                            ) : pattern.flat ? (
+                                                <RowLine text={t("pattern.fastenOffFlat")} />
                                             ) : (
                                                 <RowLine text={t("pattern.stuffLightly")} />
                                             )}

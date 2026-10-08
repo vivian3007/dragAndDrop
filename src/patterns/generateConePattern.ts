@@ -75,6 +75,7 @@ const generateConePattern = (shape: Shape, yarnWeight: string, rowHeights: Recor
         incRows: steps,
         // Open onderkant: geen slotronde.
         closed: false,
+        flat: false,
         lastRow: rows,
         stitchCount: stitchesPerRow.reduce((sum, n) => sum + n, 0),
         incArray,

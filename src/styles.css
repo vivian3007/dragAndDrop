@@ -500,6 +500,27 @@ body {
     border-bottom-style: dashed;
 }
 
+.Disc {
+    width: 56px;
+    height: 22px;
+    margin: 17px 0;
+    background-color: #FFFFFF;
+    border-radius: 50%;
+}
+
+/* Halve bol: open onderkant, net als Arm en Kegel gestippeld in de vormenbalk. */
+.Dome {
+    width: 56px;
+    height: 32px;
+    margin-top: 24px;
+    background-color: #FFFFFF;
+    border-radius: 28px 28px 0 0;
+}
+
+.draggable-shape.Dome {
+    border-bottom-style: dashed;
+}
+
 .draggables {
     display: grid;
     grid-template-columns: repeat(2, 1fr);

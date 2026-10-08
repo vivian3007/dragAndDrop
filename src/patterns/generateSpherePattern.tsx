@@ -132,6 +132,7 @@ const generateSpherePattern = (singleShape: Shape, yarnWeight: string, rowHeight
         incRows,
         // Dicht: Pattern.tsx zet er "begin met vullen" en de slotronde (6 min) bij.
         closed: true,
+        flat: false,
         lastRow,
         stitchCount,
         incArray,

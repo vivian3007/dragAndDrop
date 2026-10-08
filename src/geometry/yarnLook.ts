@@ -36,6 +36,13 @@ export function stitchRepeat(shape: Shape): [number, number] {
         case "Cone":
             along = Math.hypot(height, diameter / 2);
             break;
+        case "Disc":
+            // Vanuit het midden naar de rand.
+            along = diameter / 2;
+            break;
+        case "Dome":
+            along = halfEllipsePerimeter(diameter / 2, height) / 2;
+            break;
         default:
             // Bol: van pool tot pool.
             along = halfEllipsePerimeter(diameter / 2, height / 2);

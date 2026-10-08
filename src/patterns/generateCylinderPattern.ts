@@ -88,6 +88,7 @@ const generateCylinderPattern = (shape: Shape, yarnWeight: string, rowHeights: R
         rows,
         incRows,
         closed: true,
+        flat: false,
         lastRow: rows,
         stitchCount,
         incArray,

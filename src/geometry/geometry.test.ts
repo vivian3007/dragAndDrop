@@ -21,7 +21,7 @@ describe("patternBounds", () => {
     });
 
     it("cilinder en kegel: breedte is de diameter, hoogte van onderkant tot boven", () => {
-        for (const type of ["Cylinder", "Cone"]) {
+        for (const type of ["Cylinder", "Cone", "Disc", "Dome"]) {
             const shape = shapeOfCm(type, { width: 4, height: 6, length: 4 }, { y: 1 });
             expect(computePatternWidthCm([shape])).toBeCloseTo(4, 6);
             expect(computePatternHeightCm([shape])).toBeCloseTo(6, 6);
@@ -66,7 +66,7 @@ describe("mirrorShape", () => {
 });
 
 describe("meshScaleOf / sizeFromMeshScale (schalen met de gizmo)", () => {
-    it.each(["Sphere", "Arm", "Cylinder", "Cone"])("%s: heen en terug geeft dezelfde maat", (type) => {
+    it.each(["Sphere", "Arm", "Cylinder", "Cone", "Disc", "Dome"])("%s: heen en terug geeft dezelfde maat", (type) => {
         const shape = makeShape({ type, width: 80, height: 150, length: 60, zoom: 1.3 });
         const [x, y, z] = meshScaleOf(shape);
         const size = sizeFromMeshScale(shape, { x, y, z });

@@ -51,6 +51,28 @@ describe.each(["Cylinder", "Arm", "Cone"])("aansluiten: %s op een uitgerekte bol
     });
 });
 
+describe("aansluiten: platte vormen", () => {
+    it("een buiklapje (plat rondje) ligt plat op het lijf, de hele rand erin", () => {
+        const patch = makeShape({ id: "lapje", type: "Disc", width: 80, height: 11, length: 80, x: 0.2, y: 0.1, z: 2.2 });
+        const result = attachToNearest(patch, [body])!;
+        expectRimInside(result.shape, body);
+        // Plat: de as (dikte) wijst van het lijf af, naar voren.
+        const axis = new THREE.Vector3(0, 1, 0).applyEuler(new THREE.Euler(
+            THREE.MathUtils.degToRad(result.shape.rotation_x),
+            THREE.MathUtils.degToRad(result.shape.rotation_y),
+            THREE.MathUtils.degToRad(result.shape.rotation_z),
+        ));
+        expect(axis.z).toBeGreaterThan(0.7);
+    });
+
+    it("een muts (halve bol) zit rondom op het hoofd", () => {
+        const head = makeShape({ id: "hoofd", type: "Sphere", width: 130, height: 120, length: 125, y: 2.6 });
+        const hat = makeShape({ id: "muts", type: "Dome", width: 110, height: 55, length: 110, y: 4.2 });
+        const result = attachToNearest(hat, [head])!;
+        expectRimInside(result.shape, head);
+    });
+});
+
 describe("aansluiten: overige gevallen", () => {
     it("een poot op een cilinder-lijf sluit rondom aan", () => {
         const cylBody = makeShape({ id: "lijf", type: "Cylinder", width: 200, height: 250, length: 200 });
