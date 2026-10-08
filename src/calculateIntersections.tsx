@@ -51,6 +51,16 @@ function getCsgProxyGeometry(geometry: THREE.BufferGeometry): THREE.BufferGeomet
     return geometry;
 }
 
+// Alleen de vorm (positie + normalen), zonder vertex-kleuren (kleurwissels) of uv's: three-csg-ts
+// crasht als de ene operand wél kleuren heeft en de andere niet, en de overlap heeft ze niet nodig.
+function shapeOnly(geometry: THREE.BufferGeometry): THREE.BufferGeometry {
+    const stripped = new THREE.BufferGeometry();
+    stripped.setAttribute("position", geometry.attributes.position);
+    if (geometry.attributes.normal) stripped.setAttribute("normal", geometry.attributes.normal);
+    if (geometry.index) stripped.setIndex(geometry.index);
+    return stripped;
+}
+
 function createCsgProxyMesh(mesh: THREE.Mesh, worldBounds: THREE.Box3): THREE.Mesh {
     // Een react-three-fiber <mesh> zonder eigen <xxxGeometry>-kind krijgt van THREE.Mesh's
     // constructor standaard een lege (maar wél truthy) BufferGeometry — "attributes.position
@@ -72,8 +82,7 @@ function createCsgProxyMesh(mesh: THREE.Mesh, worldBounds: THREE.Box3): THREE.Me
         return proxyMesh;
     }
 
-    const proxyGeometry = getCsgProxyGeometry(mesh.geometry as THREE.BufferGeometry);
-    const proxyMesh = new THREE.Mesh(proxyGeometry);
+    const proxyMesh = new THREE.Mesh(shapeOnly(getCsgProxyGeometry(mesh.geometry as THREE.BufferGeometry)));
     proxyMesh.matrix.copy(mesh.matrix);
     return proxyMesh;
 }

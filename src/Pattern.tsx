@@ -136,8 +136,9 @@ const Pattern = () => {
     const widthCm = computePatternWidthCm(shapes);
 
     // Eén regel per kleur, met de onderdelen die in die kleur gehaakt worden.
-    // Ook de kleuren van kleurwissels, bij het onderdeel waarin ze zitten.
-    const partsByColor = shapes.reduce<Record<string, string[]>>((acc, shape) => {
+    // Ook de kleuren van kleurwissels, bij het onderdeel waarin ze zitten. Ogen zijn geen
+    // garen: die staan los onder "Ogen".
+    const partsByColor = shapes.filter((shape) => !isEye(shape)).reduce<Record<string, string[]>>((acc, shape) => {
         const colors = new Set([shape.color ?? "#cccccc", ...(shape.stripes ?? []).map((stripe) => stripe.color)]);
         colors.forEach((color) => (acc[color] ??= []).push(shape.name ?? shape.type));
         return acc;

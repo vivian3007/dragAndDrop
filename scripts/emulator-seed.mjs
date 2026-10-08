@@ -1,7 +1,7 @@
 // Zet testdata in de lokale Firebase-emulator, om de app met `npm run dev:emulators` uit te
 // proberen zonder de echte database aan te raken. Maakt de emulator eerst leeg.
 //   npm run emulators                      (in een ander venster)
-//   node scripts/emulator-seed.mjs
+//   npx tsx scripts/emulator-seed.mjs     (tsx: gebruikt de TypeScript-code van de editor)
 //   npm run dev:emulators                  -> http://localhost:5174
 //
 // Testaccounts (alleen in de emulator, project "demo-stitchify"):
@@ -9,6 +9,7 @@
 //   maker@test.nl  / testwachtwoord123   (@maker, met het ontwerp "Testkonijn")
 import { admin, resetEmulator } from './emulator-tests/helpers.mjs';
 import { searchFields } from '../src/searchTerms.js';
+import { attachToNearest } from '../src/geometry/attach.ts';
 
 const PASSWORD = 'testwachtwoord123';
 
@@ -51,19 +52,35 @@ await design('testkonijn', 'maker', 'Testkonijn', ['Dier'], [
 // Een complete beer met alle vormtypen, om de editor en de patroonpagina te laten zien.
 // Posities en maten in wereld-eenheden / opslag-eenheden, zoals de editor ze bewaart.
 const brown = '#b07a4f';
-await design('demobeer', 'tester', 'Demobeer', ['Dier', 'Beer', 'Demo'], [
+// Volledige vorm met de standaardwaarden die de editor ook gebruikt.
+const full = (shape) => ({ zoom: 1, rotation_x: 0, rotation_y: 0, rotation_z: 0, z: 0, ...shape });
+
+// Ogen, buiklapje en mutsje worden met de echte aansluit-functie van de editor geplaatst
+// (src/geometry/attach.ts), zodat ze precies goed zitten — daarom draait dit script via tsx.
+const body = full({ id: 'lijf', type: 'Sphere', name: 'Lijf', x: 0, y: 0, width: 150, height: 170, length: 140, color: brown,
     // Rode sjaal om de hals (kleurwissel bovenaan het lijf).
-    { type: 'Sphere', name: 'Lijf', x: 0, y: 0, width: 150, height: 170, length: 140, color: brown, stripes: [{ from: 0.1, to: 0.2, color: '#c0392b' }] },
-    { type: 'Sphere', name: 'Hoofd', x: 0, y: 2.6, width: 130, height: 120, length: 125, color: brown },
-    { type: 'Sphere', name: 'Snuit', x: 0, y: 2.3, z: 1.05, width: 55, height: 45, length: 45, color: '#e8cfa9' },
-    { type: 'Cone', name: 'Linkeroor', x: -0.85, y: 3.35, width: 90, height: 70, length: 60, rotation_z: 25, color: brown },
-    { type: 'Cone', name: 'Rechteroor', x: 0.85, y: 3.35, width: 90, height: 70, length: 60, rotation_z: -25, color: brown },
+    stripes: [{ from: 0.1, to: 0.2, color: '#c0392b' }] });
+const head = full({ id: 'hoofd', type: 'Sphere', name: 'Hoofd', x: 0, y: 2.6, width: 130, height: 120, length: 125, color: brown });
+const attached = (shape, targets) => attachToNearest(full(shape), targets).shape;
+const demoShapes = [
+    body,
+    head,
+    full({ id: 'snuit', type: 'Sphere', name: 'Snuit', x: 0, y: 2.3, z: 1.05, width: 55, height: 45, length: 45, color: '#e8cfa9' }),
+    full({ id: 'oorL', type: 'Cone', name: 'Linkeroor', x: -0.85, y: 3.35, width: 90, height: 70, length: 60, rotation_z: 25, color: brown }),
+    full({ id: 'oorR', type: 'Cone', name: 'Rechteroor', x: 0.85, y: 3.35, width: 90, height: 70, length: 60, rotation_z: -25, color: brown }),
     // Lichte pootjes: het kapje van de arm in een andere kleur.
-    { type: 'Arm', name: 'Linkerarm', x: -1.1, y: 0.4, width: 55, height: 120, length: 55, rotation_z: 60, color: brown, stripes: [{ from: 0, to: 0.25, color: '#e8cfa9' }] },
-    { type: 'Arm', name: 'Rechterarm', x: 1.1, y: 0.4, width: 55, height: 120, length: 55, rotation_z: -60, color: brown, stripes: [{ from: 0, to: 0.25, color: '#e8cfa9' }] },
-    { type: 'Cylinder', name: 'Linkerpoot', x: -0.7, y: -2.1, width: 75, height: 70, length: 75, color: '#8a5a3a' },
-    { type: 'Cylinder', name: 'Rechterpoot', x: 0.7, y: -2.1, width: 75, height: 70, length: 75, color: '#8a5a3a' },
-]);
+    full({ id: 'armL', type: 'Arm', name: 'Linkerarm', x: -1.1, y: 0.4, width: 55, height: 120, length: 55, rotation_z: 60, color: brown, stripes: [{ from: 0, to: 0.25, color: '#e8cfa9' }] }),
+    full({ id: 'armR', type: 'Arm', name: 'Rechterarm', x: 1.1, y: 0.4, width: 55, height: 120, length: 55, rotation_z: -60, color: brown, stripes: [{ from: 0, to: 0.25, color: '#e8cfa9' }] }),
+    full({ id: 'pootL', type: 'Cylinder', name: 'Linkerpoot', x: -0.7, y: -2.1, width: 75, height: 70, length: 75, color: '#8a5a3a' }),
+    full({ id: 'pootR', type: 'Cylinder', name: 'Rechterpoot', x: 0.7, y: -2.1, width: 75, height: 70, length: 75, color: '#8a5a3a' }),
+    // Veiligheidsoogjes van 10 mm, boven de snuit.
+    attached({ id: 'oogL', type: 'Eye', name: 'Linkeroog', x: -0.28, y: 2.85, z: 1.2, width: 18.9, height: 18.9, length: 18.9, color: '#111111' }, [head]),
+    attached({ id: 'oogR', type: 'Eye', name: 'Rechteroog', x: 0.28, y: 2.85, z: 1.2, width: 18.9, height: 18.9, length: 18.9, color: '#111111' }, [head]),
+    // Buiklapje (plat rondje) en een mutsje (halve bol) met een gekleurde rand.
+    attached({ id: 'buik', type: 'Disc', name: 'Buiklapje', x: 0, y: -0.2, z: 1.8, width: 90, height: 11, length: 90, color: '#e8cfa9' }, [body]),
+    attached({ id: 'muts', type: 'Dome', name: 'Mutsje', x: 0, y: 4, width: 95, height: 50, length: 95, color: '#2e86c1', stripes: [{ from: 0.75, to: 1, color: '#ffffff' }] }, [head]),
+];
+await design('demobeer', 'tester', 'Demobeer', ['Dier', 'Beer', 'Demo'], demoShapes.map(({ id, ...shape }) => shape));
 
 // Genoeg extra ontwerpen om "Meer laden" op Home te zien (24 per keer).
 const animals = ['Kat', 'Hond', 'Uil', 'Vos', 'Egel', 'Panda', 'Koala', 'Pinguïn', 'Schildpad', 'Walvis'];

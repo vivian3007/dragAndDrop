@@ -365,6 +365,7 @@ body {
 }
 
 .pattern-row-color .pattern-color-swatch {
+    display: inline-block;
     vertical-align: middle;
 }
 

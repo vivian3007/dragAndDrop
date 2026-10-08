@@ -4,7 +4,7 @@ import { connectAuthEmulator, getAuth } from "firebase/auth";
 
 // `npm run dev:emulators`: de app praat dan met de lokale Firebase-emulator (`npm run
 // emulators`) i.p.v. de echte database, zodat je vrij kunt testen. Testdata erin zetten:
-// `node scripts/emulator-seed.mjs`.
+// `npx tsx scripts/emulator-seed.mjs`.
 const useEmulators = import.meta.env.VITE_USE_EMULATORS === "true";
 
 const firebaseConfig = {
