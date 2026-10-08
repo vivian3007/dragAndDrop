@@ -54,7 +54,7 @@ function IntersectionReporter({ shapes, onIntersections }: { shapes: Shape[]; on
             if (!allMeshesReady) {
                 return false;
             }
-            calculateIntersections(shapes, scene, [], onIntersections, noop);
+            calculateIntersections(shapes, scene, onIntersections);
             return true;
         };
 

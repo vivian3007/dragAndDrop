@@ -4,7 +4,7 @@ import { toast } from "react-toastify";
 import type * as THREE from "three";
 import { db } from "../../firebase-config.js";
 import { useT } from "../i18n/LanguageProvider";
-import { EMPTY_YARN, SetView, ShapeMesh, TransformMode } from "./types";
+import { EMPTY_YARN, SetView, TransformMode } from "./types";
 
 // Hoe lang na de laatste wijziging een vorm naar Firestore gaat: slepen of een slider vuurt
 // tientallen updates per seconde af, die hoeven niet allemaal naar de server.
@@ -26,8 +26,6 @@ export function useEditorState(amigurumiId: string) {
     const [dragging, setDragging] = useState(false);
     const [camera, setCamera] = useState<THREE.Camera | null>(null);
     const [shapeColor, setShapeColor] = useState("#FFFFFF");
-    const [intersections, setIntersections] = useState<Intersection[]>([]);
-    const [meshes, setMeshes] = useState<ShapeMesh[]>([]);
     const [setView, setSetView] = useState<SetView>(() => () => {});
     const [transformMode, setTransformMode] = useState<TransformMode>("translate");
     const [showGrid, setShowGrid] = useState(false);
@@ -36,8 +34,6 @@ export function useEditorState(amigurumiId: string) {
         let cancelled = false;
         setLoading(true);
         setActiveId(null);
-        setIntersections([]);
-        setMeshes([]);
         (async () => {
             const [designSnap, shapesSnap] = await Promise.all([
                 getDoc(doc(db, "amigurumi", amigurumiId)),
@@ -167,10 +163,6 @@ export function useEditorState(amigurumiId: string) {
         setCamera,
         shapeColor,
         setShapeColor,
-        intersections,
-        setIntersections,
-        meshes,
-        setMeshes,
         setView,
         onSetView,
         transformMode,

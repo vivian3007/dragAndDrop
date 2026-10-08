@@ -10,7 +10,7 @@ export type ViewKey = "front" | "back" | "left" | "right" | "top";
 
 export type SetView = (viewKey: string) => void;
 
-// Een vorm met de three.js-mesh die er in de scene bij hoort (calculateIntersections).
+// Een vorm met de three.js-mesh die er in de scene bij hoort (zie calculateIntersections).
 export type ShapeMesh = { id: string; mesh: THREE.Mesh };
 
 export type OrbitControlsRef = React.RefObject<OrbitControlsImpl | null>;

@@ -2,7 +2,7 @@ import React, {useCallback, useEffect, useRef, useState} from 'react';
 import type * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl, TransformControls as TransformControlsImpl } from 'three-stdlib';
 import { isGizmoAxisActive } from './editor/types';
-import type { SetState, SetView, ShapeComponentProps, ShapeMesh, TransformMode, ViewKey } from './editor/types';
+import type { SetState, SetView, ShapeComponentProps, TransformMode, ViewKey } from './editor/types';
 import {Canvas} from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { GridHelper } from 'three';
@@ -28,9 +28,6 @@ export default function ThreeJsField({
     showGrid,
     setShowGrid,
     setCamera,
-    setIntersections,
-    meshes,
-    setMeshes,
 }: {
     droppedShapes: Shape[];
     threeJsContainerRef: React.RefObject<HTMLCanvasElement | null>;
@@ -44,9 +41,6 @@ export default function ThreeJsField({
     showGrid: boolean;
     setShowGrid: SetState<boolean>;
     setCamera: (camera: THREE.Camera) => void;
-    setIntersections: (intersections: Intersection[]) => void;
-    meshes: ShapeMesh[];
-    setMeshes: (meshes: ShapeMesh[]) => void;
 }) {
     const orbitControlsRef = useRef<OrbitControlsImpl | null>(null);
     const activeTransformControlsRef = useRef<TransformControlsImpl | null>(null);
@@ -103,9 +97,6 @@ export default function ThreeJsField({
                 onSetView={onSetView}
                 droppedShapes={droppedShapes}
                 setCamera={setCamera}
-                setIntersections={setIntersections}
-                meshes={meshes}
-                setMeshes={setMeshes}
                 setCurrentView={setCurrentView}
                 isDragging={isDragging}
             />

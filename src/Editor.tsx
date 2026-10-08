@@ -34,9 +34,6 @@ const Editor = () => {
         setCamera,
         shapeColor,
         setShapeColor,
-        setIntersections,
-        meshes,
-        setMeshes,
         setView,
         onSetView,
         transformMode,
@@ -171,9 +168,6 @@ const Editor = () => {
                 setTransformMode={setTransformMode}
                 setShowGrid={setShowGrid}
                 showGrid={showGrid}
-                setIntersections={setIntersections}
-                meshes={meshes}
-                setMeshes={setMeshes}
             />
             <Settingsbar
                 amigurumiId={amigurumiId}
