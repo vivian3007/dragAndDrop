@@ -9,7 +9,7 @@
 //   maker@test.nl  / testwachtwoord123   (@maker, met het ontwerp "Testkonijn")
 import { admin, resetEmulator } from './emulator-tests/helpers.mjs';
 import { searchFields } from '../src/searchTerms.js';
-import { attachToNearest } from '../src/geometry/attach.ts';
+import { demoBear, demoShapes } from './demoBear.mjs';
 
 const PASSWORD = 'testwachtwoord123';
 
@@ -49,42 +49,7 @@ await design('testkonijn', 'maker', 'Testkonijn', ['Dier'], [
     { type: 'Sphere', name: 'Hoofd', x: 0, y: 0, width: 90, height: 110, length: 90, color: '#eeeeee' },
 ]);
 
-// Een complete beer met alle vormtypen, om de editor en de patroonpagina te laten zien.
-// Posities en maten in wereld-eenheden / opslag-eenheden, zoals de editor ze bewaart.
-const brown = '#b07a4f';
-// Volledige vorm met de standaardwaarden die de editor ook gebruikt.
-const full = (shape) => ({ zoom: 1, rotation_x: 0, rotation_y: 0, rotation_z: 0, z: 0, ...shape });
-
-// Alle onderdelen worden met de echte aansluit-functie van de editor geplaatst
-// (src/geometry/attach.ts, zelfde als de knop Aansluiten), zodat ze precies op elkaar
-// aansluiten — daarom draait dit script via tsx. De x/y/z hieronder is alleen de richting
-// van waaruit het onderdeel tegen z'n doel geschoven wordt.
-// Lijf: bovenaan open voor het hoofd (omgedraaid, dus van onder naar boven gehaakt), met een
-// rode sjaal om de hals (kleurwissel vlak onder de opening).
-const body = full({ id: 'lijf', type: 'OpenSphere', name: 'Lijf', x: 0, y: 0, width: 150, height: 170, length: 140, color: brown,
-    rotation_x: 180, opening: 0.45, stripes: [{ from: 0.86, to: 0.94, color: '#c0392b' }] });
-const attached = (shape, targets) => attachToNearest(full(shape), targets).shape;
-const head = attached({ id: 'hoofd', type: 'Sphere', name: 'Hoofd', x: 0, y: 2.6, width: 130, height: 120, length: 125, color: brown }, [body]);
-const demoShapes = [
-    body,
-    head,
-    // Snuit: een bolletje dat aan de achterkant open is; de opening gaat tegen het hoofd.
-    attached({ id: 'snuit', type: 'OpenSphere', name: 'Snuit', x: 0, y: 2.3, z: 1.05, width: 60, height: 32, length: 48, opening: 0.75, color: '#e8cfa9' }, [head]),
-    attached({ id: 'oorL', type: 'Cone', name: 'Linkeroor', x: -0.85, y: 3.35, width: 90, height: 70, length: 60, rotation_z: 25, color: brown }, [head]),
-    attached({ id: 'oorR', type: 'Cone', name: 'Rechteroor', x: 0.85, y: 3.35, width: 90, height: 70, length: 60, rotation_z: -25, color: brown }, [head]),
-    // Lichte pootjes: het kapje van de arm in een andere kleur.
-    attached({ id: 'armL', type: 'Dome', name: 'Linkerarm', x: -1.1, y: 0.4, width: 55, height: 120, length: 55, rotation_z: 60, color: brown, stripes: [{ from: 0, to: 0.25, color: '#e8cfa9' }] }, [body]),
-    attached({ id: 'armR', type: 'Dome', name: 'Rechterarm', x: 1.1, y: 0.4, width: 55, height: 120, length: 55, rotation_z: -60, color: brown, stripes: [{ from: 0, to: 0.25, color: '#e8cfa9' }] }, [body]),
-    attached({ id: 'pootL', type: 'Cylinder', name: 'Linkerpoot', x: -0.7, y: -2.1, width: 75, height: 70, length: 75, color: '#8a5a3a' }, [body]),
-    attached({ id: 'pootR', type: 'Cylinder', name: 'Rechterpoot', x: 0.7, y: -2.1, width: 75, height: 70, length: 75, color: '#8a5a3a' }, [body]),
-    // Veiligheidsoogjes van 10 mm, boven de snuit.
-    attached({ id: 'oogL', type: 'Eye', name: 'Linkeroog', x: -0.28, y: 2.85, z: 1.2, width: 18.9, height: 18.9, length: 18.9, color: '#111111' }, [head]),
-    attached({ id: 'oogR', type: 'Eye', name: 'Rechteroog', x: 0.28, y: 2.85, z: 1.2, width: 18.9, height: 18.9, length: 18.9, color: '#111111' }, [head]),
-    // Buiklapje (plat rondje) en een mutsje (halve bol) met een gekleurde rand.
-    attached({ id: 'buik', type: 'Disc', name: 'Buiklapje', x: 0, y: -0.2, z: 1.8, width: 90, height: 11, length: 90, color: '#e8cfa9' }, [body]),
-    attached({ id: 'muts', type: 'Dome', name: 'Mutsje', x: 0, y: 4, width: 95, height: 50, length: 95, color: '#2e86c1', stripes: [{ from: 0.75, to: 1, color: '#ffffff' }] }, [head]),
-];
-await design('demobeer', 'tester', 'Demobeer', ['Dier', 'Beer', 'Demo'], demoShapes.map(({ id, ...shape }) => shape));
+await design('demobeer', 'tester', demoBear.name, demoBear.tags, demoShapes.map(({ id, ...shape }) => shape));
 
 // Genoeg extra ontwerpen om "Meer laden" op Home te zien (24 per keer).
 const animals = ['Kat', 'Hond', 'Uil', 'Vos', 'Egel', 'Panda', 'Koala', 'Pinguïn', 'Schildpad', 'Walvis'];
