@@ -125,6 +125,9 @@ export default function calculateIntersections(
     const meshesArray: ShapeMesh[] = [];
 
     droppedShapes.forEach((shape) => {
+        // Een borduursel ligt óp een onderdeel en wordt niet vastgenaaid; waar het zit rekent
+        // patterns/embroidery.ts zelf uit.
+        if (shape.type === "Embroidery") return;
         const mesh = scene.getObjectByProperty('uuid', shape.id);
         if (mesh instanceof THREE.Mesh) {
             if (!meshesArray.find((m) => m.id === shape.id)) {

@@ -604,6 +604,47 @@ body {
     border-bottom-style: dashed;
 }
 
+/* Plat ovaal: een liggend ovaal met rechte zijkanten, zoals een voetzool. */
+.Oval {
+    width: 56px;
+    height: 30px;
+    margin: 13px 0;
+    background-color: #FFFFFF;
+    border-radius: 15px;
+}
+
+/* Open buis: open aan beide kanten, dus boven én onder gestippeld. */
+.Tube {
+    width: 44px;
+    height: 56px;
+    background-color: #FFFFFF;
+    border-radius: 22px / 6px;
+}
+
+.draggable-shape.Tube {
+    border-top-style: dashed;
+    border-bottom-style: dashed;
+}
+
+/* Borduursel: een geborduurd lachje (SVG, net als de kegel). */
+.draggable-shape.Embroidery {
+    width: 56px;
+    height: 56px;
+    border: none;
+    background: no-repeat center / contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'%3E%3Ccircle cx='28' cy='28' r='25' fill='%23FFFFFF' stroke='%232A1E1B' stroke-width='3'/%3E%3Cpath d='M16 30 Q28 42 40 30' fill='none' stroke='%232A1E1B' stroke-width='3' stroke-linecap='round' stroke-dasharray='4 3'/%3E%3Cpath d='M24 19 L32 19 L28 24 Z' fill='%232A1E1B'/%3E%3C/svg%3E");
+}
+
+.draggable-shape.Embroidery:hover {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'%3E%3Ccircle cx='28' cy='28' r='25' fill='%23FFFFFF' stroke='%237D3A45' stroke-width='3'/%3E%3Cpath d='M16 30 Q28 42 40 30' fill='none' stroke='%237D3A45' stroke-width='3' stroke-linecap='round' stroke-dasharray='4 3'/%3E%3Cpath d='M24 19 L32 19 L28 24 Z' fill='%237D3A45'/%3E%3C/svg%3E");
+}
+
+/* Knoppen voor het soort borduursel: twee per rij. */
+.embroidery-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    margin-bottom: 8px;
+}
+
 /* Oog: klein, zwart, glanzend. */
 .Eye {
     width: 24px;

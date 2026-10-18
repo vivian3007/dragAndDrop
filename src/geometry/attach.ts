@@ -1,8 +1,8 @@
 import * as THREE from "three";
-import { meshScaleOf } from "./units";
+import { meshScaleOf, PIXELS_PER_CM, WORLD_SCALE_FACTOR } from "./units";
 import { ARM_TOTAL_LOCAL_LENGTH } from "./armGeometry";
-import { domeCapFraction, insideDome } from "./domeShape";
 import { sphereOpening } from "./sphereOpening";
+import { insideLocal } from "./shapeSpace";
 
 // "Aansluiten": een vorm netjes tegen de dichtstbijzijnde andere vorm zetten, zodat hij er
 // rondom op aansluit — zoals een aangenaaid been, oor of snuit.
@@ -38,33 +38,15 @@ function worldMatrix(shape: Shape): THREE.Matrix4 {
     );
 }
 
-// Ligt een punt (in de eigen, ongeschaalde ruimte van de vorm) in de vorm? Zelfde geometrie
-// als in 3D: bol met straal 1; arm = cilinder (straal 0,5, y 0..1) met halve bol erop;
-// cilinder en kegel: diameter 1, y 0..1.
-function insideLocal(shape: Shape, p: THREE.Vector3): boolean {
-    const radial = Math.hypot(p.x, p.z);
-    switch (shape.type) {
-        case "Arm":
-            return (p.y >= 0 && p.y <= 1 && radial <= 0.5) || p.distanceTo(new THREE.Vector3(0, 1, 0)) <= 0.5;
-        case "Cylinder":
-        case "Disc":
-            return p.y >= 0 && p.y <= 1 && radial <= 0.5;
-        case "Dome":
-            return insideDome(p.x, p.y, p.z, domeCapFraction(shape));
-        case "Cone":
-            return p.y >= 0 && p.y <= 1 && radial <= 0.5 * (1 - p.y);
-        default:
-            return p.length() <= 1;
-    }
-}
-
 // Het middelpunt van de vorm (in eigen ruimte), van waaruit het oppervlak gezocht wordt.
 function localCenter(type: string): THREE.Vector3 {
     switch (type) {
         case "Arm":
             return new THREE.Vector3(0, ARM_TOTAL_LOCAL_LENGTH / 3, 0);
         case "Cylinder":
+        case "Tube":
         case "Disc":
+        case "Oval":
             return new THREE.Vector3(0, 0.5, 0);
         case "Dome":
             return new THREE.Vector3(0, 0.35, 0);
@@ -163,7 +145,7 @@ function toDegrees(quaternion: THREE.Quaternion) {
 export type AttachResult = { shape: Shape; targetId: string };
 
 // Vormen die met hun (open of platte) onderkant aansluiten; een bol sluit aan met z'n ronding.
-const isLimb = (shape: Shape) => ["Arm", "Cylinder", "Cone", "Disc", "Dome"].includes(shape.type);
+const isLimb = (shape: Shape) => ["Arm", "Cylinder", "Tube", "Cone", "Disc", "Oval", "Dome"].includes(shape.type);
 
 // Zet `shape` tegen `target`, in de richting `direction` vanuit het middelpunt van `target`.
 function attachTo(shape: Shape, solid: Solid, direction: THREE.Vector3): Shape {
@@ -171,6 +153,7 @@ function attachTo(shape: Shape, solid: Solid, direction: THREE.Vector3): Shape {
     const normal = solid.normalTowards(direction);
 
     if (sphereOpening(shape) > 0) return attachOpenSphere(shape, solid, surface, normal);
+    if (shape.type === "Embroidery") return attachEmbroidery(shape, solid, surface, normal);
 
     if (!isLimb(shape)) {
         // Bol: middelpunt langs de normaal naar buiten, een stukje in de andere vorm gezakt.
@@ -236,14 +219,42 @@ function attachOpenSphere(shape: Shape, solid: Solid, surface: THREE.Vector3, no
     return { ...shape, x: center.x, y: center.y, z: center.z, ...toDegrees(rotation) };
 }
 
+// Borduursel: plat óp het oppervlak (niet erin gezakt), recht op: lokale x horizontaal en −z
+// naar boven, zodat een mondje niet scheef komt te staan. Hoe bol het oppervlak eronder is,
+// gaat mee als `curvature`, zodat de draadjes meebuigen (zie embroideryGeometry.ts).
+function attachEmbroidery(shape: Shape, solid: Solid, surface: THREE.Vector3, normal: THREE.Vector3): Shape {
+    const worldUp = new THREE.Vector3(0, 1, 0);
+    const right = new THREE.Vector3().crossVectors(worldUp, normal);
+    if (right.lengthSq() < 1e-6) right.set(1, 0, 0); // boven- of onderop: gewoon wereld-x
+    right.normalize();
+    const down = new THREE.Vector3().crossVectors(right, normal).normalize();
+    const rotation = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(right, normal, down));
+
+    // Kromming 2·diepte/afstand² op een halve breedte (en halve hoogte) van het midden.
+    const [sx, , sz] = meshScaleOf(shape);
+    const inward = normal.clone().negate();
+    const curvatures = [[right, sx / 2], [down, sz / 2]].map(([axis, distance]) => {
+        const d = Math.max(distance as number, 1e-4);
+        const sides = [1, -1].map((sign) =>
+            solid.depthUntilInside(surface.clone().addScaledVector(axis as THREE.Vector3, sign * d), inward));
+        return (2 * Math.max(...sides)) / (d * d);
+    });
+    const worldPerCm = PIXELS_PER_CM * WORLD_SCALE_FACTOR;
+    const curvature = ((curvatures[0] + curvatures[1]) / 2) * worldPerCm;
+    return { ...shape, x: surface.x, y: surface.y, z: surface.z, ...toDegrees(rotation), curvature };
+}
+
 function directionFrom(solid: Solid, point: THREE.Vector3): THREE.Vector3 {
     const direction = point.clone().sub(solid.center);
     return direction.lengthSq() < 1e-9 ? new THREE.Vector3(0, 1, 0) : direction;
 }
 
+// Op een borduursel sluit niets aan: dat ligt zelf al op een onderdeel.
+const canHold = (other: Shape) => other.type !== "Embroidery";
+
 // Zet `shape` netjes tegen de dichtstbijzijnde van `others`. Null als er geen andere vorm is.
 export function attachToNearest(shape: Shape, others: Shape[]): AttachResult | null {
-    const candidates = others.filter((other) => other.id !== shape.id);
+    const candidates = others.filter((other) => other.id !== shape.id && canHold(other));
     if (candidates.length === 0) return null;
 
     const point = attachPoint(shape);
@@ -262,6 +273,8 @@ export function attachToNearest(shape: Shape, others: Shape[]): AttachResult | n
 function contactPoint(shape: Shape, other: Solid): THREE.Vector3 {
     const point = attachPoint(shape);
     if (isLimb(shape)) return point;
+    // Borduursel: net onder het oppervlak waar het op ligt (één draaddikte).
+    if (shape.type === "Embroidery") return new THREE.Vector3(0, -1, 0).applyMatrix4(worldMatrix(shape));
     const opening = sphereOpening(shape);
     if (opening > 0) {
         // Het midden van de opening, een klein stukje erbuiten (eigen ruimte: bol met straal 1).
@@ -278,7 +291,7 @@ function contactPoint(shape: Shape, other: Solid): THREE.Vector3 {
 export function findAttachedTarget(shape: Shape, others: Shape[]): Shape | null {
     let best: { other: Shape; distance: number } | null = null;
     for (const other of others) {
-        if (other.id === shape.id) continue;
+        if (other.id === shape.id || !canHold(other)) continue;
         const solid = new Solid(other);
         if (!solid.contains(contactPoint(shape, solid))) continue;
         const distance = solid.center.distanceTo(attachPoint(shape));
@@ -342,7 +355,7 @@ export function nudgeShape(
 // oppervlak ligt (zodat hij er bij het opschuiven niet doorheen springt).
 function touchingTarget(shape: Shape, others: Shape[], tolerance = MOVE_STEP.normal * 0.75): Shape | null {
     for (const other of others) {
-        if (other.id === shape.id) continue;
+        if (other.id === shape.id || !canHold(other)) continue;
         const solid = new Solid(other);
         const point = contactPoint(shape, solid);
         const surface = solid.surfaceTowards(directionFrom(solid, point));

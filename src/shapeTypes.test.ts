@@ -5,7 +5,7 @@ import { generatePattern } from "./patterns/generators";
 import { ROW_HEIGHTS } from "./patterns/estimateYarn";
 import { computePatternBounds } from "./geometry/patternBounds";
 import { shapeOfCm } from "./patterns/testShapes";
-import { isEye } from "./patterns/eyes";
+import { isDecoration } from "./patterns/embroidery";
 
 // Elke vorm in de vormenbalk moet overal bekend zijn — anders wordt hij bv. als bol getekend
 // of krijgt hij geen patroon (zoals bij het platte rondje en de halve bol gebeurde).
@@ -16,9 +16,9 @@ describe.each(SHAPE_TYPES)("vormtype %s", (type) => {
         expect(SHAPE_COMPONENTS[type]).toBeDefined();
     });
 
-    it(isEye(shape) ? "heeft (als oog) geen eigen patroon" : "heeft een patroon", () => {
+    it(isDecoration(shape) ? "heeft (als oog of borduursel) geen eigen patroon" : "heeft een patroon", () => {
         const pattern = generatePattern(shape, "Medium", ROW_HEIGHTS, []);
-        if (isEye(shape)) expect(pattern).toBeNull();
+        if (isDecoration(shape)) expect(pattern).toBeNull();
         else expect(pattern).not.toBeNull();
     });
 

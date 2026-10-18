@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { domeCapFraction } from "./domeShape";
+import { createEmbroideryGeometry } from "./embroideryGeometry";
 
 // 3D-geometrie van de vormen met een vlakke kant (cilinder, kegel). Net als de Arm: diameter
 // 1, lokale hoogte 0..1, en de oorsprong in het midden van de onderkant. Daardoor werken de
@@ -8,23 +9,27 @@ import { domeCapFraction } from "./domeShape";
 //
 // Gedeeld door de editor (SolidShape.tsx) en de ontwerp-snapshots (designSnapshot.ts).
 
-export const SOLID_SHAPE_TYPES = ["Cylinder", "Cone", "Disc", "Dome"] as const;
+export const SOLID_SHAPE_TYPES = ["Cylinder", "Tube", "Cone", "Disc", "Oval", "Dome", "Embroidery"] as const;
 export type SolidShapeType = (typeof SOLID_SHAPE_TYPES)[number];
 
 export function isSolidShapeType(type: string | null | undefined): type is SolidShapeType {
     return (SOLID_SHAPE_TYPES as readonly string[]).includes(type ?? "");
 }
 
-// `shape` alleen nodig voor de halve bol: hoe hoog het kapje is t.o.v. de buis (domeShape.ts).
-export function createSolidGeometry(type: SolidShapeType, shape?: Parameters<typeof domeCapFraction>[0]): THREE.BufferGeometry {
+// `shape` alleen nodig voor de halve bol (hoe hoog het kapje is t.o.v. de buis, domeShape.ts)
+// en het borduursel (welk detail, op welke maat; embroideryGeometry.ts).
+export function createSolidGeometry(type: SolidShapeType, shape?: Partial<Shape>): THREE.BufferGeometry {
     let geometry: THREE.BufferGeometry;
     if (type === "Dome") {
         geometry = createDomeGeometry(shape ? domeCapFraction(shape) : 1);
+    } else if (type === "Embroidery") {
+        return createEmbroideryGeometry(shape ?? {});
     } else {
-        // Cilinder en plat rondje (een dunne cilinder; de dikte komt uit `height`), of kegel.
+        // Cilinder, plat rondje en plat ovaal (een dunne cilinder; de dikte komt uit `height`,
+        // ovaal door een andere breedte en lengte), open buis (zonder bodem en bovenkant), of kegel.
         geometry = type === "Cone"
             ? new THREE.ConeGeometry(0.5, 1, 48)
-            : new THREE.CylinderGeometry(0.5, 0.5, 1, 48);
+            : new THREE.CylinderGeometry(0.5, 0.5, 1, 48, 1, type === "Tube");
         // three.js zet deze vormen gecentreerd neer (-0.5..0.5); wij willen 0..1.
         geometry.translate(0, 0.5, 0);
     }

@@ -68,7 +68,10 @@ function buildShape(shape: Shape, baseTexture: THREE.Texture): THREE.Object3D {
             ? createSolidGeometry(shape.type, shape)
             : new THREE.SphereGeometry(1, 64, 48, 0, Math.PI * 2, 0, sphereEndAngle(sphereOpening(shape)));
         const eyeMaterial = new THREE.MeshPhysicalMaterial({ color: shape.color ?? '#111111', roughness: 0.15, clearcoat: 1 });
-        object.add(new THREE.Mesh(paintStripes(geometry, shape), shape.type === 'Eye' ? eyeMaterial : material));
+        // Borduurdraad: gewoon mat garen in z'n kleur (zie SolidShape.tsx).
+        const threadMaterial = new THREE.MeshStandardMaterial({ roughness: 1, metalness: 0, vertexColors: true, color: YARN_TINT });
+        const materialFor = { Eye: eyeMaterial, Embroidery: threadMaterial }[shape.type] ?? material;
+        object.add(new THREE.Mesh(paintStripes(geometry, shape), materialFor));
         object.scale.set(
             (shape.width ?? 50) * zoom * WORLD_SCALE_FACTOR,
             (shape.height ?? 50) * zoom * WORLD_SCALE_FACTOR,

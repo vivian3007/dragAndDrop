@@ -6,6 +6,7 @@ import {db} from "../firebase-config.js";
 import { generatePattern, PatternPart } from "./patterns/generators";
 import { formatRow, PatternRow } from "./patterns/patternTerms";
 import { eyePlacements, eyeSupplies, isEye } from "./patterns/eyes";
+import { embroideryPlacements, embroiderySupplies, type EmbroideryPlacement } from "./patterns/embroidery";
 import { computePatternHeightCm, computePatternWidthCm } from "./geometry/patternBounds";
 import { useIntl } from "react-intl";
 import { useT } from "./i18n/LanguageProvider";
@@ -168,7 +169,12 @@ const Pattern = () => {
         if (multipleColors) {
             lines.push({ text: t("pattern.startInColor", { letter: letterOf(current) }), color: current });
         }
-        lines.push({ text: `${terms.row(1)}: ${t("pattern.magicRingStart", { stitches: terms.sc(6) })} (6)` });
+        // Ronde 1: een magische ring, of (ovaal, buis) een eigen begin met lossen.
+        if ("firstRow" in pattern && pattern.firstRow) {
+            lines.push({ text: formatRow(terms, pattern.firstRow) });
+        } else {
+            lines.push({ text: `${terms.row(1)}: ${t("pattern.magicRingStart", { stitches: terms.sc(6) })} (6)` });
+        }
         const switchTo = (color: string) => {
             if (color !== current) {
                 lines.push({ text: t("pattern.changeColor", { letter: letterOf(color) }), color });
@@ -190,12 +196,37 @@ const Pattern = () => {
         } else {
             // Bol met opening (snuit, lijf voor het hoofd): stevig vullen, de opening tegen het
             // andere onderdeel naaien.
-            lines.push({ text: t(pattern.flat ? "pattern.fastenOffFlat" : pattern.type === "OpenSphere" ? "pattern.stuffOpening" : "pattern.stuffLightly") });
+            const closing: Record<string, string> = {
+                Oval: "pattern.fastenOffOval",
+                Tube: "pattern.fastenOffTube",
+                OpenSphere: "pattern.stuffOpening",
+            };
+            lines.push({ text: t(closing[pattern.type] ?? (pattern.flat ? "pattern.fastenOffFlat" : "pattern.stuffLightly")) });
         }
         return lines;
     };
 
     const yarnAmountLabel = (meters: number) => t("pattern.yarnAmount", { meters });
+
+    // "Borduur een mondje in zwart op Hoofd van ronde 14 tot 15, 4 steken breed, 3 rondes onder Linkeroog".
+    const embroideryLine = ({ embroidery, detail, target, rows: [from, to], stitchesWide, eye }: EmbroideryPlacement) => {
+        const parts = [
+            t("pattern.embroider", {
+                detail: t(`pattern.embroider.${detail}`),
+                color: colorName(embroidery.color, intl.locale) ?? embroidery.color,
+                part: target.name || t(`shapes.${target.type}`),
+                rows: from === to ? t("pattern.embroiderRow", { row: from }) : t("pattern.embroiderRows", { from, to }),
+            }),
+            t("pattern.embroiderWidth", { count: stitchesWide }),
+        ];
+        if (eye) {
+            const eyeName = eye.eye.name || t("shapes.Eye");
+            parts.push(eye.rowsApart === 0
+                ? t("pattern.embroiderLevelWithEye", { eye: eyeName })
+                : t(eye.below ? "pattern.embroiderBelowEye" : "pattern.embroiderAboveEye", { count: eye.rowsApart, eye: eyeName }));
+        }
+        return parts.join(", ");
+    };
 
     return (
         <div>
@@ -283,6 +314,15 @@ const Pattern = () => {
                                 {eyeSupplies(shapes).map(({ count, sizeMm }) => (
                                     <li key={sizeMm}>{t("pattern.eyesSupply", { count, size: sizeMm })}</li>
                                 ))}
+                                {embroiderySupplies(shapes).map(({ color, details }) => (
+                                    <li key={color}>
+                                        <span className="pattern-color-swatch" style={{ backgroundColor: color }} />{" "}
+                                        {t("pattern.embroiderySupply", {
+                                            color: colorName(color, intl.locale) ?? color,
+                                            details: details.map((detail) => t(`embroidery.detail.${detail}`).toLowerCase()).join(", "),
+                                        })}
+                                    </li>
+                                ))}
                                 <li>{t("pattern.stuffingSupply")}</li>
                                 <li>{t("pattern.toolsSupply")}</li>
                             </ul>
@@ -342,7 +382,7 @@ const Pattern = () => {
                                 >
                                     <h2 className="pattern-card-title">
                                         <span className="pattern-step-badge">{index + 1}</span>
-                                        {t("pattern.partTitle", { name: pattern.name ?? t("pattern.unnamedPart") })}
+                                        {t("pattern.partTitle", { name: pattern.name || t("pattern.unnamedPart") })}
                                     </h2>
                                     <div className="pattern-card-body">
                                         <ul className="pattern-row-list">
@@ -396,17 +436,23 @@ const Pattern = () => {
                                 const eyeLines = placements.map((placement) => {
                                     const other = placements.find((p) => p !== placement && p.target.id === placement.target.id);
                                     const base = t("pattern.placeEye", {
-                                        eye: placement.eye.name ?? t("shapes.Eye"),
-                                        part: placement.target.name ?? t(`shapes.${placement.target.type}`),
+                                        eye: placement.eye.name || t("shapes.Eye"),
+                                        part: placement.target.name || t(`shapes.${placement.target.type}`),
                                         from: placement.betweenRows[0],
                                         to: placement.betweenRows[1],
                                     });
                                     return placement.stitchesApart && other
-                                        ? `${base}, ${t("pattern.eyeSpacing", { count: placement.stitchesApart, other: other.eye.name ?? t("shapes.Eye") })}`
+                                        ? `${base}, ${t("pattern.eyeSpacing", { count: placement.stitchesApart, other: other.eye.name || t("shapes.Eye") })}`
                                         : base;
                                 });
                                 if (placements.length > 0) {
                                     eyeLines.push(t("pattern.eyesBeforeClosing"));
+                                }
+                                // Borduursels: waar, hoe breed en hoe ver van de ogen (patterns/embroidery.ts).
+                                const embroideries = embroideryPlacements(shapes, yarnWeight);
+                                eyeLines.push(...embroideries.map(embroideryLine));
+                                if (embroideries.length > 0) {
+                                    eyeLines.push(t("pattern.embroiderBeforeClosing"));
                                 }
                                 return connections.length > 0 || eyeLines.length > 0 ? (
                                     [...eyeLines.map((text, idx) => <RowLine key={`eye-${idx}`} text={text} />), ...connections.map((intersection, idx) => {

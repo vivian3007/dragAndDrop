@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 import type { SetState } from "./editor/types";
 import { PALETTE_SHAPE_TYPES } from "./shapeTypes";
 import { snapIfTouching } from "./geometry/attach";
+import { embroideryDefaults } from "./patterns/embroidery";
 import {setDoc, doc} from "firebase/firestore";
 import {db} from "../firebase-config.js";
 
@@ -93,6 +94,7 @@ function Shapebar({ amigurumiId, shapes, setDroppedShapes, setActiveId, threeJsC
                 // Een oog is een veiligheidsoogje van 10 mm (bol-maat: straal, zie units.ts).
                 const eyeSize = 1 * 37.8 / 2;
                 const isEyeShape = currentShape === "Eye";
+                const isFlat = currentShape === "Disc" || currentShape === "Oval";
                 const newShape: Shape & { zIndex: number } = {
                     id: uuidv4(),
                     amigurumi_id: amigurumiId,
@@ -100,10 +102,11 @@ function Shapebar({ amigurumiId, shapes, setDroppedShapes, setActiveId, threeJsC
                     x: worldPosition.x,
                     y: worldPosition.y,
                     z: 0,
-                    length: isEyeShape ? eyeSize : width,
+                    // Plat ovaal: anderhalf keer zo lang als breed.
+                    length: isEyeShape ? eyeSize : currentShape === "Oval" ? width * 1.6 : width,
                     width: isEyeShape ? eyeSize : width,
-                    // Plat rondje: de dikte van een laag garen; halve bol: half zo hoog als breed.
-                    height: isEyeShape ? eyeSize : currentShape === "Disc" ? DISC_THICKNESS : currentShape === "Dome" ? width / 2 : height,
+                    // Plat rondje/ovaal: de dikte van een laag garen; halve bol: half zo hoog als breed.
+                    height: isEyeShape ? eyeSize : isFlat ? DISC_THICKNESS : currentShape === "Dome" ? width / 2 : height,
                     color: isEyeShape ? "#111111" : "#FFFFFF",
                     name: null,
                     rotation_x: 0,
@@ -111,6 +114,8 @@ function Shapebar({ amigurumiId, shapes, setDroppedShapes, setActiveId, threeJsC
                     rotation_z: 0,
                     zIndex: 10,
                     zoom: 1,
+                    // Borduursel: begint als mondje, in z'n eigen maat en kleur.
+                    ...(currentShape === "Embroidery" ? embroideryDefaults("mouth") : {}),
                 };
 
                 // Neergezet tegen (of in) een andere vorm: meteen netjes aansluiten.

@@ -10,6 +10,10 @@ export type PatternTerms = {
     // Vasten alleen in de achterste lus (BLO): daardoor knikt het werk en krijg je een
     // scherpe rand, bv. tussen de platte bodem en de zijkant van een cilinder.
     scBackLoop: (count: number) => string;
+    // Ronde 1 van een plat ovaal: rond een rij lossen (zie generateOvalPattern.ts).
+    ovalStart: (chains: number, middle: number) => string;
+    // Ronde 1 van een open buis: een ring van lossen (zie generateTubePattern.ts).
+    tubeStart: (chains: number) => string;
 };
 
 // Eén regel van een patroon: één ronde of een reeks rondes met dezelfde instructie. Als
@@ -23,6 +27,12 @@ export type PatternRow = {
     // Kleur van deze rondes, als die afwijkt van de kleur van de vorm (zie colorChanges.ts).
     color?: string | null;
 };
+
+// Steken van ronde 1: de magische ring (6), tenzij de vorm anders begint (`firstRow`, bv. een
+// ovaal rond een rij lossen of een buis vanuit een ring van lossen).
+export function firstRowStitches(pattern: object): number {
+    return "firstRow" in pattern && pattern.firstRow ? (pattern.firstRow as PatternRow).stitches : 6;
+}
 
 export function formatRow(t: PatternTerms, row: PatternRow): string {
     const label = row.from === row.to ? t.row(row.from) : t.row(`${row.from}-${row.to}`);
@@ -53,4 +63,6 @@ export const englishPatternTerms: PatternTerms = {
     inc: (count) => `${count}inc`,
     dec: (count) => `${count}dec`,
     scBackLoop: (count) => `${count}sc BLO`,
+    ovalStart: (chains, middle) => `ch ${chains}; starting in the 2nd ch from the hook: 3sc in that ch, ${middle}sc, 3sc in the last ch, then along the other side of the chain ${middle}sc`,
+    tubeStart: (chains) => `ch ${chains} and join with a sl st into a ring without twisting; 1sc in each ch`,
 };

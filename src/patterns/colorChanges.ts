@@ -1,4 +1,4 @@
-import { PatternRow } from "./patternTerms";
+import { firstRowStitches, PatternRow } from "./patternTerms";
 
 // Kleurwissels binnen één vorm: banen in een andere kleur (strepen, een witte buik, een
 // gekleurde punt). Een baan loopt van `from` tot `to` als fractie van de haakvolgorde:
@@ -79,13 +79,13 @@ export function applyStripes<P extends ColorablePattern>(pattern: P, stripes: St
     };
 }
 
-// Steken per ronde met hun kleur, inclusief ronde 1 (6) en de slotronde (6) — voor de
+// Steken per ronde met hun kleur, inclusief ronde 1 en de slotronde (6) — voor de
 // garenschatting per kleur.
 export function stitchesWithColor(
     pattern: ReturnType<typeof applyStripes<ColorablePattern>>,
     shapeColor: string,
 ): { stitches: number; color: string }[] {
-    const result = [{ stitches: 6, color: pattern.startColor ?? shapeColor }];
+    const result = [{ stitches: firstRowStitches(pattern), color: pattern.startColor ?? shapeColor }];
     for (const row of [...pattern.incArray, ...pattern.scArray, ...pattern.decArray]) {
         for (let r = row.from; r <= row.to; r++) result.push({ stitches: row.stitches, color: row.color ?? shapeColor });
     }

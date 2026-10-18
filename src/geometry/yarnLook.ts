@@ -23,7 +23,7 @@ export function stitchRepeat(shape: Shape): [number, number] {
     const height = shapeDimensionCm(shape, "height");
     const length = shapeDimensionCm(shape, "length");
     const diameter = (width + length) / 2;
-    const around = Math.PI * diameter;
+    let around = Math.PI * diameter;
 
     let along: number;
     switch (shape.type) {
@@ -32,6 +32,7 @@ export function stitchRepeat(shape: Shape): [number, number] {
             along = height / ARM_TOTAL_LOCAL_LENGTH;
             break;
         case "Cylinder":
+        case "Tube":
             along = height;
             break;
         case "Cone":
@@ -41,6 +42,14 @@ export function stitchRepeat(shape: Shape): [number, number] {
             // Vanuit het midden naar de rand.
             along = diameter / 2;
             break;
+        case "Oval": {
+            // Rond het rechte middenstuk: de omtrek van een ovaal met rechte zijkanten, en
+            // vanuit het middenstuk naar de rand.
+            const short = Math.min(width, length);
+            around = Math.PI * short + 2 * Math.abs(width - length);
+            along = short / 2;
+            break;
+        }
         case "Dome":
             // Over het kapje en (als die er is) de buis.
             along = domeLengths(diameter, height, domeCapFraction(shape)).total;

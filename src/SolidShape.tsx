@@ -10,7 +10,7 @@ import { YARN_MATERIAL, YARN_TINT } from "./geometry/yarnLook";
 import { useStripedGeometry } from "./editor/useStripedGeometry";
 import { createSolidGeometry, SolidShapeType } from "./geometry/solidGeometry";
 
-// Cilinder of kegel in de editor en de patroonpreview. Zelfde gedrag als Sphere.tsx
+// Cilinder, buis, kegel, plat rondje/ovaal, halve bol of borduursel in de editor en de patroonpreview. Zelfde gedrag als Sphere.tsx
 // (selecteren, de gizmo, schaal uit width/height/length × zoom); alleen de geometrie
 // verschilt (zie geometry/solidGeometry.ts).
 function SolidShape({
@@ -80,7 +80,13 @@ function SolidShape({
                 }}
             >
                 <mesh ref={meshRef} geometry={geometry}>
-                    <meshStandardMaterial map={texture} bumpMap={texture} {...YARN_MATERIAL} vertexColors color={YARN_TINT} />
+                    {type === "Embroidery" ? (
+                        // Borduurdraad: te dun voor de steekfoto, gewoon mat garen in z'n kleur.
+                        <meshStandardMaterial roughness={1} metalness={0} vertexColors color={YARN_TINT} />
+                    ) : (
+                        // Een open buis zie je ook van binnen.
+                        <meshStandardMaterial map={texture} bumpMap={texture} {...YARN_MATERIAL} vertexColors color={YARN_TINT} side={type === "Tube" ? THREE.DoubleSide : THREE.FrontSide} />
+                    )}
                 </mesh>
             </group>
             {isSelected && (
@@ -100,3 +106,6 @@ export const Cylinder = React.memo((props: ShapeComponentProps) => <SolidShape {
 export const Cone = React.memo((props: ShapeComponentProps) => <SolidShape {...props} type="Cone" />, areEqual);
 export const Disc = React.memo((props: ShapeComponentProps) => <SolidShape {...props} type="Disc" />, areEqual);
 export const Dome = React.memo((props: ShapeComponentProps) => <SolidShape {...props} type="Dome" />, areEqual);
+export const Tube = React.memo((props: ShapeComponentProps) => <SolidShape {...props} type="Tube" />, areEqual);
+export const Oval = React.memo((props: ShapeComponentProps) => <SolidShape {...props} type="Oval" />, areEqual);
+export const Embroidery = React.memo((props: ShapeComponentProps) => <SolidShape {...props} type="Embroidery" />, areEqual);

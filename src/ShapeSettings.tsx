@@ -3,6 +3,7 @@ import {Checkbox} from "@mui/material";
 import { HexColorPicker } from "react-colorful";
 import StripeEditor from "./editor/StripeEditor";
 import SphereOpeningEditor from "./editor/SphereOpeningEditor";
+import EmbroideryEditor from "./editor/EmbroideryEditor";
 import { pixelsPerCm } from "./geometry/units";
 import { useT } from "./i18n/LanguageProvider";
 
@@ -266,6 +267,14 @@ function ShapeSettings({
                                 />
                             </div>
                         </div>
+                        {activeShape.type === "Embroidery" && (
+                            <div className="shape-settings-group">
+                                <h3 className="shape-settings-title">{t("embroidery.title")}</h3>
+                                <EmbroideryEditor shape={activeShape} onChange={handleUpdate} />
+                            </div>
+                        )}
+                        {/* Een borduursel krijgt z'n maat in millimeters in de EmbroideryEditor. */}
+                        {activeShape.type !== "Embroidery" && (
                         <div className="shape-settings-group">
                             <h3 className="shape-settings-title">{t("shapeSettings.scaling")}</h3>
                             <div
@@ -356,6 +365,7 @@ function ShapeSettings({
                             {/*    />*/}
                             {/*</div>*/}
                         </div>
+                        )}
                         <div className="shape-settings-group">
                             <h3 className="shape-settings-title">{t("shapeSettings.rotation")}</h3>
                             <div className="input-text">
@@ -408,7 +418,7 @@ function ShapeSettings({
                                 <SphereOpeningEditor shape={activeShape} onChange={handleUpdate} />
                             </div>
                         )}
-                        {activeShape.type !== "Eye" && (
+                        {activeShape.type !== "Eye" && activeShape.type !== "Embroidery" && (
                             <div className="shape-settings-group">
                                 <h3 className="shape-settings-title">{t("stripes.title")}</h3>
                                 <StripeEditor shape={activeShape} yarnWeight={yarnWeight} onChange={(stripes) => handleUpdate({ stripes })} />

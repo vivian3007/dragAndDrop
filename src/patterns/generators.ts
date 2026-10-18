@@ -4,18 +4,23 @@ import generateCylinderPattern from "./generateCylinderPattern";
 import generateConePattern from "./generateConePattern";
 import generateDiscPattern from "./generateDiscPattern";
 import generateDomePattern from "./generateDomePattern";
+import generateOvalPattern from "./generateOvalPattern";
+import generateTubePattern from "./generateTubePattern";
 import { englishPatternTerms, PatternTerms } from "./patternTerms";
 import { applyStripes } from "./colorChanges";
 
 // Welke patroongenerator bij welk vormtype hoort. Eén plek, zodat de patroonpagina en de
-// garenschatting altijd dezelfde vormen kennen.
+// garenschatting altijd dezelfde vormen kennen. Ogen en borduursels hebben geen eigen
+// patroon (zie eyes.ts en embroidery.ts).
 const generators = {
     Sphere: generateSpherePattern,
     OpenSphere: generateSpherePattern,
     Arm: generateArmPattern,
     Cylinder: generateCylinderPattern,
+    Tube: generateTubePattern,
     Cone: generateConePattern,
     Disc: generateDiscPattern,
+    Oval: generateOvalPattern,
     Dome: generateDomePattern,
 };
 

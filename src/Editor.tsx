@@ -83,6 +83,17 @@ const Editor = () => {
         handleUpdateShape(shape);
     }, [checkpoint, handleUpdateShape]);
 
+    // Wijzigingen uit de vorminstellingen. Een borduursel dat een andere maat of soort krijgt,
+    // wordt opnieuw aangesloten: hoe ver de draadjes meebuigen hangt af van hoeveel van het
+    // oppervlak ze beslaan (op een kleine snuit veel meer dan op een hoofd). Het borduursel
+    // blijft daarbij op z'n plek.
+    const updateShapeFromSettings = useCallback((shape: Shape) => {
+        const previous = droppedShapes.find((other) => other.id === shape.id);
+        const refit = shape.type === "Embroidery" && previous
+            && (["width", "length", "zoom", "detail"] as const).some((key) => previous[key] !== shape[key]);
+        updateShape(refit ? snapIfTouching(shape, droppedShapes)?.shape ?? shape : shape);
+    }, [droppedShapes, updateShape]);
+
     const deleteShape = useCallback((id: string) => {
         checkpoint();
         handleDeleteShape(id);
@@ -234,7 +245,7 @@ const Editor = () => {
             <Settingsbar
                 amigurumiId={amigurumiId}
                 activeShape={activeShape}
-                onUpdateShape={updateShape}
+                onUpdateShape={updateShapeFromSettings}
                 onDeleteShape={deleteShape}
                 onMirrorShape={handleMirrorShape}
                 onAttachShape={handleAttachShape}
