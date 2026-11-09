@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { IconButton, Menu, MenuItem } from "@mui/material";
-import { AspectRatio, GridOff, GridOn, OpenWith, Redo, Rotate90DegreesCcw, Undo, Videocam } from "@mui/icons-material";
+import { Button, IconButton, Menu, MenuItem } from "@mui/material";
+import { AspectRatio, GridOff, GridOn, OpenWith, Redo, Rotate90DegreesCcw, Tune, Undo, Videocam } from "@mui/icons-material";
 import { useT } from "../i18n/LanguageProvider";
 import type { SetState, SetView, TransformMode, ViewKey } from "./types";
 
@@ -16,7 +16,9 @@ const TRANSFORM_MODES: { mode: TransformMode; icon: React.ReactNode }[] = [
 // verder onderin in het midden (zie .canvas-toolbar in styles.css). Verplaatsen, schalen en
 // draaien staan er alleen als er een vorm geselecteerd is; zonder toetsenbord (T/S/R) is dit
 // de enige manier om van modus te wisselen.
-function CanvasToolbar({ setView, transformMode, setTransformMode, hasSelection, showGrid, setShowGrid, onUndo, onRedo, canUndo, canRedo }: {
+// `onToggleSettings` en `onOpenPattern` alleen op de telefoon: daar is het instellingenpaneel
+// standaard weg en staan die twee rechts in deze werkbalk.
+function CanvasToolbar({ setView, transformMode, setTransformMode, hasSelection, showGrid, setShowGrid, onUndo, onRedo, canUndo, canRedo, settingsOpen, onToggleSettings, onOpenPattern, canOpenPattern }: {
     setView: SetView;
     transformMode: TransformMode;
     setTransformMode: (mode: TransformMode) => void;
@@ -27,6 +29,10 @@ function CanvasToolbar({ setView, transformMode, setTransformMode, hasSelection,
     onRedo: () => void;
     canUndo: boolean;
     canRedo: boolean;
+    settingsOpen?: boolean;
+    onToggleSettings?: () => void;
+    onOpenPattern?: () => void;
+    canOpenPattern?: boolean;
 }) {
     const t = useT();
     const [viewMenuAnchor, setViewMenuAnchor] = useState<HTMLElement | null>(null);
@@ -69,6 +75,27 @@ function CanvasToolbar({ setView, transformMode, setTransformMode, hasSelection,
                             {icon}
                         </IconButton>
                     ))}
+                </div>
+            )}
+            {(onToggleSettings || onOpenPattern) && (
+                <div className="canvas-toolbar-group canvas-toolbar-group--end">
+                    {onToggleSettings && (
+                        <IconButton
+                            size="small"
+                            aria-label={t("editor.sheet.title")}
+                            aria-pressed={settingsOpen}
+                            title={t("editor.sheet.title")}
+                            className={settingsOpen ? "active" : ""}
+                            onClick={onToggleSettings}
+                        >
+                            <Tune fontSize="small" />
+                        </IconButton>
+                    )}
+                    {onOpenPattern && (
+                        <Button size="small" onClick={onOpenPattern} disabled={!canOpenPattern} className="canvas-toolbar-text-btn">
+                            {t("editor.pattern")}
+                        </Button>
+                    )}
                 </div>
             )}
             <Menu anchorEl={viewMenuAnchor} open={viewMenuAnchor !== null} onClose={() => setViewMenuAnchor(null)}>

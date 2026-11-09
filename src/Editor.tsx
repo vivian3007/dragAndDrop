@@ -2,10 +2,9 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { v4 as uuidv4 } from "uuid";
 import { useParams } from "react-router-dom";
 import { Box, Typography, useMediaQuery } from "@mui/material";
-import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import { toast } from "react-toastify";
 import ThreeJsField from "./ThreeJsField.tsx";
-import Settingsbar from "./Settingsbar.tsx";
+import Settingsbar, { type SettingsbarHandle } from "./Settingsbar.tsx";
 import Shapebar from "./Shapebar.tsx";
 import CanvasToolbar from "./editor/CanvasToolbar";
 import { useShapeHistory } from "./useShapeHistory";
@@ -27,6 +26,7 @@ const Editor = () => {
     const { amigurumi_id: amigurumiId = '' } = useParams();
     const t = useT();
     const threeJsContainerRef = useRef<HTMLCanvasElement>(null);
+    const settingsbarRef = useRef<SettingsbarHandle>(null);
     const isPhone = useMediaQuery(PHONE_LAYOUT_QUERY, { noSsr: true });
     const {
         loading,
@@ -252,6 +252,9 @@ const Editor = () => {
             droppedShapes={droppedShapes}
             onUpdateYarnInfo={handleUpdateYarnInfo}
             yarnInfo={yarnInfo}
+            compact={isPhone}
+            onClose={isPhone ? () => setSheetOpen(false) : undefined}
+            actionsRef={settingsbarRef}
         />
     );
 
@@ -271,6 +274,12 @@ const Editor = () => {
                 onRedo={redo}
                 canUndo={history.canUndo}
                 canRedo={history.canRedo}
+                {...(isPhone && {
+                    settingsOpen: sheetOpen,
+                    onToggleSettings: () => setSheetOpen((open) => !open),
+                    onOpenPattern: () => settingsbarRef.current?.openPattern(),
+                    canOpenPattern: droppedShapes.length > 0,
+                })}
             />
         </div>
     );
@@ -297,23 +306,9 @@ const Editor = () => {
             <div className="editor editor--phone">
                 {canvasArea}
                 {shapebar("strip")}
-                {/* Tikken op een dicht paneel (bv. op een tabblad) klapt het open. */}
-                <div
-                    className={`editor-sheet ${sheetOpen ? "editor-sheet--open" : ""}`}
-                    onClick={() => { if (!sheetOpen) setSheetOpen(true); }}
-                >
-                    <button
-                        type="button"
-                        className="editor-sheet-toggle"
-                        aria-expanded={sheetOpen}
-                        aria-label={t(sheetOpen ? "editor.sheet.collapse" : "editor.sheet.expand")}
-                        onClick={(event) => {
-                            event.stopPropagation();
-                            setSheetOpen((open) => !open);
-                        }}
-                    >
-                        {sheetOpen ? <ExpandMore /> : <ExpandLess />}
-                    </button>
+                {/* Dicht: helemaal weg (wel gemonteerd, zodat bv. niet-opgeslagen garen bewaard blijft);
+                    openen kan met de knop Instellingen in de werkbalk, of door een vorm te kiezen. */}
+                <div className={`editor-sheet ${sheetOpen ? "editor-sheet--open" : ""}`}>
                     {settingsbar}
                 </div>
             </div>

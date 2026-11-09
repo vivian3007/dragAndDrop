@@ -243,6 +243,8 @@ function Shapebar({ amigurumiId, shapes, setDroppedShapes, setActiveId, threeJsC
             <div className={"draggables"}>
                 {PALETTE_SHAPE_TYPES.map((type) => (
                     <div key={type} className="palette-item">
+                        {/* Vak om de vorm heen: in de vormenstrook op de telefoon kleiner (zie styles.css). */}
+                        <div className="palette-shape-box">
                         <div
                             className={`draggable-shape ${type}`}
                             role="button"
@@ -256,6 +258,7 @@ function Shapebar({ amigurumiId, shapes, setDroppedShapes, setActiveId, threeJsC
                             onTouchEnd={handleTouchEnd}
                             onTouchCancel={handleTouchCancel}
                         />
+                        </div>
                         <span className="palette-label">{t(`shapes.${type}`)}</span>
                     </div>
                 ))}

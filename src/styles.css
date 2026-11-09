@@ -2205,6 +2205,19 @@ body {
     color: var(--color-primary);
 }
 
+/* Rechts in de rij (telefoon): Instellingen en Patroon. */
+.canvas-toolbar-group--end {
+    margin-left: auto;
+    align-items: center;
+}
+
+.canvas-toolbar-text-btn.MuiButton-root {
+    height: 40px;
+    padding: 0 12px;
+    color: var(--color-primary);
+    font-weight: 700;
+}
+
 .canvas-toolbar-group .MuiIconButton-root.active {
     background-color: var(--color-primary);
     color: var(--color-bg);
@@ -2216,7 +2229,7 @@ body {
     width: 100%;
     height: auto;
     min-height: auto;
-    padding: 6px 0;
+    padding: 2px 0;
     display: block;
     overflow: visible;
     background-color: var(--color-bg-card);
@@ -2230,7 +2243,7 @@ body {
 .editor--phone .draggables {
     display: flex;
     flex-wrap: nowrap;
-    gap: 14px;
+    gap: 10px;
     width: auto;
     margin: 0;
     padding: 4px 12px;
@@ -2240,12 +2253,28 @@ body {
 
 .editor--phone .palette-item {
     flex: 0 0 auto;
-    min-width: 60px;
-    justify-content: flex-end;
+    min-width: 48px;
+    gap: 2px;
+}
+
+/* Kleinere icoontjes in de strook. Met transform i.p.v. een kleinere breedte: Shapebar leest
+   de maat van een nieuwe vorm uit het icoontje (offsetWidth), en die blijft zo gelijk. */
+.editor--phone .palette-shape-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+}
+
+.editor--phone .palette-shape-box > .draggable-shape {
+    flex: none;
+    margin: 0;
+    transform: scale(0.65);
 }
 
 .editor--phone .palette-label {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     white-space: nowrap;
 }
 
@@ -2255,27 +2284,15 @@ body {
 }
 
 .editor--phone .draggables .draggable-shape:hover {
-    transform: none;
+    transform: scale(0.65);
 }
 
-/* Instellingenpaneel. Dicht: tabbladen en knoppen; open: een vaste hoogte met eigen scroll. */
+/* Instellingenpaneel: open een vaste hoogte met eigen scroll. */
 .editor-sheet {
     flex: 0 0 auto;
     background-color: var(--color-bg-card);
     border-radius: 16px 16px 0 0;
     box-shadow: 0 -4px 12px rgba(var(--shadow-color), 0.15);
-}
-
-.editor-sheet-toggle {
-    display: flex;
-    justify-content: center;
-    width: 100%;
-    height: 24px;
-    padding: 0;
-    border: none;
-    background: none;
-    color: var(--color-primary);
-    cursor: pointer;
 }
 
 .editor--phone .settings-bar {
@@ -2298,20 +2315,24 @@ body {
 }
 
 .editor--phone .settings-bar-topbar {
-    margin: 0 0 6px;
+    margin: 6px 0 4px;
 }
 
-/* De knoppen onderaan (o.a. Patroon) blijven ook bij een dicht paneel in beeld. */
-.editor-sheet:not(.editor-sheet--open) .settings-bar-scroll {
+/* Dicht: het paneel is helemaal weg; onderaan staat dan alleen de vormenstrook. */
+.editor-sheet:not(.editor-sheet--open) {
     display: none;
 }
 
-.editor--phone .settings-bar-footer {
-    padding-top: 8px;
+.settings-bar-footer--compact {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 4px 0 6px;
+    border-top: 1px solid var(--color-accent-soft-hover);
 }
 
-.editor--phone .settings-bar-footer .MuiButton-root:last-child {
-    margin-bottom: 0;
+.settings-bar-footer--compact .MuiIconButton-root {
+    color: var(--color-primary);
 }
 
 /* Pijltjestoetsen zijn er op een telefoon niet. */

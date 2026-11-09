@@ -1,12 +1,16 @@
-import { memo, useRef, useState } from "react";
+import { memo, useImperativeHandle, useRef, useState } from "react";
 import { Button, IconButton, Tab, Tabs } from "@mui/material";
-import { HelpOutline } from "@mui/icons-material";
+import { Close, DeleteOutline, Flip, HelpOutline, Link } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import YarnSettings, { YarnSettingsHandle } from "./YarnSettings.tsx";
 import ShapeSettings from "./ShapeSettings.tsx"
 import AppDialog from "./AppDialog.tsx";
 import { FormattedMessage } from "react-intl";
 import { useT } from "./i18n/LanguageProvider";
+// Wat de editor van buitenaf kan doen: op de telefoon staat de knop Patroon in de werkbalk
+// boven het canvas, maar het waarschuwen bij niet-opgeslagen garen gebeurt hier.
+export type SettingsbarHandle = { openPattern: () => void };
+
 function Settingsbar({
                                         amigurumiId,
                                         activeShape,
@@ -19,6 +23,9 @@ function Settingsbar({
                                         droppedShapes,
                                         onUpdateYarnInfo,
                                         yarnInfo,
+                                        compact = false,
+                                        onClose,
+                                        actionsRef,
                                     }: {
     amigurumiId: string,
     activeShape: Shape | undefined,
@@ -31,6 +38,12 @@ function Settingsbar({
     droppedShapes: Shape[],
     onUpdateYarnInfo: (yarn: Yarn) => void,
     yarnInfo: Yarn,
+    // Telefoon (instellingenpaneel onderin de editor): de knoppen onderaan in één rij, met
+    // iconen voor aansluiten/spiegelen/verwijderen, zodat de instellingen zelf ruimte houden.
+    compact?: boolean,
+    // Telefoon: sluitknop naast de tabbladen, om het paneel dicht te klappen.
+    onClose?: () => void,
+    actionsRef?: React.Ref<SettingsbarHandle>,
 }) {
     const [showYarnSettings, setShowYarnSettings] = useState(false)
     const [showHelp, setShowHelp] = useState(false)
@@ -53,6 +66,8 @@ function Settingsbar({
             goToPattern();
         }
     };
+
+    useImperativeHandle(actionsRef, () => ({ openPattern: handlePatternNavigation }));
 
     const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
         const wantsYarn = newValue === 1;
@@ -96,12 +111,69 @@ function Settingsbar({
                 >
                     <HelpOutline fontSize="small" />
                 </IconButton>
+                {onClose && (
+                    <IconButton
+                        aria-label={t("editor.sheet.collapse")}
+                        size="small"
+                        className="settings-bar-help-btn"
+                        onClick={onClose}
+                    >
+                        <Close fontSize="small" />
+                    </IconButton>
+                )}
             </div>
             <div className="settings-bar-scroll">
                 {showYarnSettings ? (
                     <YarnSettings ref={yarnSettingsRef} amigurumiId={amigurumiId} onUpdateYarnInfo={onUpdateYarnInfo} yarnInfo={yarnInfo} onDirtyChange={setYarnDirty}/>
                 ) : <ShapeSettings yarnWeight={yarnInfo?.weight} shapeColor={shapeColor} setShapeColor={setShapeColor} activeShape={activeShape} onUpdateShape={onUpdateShape}/>}
             </div>
+            {compact ? (
+                (showYarnSettings || activeShape) && (
+                    <div className="settings-bar-footer settings-bar-footer--compact">
+                        {!showYarnSettings && activeShape && (
+                            <>
+                                <IconButton
+                                    size="small"
+                                    aria-label={t("editor.attachShape")}
+                                    title={t("editor.attachShapeHint")}
+                                    onClick={() => onAttachShape(activeShape.id)}
+                                >
+                                    <Link fontSize="small" />
+                                </IconButton>
+                                <IconButton
+                                    size="small"
+                                    aria-label={t("editor.mirrorShape")}
+                                    title={t("editor.mirrorShape")}
+                                    onClick={() => onMirrorShape(activeShape.id)}
+                                >
+                                    <Flip fontSize="small" />
+                                </IconButton>
+                                <IconButton
+                                    size="small"
+                                    aria-label={t("editor.deleteShape")}
+                                    title={t("editor.deleteShape")}
+                                    onClick={() => onDeleteShape(activeShape.id)}
+                                >
+                                    <DeleteOutline fontSize="small" />
+                                </IconButton>
+                            </>
+                        )}
+                        {showYarnSettings && (
+                            <Button
+                                type="button"
+                                size="small"
+                                variant="outlined"
+                                color="inherit"
+                                className={yarnDirty ? "save-btn-dirty" : ""}
+                                sx={{borderColor: "var(--color-primary)", color: "var(--color-primary)"}}
+                                onClick={() => yarnSettingsRef.current?.save()}
+                            >
+                                {t("editor.save")}
+                            </Button>
+                        )}
+                    </div>
+                )
+            ) : (
             <div className="settings-bar-footer" style={{marginBottom: 20, alignItems: "center", display: "flex", flexDirection: "column"}}>
                 {!showYarnSettings && activeShape && (
                     <div style={{ display: "flex", gap: 8, width: "100%", marginBottom: 10 }}>
@@ -167,6 +239,7 @@ function Settingsbar({
                     {t("editor.pattern")}
                 </Button>
             </div>
+            )}
             <AppDialog open={pendingLeaveAction !== null} onClose={() => setPendingLeaveAction(null)} maxWidth="xs">
                 <div style={{padding: "32px 24px 24px", textAlign: "center"}}>
                     <h2 style={{marginTop: 0}}>{t("editor.unsavedYarn.title")}</h2>
