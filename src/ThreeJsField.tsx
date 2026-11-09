@@ -7,7 +7,7 @@ import {Canvas} from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { GridHelper } from 'three';
 import { shapeComponentFor } from './shapeComponents';
-import { GroundShadow, YarnLights } from './editor/YarnScene';
+import { YarnLights } from './editor/YarnScene';
 import SceneController from "./SceneController.tsx";
 import TouchGestures from "./editor/TouchGestures";
 
@@ -106,7 +106,10 @@ export default function ThreeJsField({
                 />
             )}
             <YarnLights />
-            <GroundShadow shapes={droppedShapes} />
+            {/* Geen GroundShadow hier (wel in PatternPreview3D): die ligt op een vloer onder de
+                knuffel en klopt alleen bij een camera schuin van boven. In de editor kijk je
+                recht van voren/opzij, dan zag je die vloer van de zijkant als een los streepje,
+                en onderdelen zweven hier nog vaak los in de ruimte. */}
             <TouchGestures
                 activeId={activeId}
                 shapes={droppedShapes}
