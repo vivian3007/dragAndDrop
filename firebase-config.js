@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { connectFirestoreEmulator, initializeFirestore, memoryLocalCache, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
-import { connectAuthEmulator, getAuth } from "firebase/auth";
+import { connectAuthEmulator, getAuth, indexedDBLocalPersistence, initializeAuth } from "firebase/auth";
+import { Capacitor } from "@capacitor/core";
 
 // `npm run dev:emulators`: de app praat dan met de lokale Firebase-emulator (`npm run
 // emulators`) i.p.v. de echte database, zodat je vrij kunt testen. Testdata erin zetten:
@@ -21,7 +22,10 @@ const firebaseConfig = {
 // en een demo-project kan nooit per ongeluk de echte servers bereiken.
 const app = initializeApp(useEmulators ? { apiKey: "demo-key", projectId: "demo-stitchify" } : firebaseConfig);
 
-const auth = getAuth(app);
+// In de app (Capacitor) kan getAuth blijven hangen op zijn standaardinstellingen voor de browser.
+const auth = Capacitor.isNativePlatform()
+    ? initializeAuth(app, { persistence: indexedDBLocalPersistence })
+    : getAuth(app);
 
 // Lokale cache in IndexedDB: listeners (useCollection, onSnapshot) geven eerst meteen wat er
 // al in de cache staat en werken daarna bij vanaf de server. Een eerder bezochte pagina staat

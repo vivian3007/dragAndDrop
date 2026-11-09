@@ -9,11 +9,17 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "cap:sync": "npm run build && npx cap sync",
+    "android": "npm run cap:sync && npx cap run android",
     "test": "vitest run",
     "emulators": "npx -y firebase-tools@15.29.0 emulators:start --only firestore,auth --project demo-stitchify",
     "test:emulator": "node scripts/emulator-tests/migration.test.mjs && node scripts/emulator-tests/firestore-rules.test.mjs && node scripts/emulator-tests/search-fields.test.mjs"
   },
   "dependencies": {
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.6.0",
+    "@capacitor/ios": "^8.6.0",
     "@dnd-kit/core": "^6.3.1",
     "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^6.4.8",
@@ -36,6 +42,8 @@
     "uuid": "^11.1.0"
   },
   "devDependencies": {
+    "@capacitor/assets": "^4.0.0",
+    "@capacitor/cli": "^8.6.0",
     "@eslint/js": "^9.22.0",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",

@@ -13,6 +13,7 @@ import Profile from "./Profile.tsx";
 import { ToastContainer } from 'react-toastify';
 import { RequireAuth } from './auth/AuthProvider';
 import ChooseUsernameDialog from './users/ChooseUsernameDialog';
+import { useAndroidBackButton } from './native/useAndroidBackButton';
 import 'react-toastify/dist/ReactToastify.css';
 
 // Pagina's met three.js (editor, patroon met 3D-preview) pas laden als je ze opent: three.js
@@ -24,6 +25,8 @@ const Pattern = lazy(() => import("./Pattern"));
 const RouteFallback = () => <Box sx={{ minHeight: "92vh" }} aria-busy="true" />;
 
 export default function App() {
+    useAndroidBackButton();
+
     return (
         <div className="App">
             <TopNavBar />

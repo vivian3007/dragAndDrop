@@ -186,7 +186,8 @@ function Shapebar({ amigurumiId, shapes, setDroppedShapes, setActiveId, threeJsC
                     ref={dragItemRef}
                     className={`draggable-shape ${currentShape}`}
                     style={{
-                        position: "absolute",
+                        // Fixed: de positie is in schermcoördinaten, ook als de pagina gescrold is.
+                        position: "fixed",
                         ...getCenteredPosition(),
                         pointerEvents: "none",
                         zIndex: 10,

@@ -58,6 +58,9 @@ body {
     /* font-family: sans-serif; */
     display: flex;
     flex-direction: column;
+    /* Niet onder de notch, statusbalk of navigatiebalk van de telefoon; elders zijn deze 0. */
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    box-sizing: border-box;
 }
 
 .editor {
@@ -668,6 +671,8 @@ body {
     text-align: center;
     align-items: center;
     cursor: grab;
+    /* Slepen met de vinger mag de pagina niet laten meescrollen. */
+    touch-action: none;
     border: 3px solid var(--color-text);
     transition: transform 0.15s ease, border-color 0.15s ease;
 }

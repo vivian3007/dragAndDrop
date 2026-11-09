@@ -9,5 +9,10 @@ service-account*.json
 backups/
 *-debug.log
 
+# Sleutels waarmee de Android-app wordt ondertekend. Nooit committen.
+*.jks
+*.keystore
+keystore.properties
+
 # Gebouwde app (npm run build): hoort niet in git, wordt bij elke build opnieuw gemaakt.
 dist
