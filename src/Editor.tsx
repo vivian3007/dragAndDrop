@@ -1,11 +1,14 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { v4 as uuidv4 } from "uuid";
 import { useParams } from "react-router-dom";
-import { Box, Typography } from "@mui/material";
+import { Box, Typography, useMediaQuery } from "@mui/material";
+import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import { toast } from "react-toastify";
 import ThreeJsField from "./ThreeJsField.tsx";
 import Settingsbar from "./Settingsbar.tsx";
 import Sidebar from "./Sidebar.tsx";
+import Shapebar from "./Shapebar.tsx";
+import PhoneToolbar from "./editor/PhoneToolbar";
 import { useShapeHistory } from "./useShapeHistory";
 import { saveShapeDoc } from "./shapeDocs";
 import { mirrorShape } from "./geometry/mirrorShape";
@@ -15,12 +18,17 @@ import * as THREE from "three";
 import { useEditorState } from "./editor/useEditorState";
 import { useT } from "./i18n/LanguageProvider";
 
+// Tot en met deze breedte (telefoons, tablets staand) krijgt de editor de telefoonindeling:
+// zelfde grens als de mobiele stijlen in styles.css.
+const PHONE_LAYOUT_QUERY = "(max-width: 899px)";
+
 // De editor voor één ontwerp (/:amigurumi_id/editor). Alle state zit in useEditorState;
 // welk ontwerp het is komt uit de URL, zodat herladen en een gedeelde link gewoon werken.
 const Editor = () => {
     const { amigurumi_id: amigurumiId = '' } = useParams();
     const t = useT();
     const threeJsContainerRef = useRef<HTMLCanvasElement>(null);
+    const isPhone = useMediaQuery(PHONE_LAYOUT_QUERY, { noSsr: true });
     const {
         loading,
         amigurumi,
@@ -70,6 +78,13 @@ const Editor = () => {
 
     const history = useShapeHistory(droppedShapes, applySnapshot);
     const { checkpoint, undo, redo, reset: resetHistory } = history;
+
+    // Telefoon: het instellingenpaneel schuift open zodra je een vorm selecteert en weer
+    // dicht als je naast de vormen tikt; daartussen kun je het zelf open- en dichtklappen.
+    const [sheetOpen, setSheetOpen] = useState(false);
+    useEffect(() => {
+        setSheetOpen(activeId !== null);
+    }, [activeId]);
 
     // Ander ontwerp (of opnieuw geladen): de geschiedenis van het vorige telt niet meer.
     useEffect(() => {
@@ -207,6 +222,94 @@ const Editor = () => {
         );
     }
 
+    const threeJsField = (
+        <ThreeJsField
+            droppedShapes={droppedShapes}
+            threeJsContainerRef={threeJsContainerRef}
+            activeId={activeId}
+            setActiveId={setActiveId}
+            onUpdateShape={updateShape}
+            setCamera={setCamera}
+            onDeleteShape={deleteShape}
+            onSetView={onSetView}
+            transformMode={transformMode}
+            setTransformMode={setTransformMode}
+            setShowGrid={setShowGrid}
+            showGrid={showGrid}
+            onTransformEnd={handleTransformEnd}
+        />
+    );
+
+    const settingsbar = (
+        <Settingsbar
+            amigurumiId={amigurumiId}
+            activeShape={activeShape}
+            onUpdateShape={updateShapeFromSettings}
+            onDeleteShape={deleteShape}
+            onMirrorShape={handleMirrorShape}
+            onAttachShape={handleAttachShape}
+            shapeColor={shapeColor}
+            setShapeColor={setShapeColor}
+            droppedShapes={droppedShapes}
+            onUpdateYarnInfo={handleUpdateYarnInfo}
+            yarnInfo={yarnInfo}
+        />
+    );
+
+    // Telefoon: het canvas vult het scherm, de werkbalk ligt eroverheen, de vormen staan in
+    // een strook eronder (vormenbalk en canvas dus tegelijk in beeld, zodat slepen kan) en de
+    // instellingen zitten in een paneel dat van onderen openschuift.
+    if (isPhone) {
+        return (
+            <div className="editor editor--phone">
+                <div className="editor-canvas-area">
+                    {threeJsField}
+                    <PhoneToolbar
+                        setView={setView}
+                        transformMode={transformMode}
+                        setTransformMode={setTransformMode}
+                        hasSelection={activeId !== null}
+                        showGrid={showGrid}
+                        setShowGrid={setShowGrid}
+                        onUndo={undo}
+                        onRedo={redo}
+                        canUndo={history.canUndo}
+                        canRedo={history.canRedo}
+                    />
+                </div>
+                <Shapebar
+                    amigurumiId={amigurumiId}
+                    shapes={droppedShapes}
+                    setActiveId={setActiveId}
+                    threeJsContainerRef={threeJsContainerRef}
+                    dragging={dragging}
+                    setDragging={setDragging}
+                    camera={camera}
+                    setDroppedShapes={setShapesFromUser}
+                />
+                {/* Tikken op een dicht paneel (bv. op een tabblad) klapt het open. */}
+                <div
+                    className={`editor-sheet ${sheetOpen ? "editor-sheet--open" : ""}`}
+                    onClick={() => { if (!sheetOpen) setSheetOpen(true); }}
+                >
+                    <button
+                        type="button"
+                        className="editor-sheet-toggle"
+                        aria-expanded={sheetOpen}
+                        aria-label={t(sheetOpen ? "editor.sheet.collapse" : "editor.sheet.expand")}
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            setSheetOpen((open) => !open);
+                        }}
+                    >
+                        {sheetOpen ? <ExpandMore /> : <ExpandLess />}
+                    </button>
+                    {settingsbar}
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="editor">
             <Sidebar
@@ -227,34 +330,8 @@ const Editor = () => {
                 canUndo={history.canUndo}
                 canRedo={history.canRedo}
             />
-            <ThreeJsField
-                droppedShapes={droppedShapes}
-                threeJsContainerRef={threeJsContainerRef}
-                activeId={activeId}
-                setActiveId={setActiveId}
-                onUpdateShape={updateShape}
-                setCamera={setCamera}
-                onDeleteShape={deleteShape}
-                onSetView={onSetView}
-                transformMode={transformMode}
-                setTransformMode={setTransformMode}
-                setShowGrid={setShowGrid}
-                showGrid={showGrid}
-                onTransformEnd={handleTransformEnd}
-            />
-            <Settingsbar
-                amigurumiId={amigurumiId}
-                activeShape={activeShape}
-                onUpdateShape={updateShapeFromSettings}
-                onDeleteShape={deleteShape}
-                onMirrorShape={handleMirrorShape}
-                onAttachShape={handleAttachShape}
-                shapeColor={shapeColor}
-                setShapeColor={setShapeColor}
-                droppedShapes={droppedShapes}
-                onUpdateYarnInfo={handleUpdateYarnInfo}
-                yarnInfo={yarnInfo}
-            />
+            {threeJsField}
+            {settingsbar}
         </div>
     );
 };

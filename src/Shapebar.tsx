@@ -28,6 +28,9 @@ const getEventCoordinates = (e: PointerLikeEvent) => {
     return { x: e.clientX, y: e.clientY };
 };
 
+// Zo weinig bewogen tussen neerzetten en loslaten van de vinger telt als tikken, niet slepen.
+const TAP_SLOP_PX = 10;
+
 function Shapebar({ amigurumiId, shapes, setDroppedShapes, setActiveId, threeJsContainerRef, dragging, setDragging, camera }: {
     amigurumiId: string;
     shapes: Shape[];
@@ -43,12 +46,26 @@ function Shapebar({ amigurumiId, shapes, setDroppedShapes, setActiveId, threeJsC
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [currentShape, setCurrentShape] = useState<string | null>(null);
     const dragItemRef = useRef<HTMLDivElement | null>(null);
+    // Waar de vinger neerkwam, om tikken van slepen te onderscheiden (zie handleMouseUp).
+    const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
     const handleMouseDown = (e: React.MouseEvent | React.TouchEvent, shapeType: string) => {
-        e.preventDefault();
+        // Bij touch niet: React luistert passief naar touchstart, dan doet preventDefault niets
+        // (behalve een waarschuwing). Scrollen voorkomt touch-action in styles.css.
+        if (!("touches" in e)) e.preventDefault();
+        const start = getEventCoordinates(e);
+        touchStartRef.current = "touches" in e ? start : null;
         setDragging(true);
         setCurrentShape(shapeType);
-        setPosition(getEventCoordinates(e));
+        setPosition(start);
+    }
+
+    // De browser neemt het gebaar over (bv. de vormenstrook horizontaal scrollen op een
+    // telefoon): dan wordt er niets neergezet.
+    const handleTouchCancel = () => {
+        touchStartRef.current = null;
+        setDragging(false);
+        setCurrentShape(null);
     }
 
     const handleMouseMove = (e: PointerLikeEvent) => {
@@ -58,6 +75,8 @@ function Shapebar({ amigurumiId, shapes, setDroppedShapes, setActiveId, threeJsC
     }
 
     const handleMouseUp = async (e: PointerLikeEvent) => {
+        // Na een touch geen nagebootste muisklik meer: die zou de vorm opnieuw oppakken.
+        if ("touches" in e && e.cancelable) e.preventDefault();
         if (dragging && currentShape) {
             const width = dragItemRef.current?.offsetWidth;
             const height = dragItemRef.current?.offsetHeight;
@@ -69,7 +88,14 @@ function Shapebar({ amigurumiId, shapes, setDroppedShapes, setActiveId, threeJsC
             // De vorm moet helemaal binnen het canvas vallen. Alles in schermcoördinaten: eerder
             // werd de muispositie met de canvashoogte vergeleken zonder de navigatiebalk erboven
             // mee te tellen, waardoor loslaten onderin het canvas stilletjes werd geweigerd.
-            const { x: clientX, y: clientY } = getEventCoordinates(e);
+            // Een vorm aangetikt (touch, niet gesleept): dan komt hij midden in het canvas.
+            const released = getEventCoordinates(e);
+            const touchStart = touchStartRef.current;
+            const isTap = touchStart !== null
+                && Math.hypot(released.x - touchStart.x, released.y - touchStart.y) < TAP_SLOP_PX;
+            const { x: clientX, y: clientY } = isTap
+                ? { x: containerRect.left + containerRect.width / 2, y: containerRect.top + containerRect.height / 2 }
+                : released;
             const isOutOfBounds =
                 clientX - width / 2 < containerRect.left ||
                 clientX + width / 2 > containerRect.right ||
@@ -132,6 +158,7 @@ function Shapebar({ amigurumiId, shapes, setDroppedShapes, setActiveId, threeJsC
                 }
             }
         }
+        touchStartRef.current = null;
         setDragging(false);
         setCurrentShape(null);
     }
@@ -176,6 +203,7 @@ function Shapebar({ amigurumiId, shapes, setDroppedShapes, setActiveId, threeJsC
                             onTouchStart={(e) => handleMouseDown(e, type)}
                             onTouchMove={handleMouseMove}
                             onTouchEnd={handleMouseUp}
+                            onTouchCancel={handleTouchCancel}
                         />
                         <span className="palette-label">{t(`shapes.${type}`)}</span>
                     </div>

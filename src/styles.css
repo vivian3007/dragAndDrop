@@ -2163,3 +2163,181 @@ body {
         padding: 8px;
     }
 }
+/* ---------------------------------------------------------------------------------------
+   Editor op een telefoon (Editor.tsx, .editor--phone): canvas schermvullend met de werkbalk
+   eroverheen, een horizontale vormenstrook eronder en de instellingen in een paneel dat van
+   onderen openschuift. Staat bewust onderaan: wint zo van de algemene mobiele regels hierboven.
+   --------------------------------------------------------------------------------------- */
+
+/* De editor vult precies het scherm onder de navigatiebalk; de pagina zelf scrollt niet. */
+.App:has(.editor--phone) {
+    height: 100dvh;
+    overflow: hidden;
+}
+
+.App:has(.editor--phone) > .MuiBox-root {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.editor.editor--phone {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.editor-canvas-area {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.editor--phone .threejs-canvas {
+    position: absolute !important;
+    inset: 0;
+    height: 100% !important;
+}
+
+/* Eén rij bovenin: in een kolom liep hij bij een open paneel over de strook en het paneel heen. */
+.phone-toolbar {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    pointer-events: none;
+}
+
+.phone-toolbar-group {
+    display: flex;
+    background-color: var(--color-bg-card);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(var(--shadow-color), 0.2);
+    pointer-events: auto;
+}
+
+.phone-toolbar-group .MuiIconButton-root {
+    width: 40px;
+    height: 40px;
+    color: var(--color-primary);
+}
+
+.phone-toolbar-group .MuiIconButton-root.active {
+    background-color: var(--color-primary);
+    color: var(--color-bg);
+}
+
+/* Vormenstrook: één rij, horizontaal scrollen. */
+.editor--phone .shapebar {
+    flex: 0 0 auto;
+    width: 100%;
+    height: auto;
+    min-height: auto;
+    padding: 6px 0;
+    display: block;
+    overflow: visible;
+    background-color: var(--color-bg-card);
+    border-top: 2px solid var(--color-accent-soft-hover);
+}
+
+.editor--phone .shapebar .shapes-text {
+    display: none;
+}
+
+.editor--phone .draggables {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 14px;
+    width: auto;
+    margin: 0;
+    padding: 4px 12px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.editor--phone .palette-item {
+    flex: 0 0 auto;
+    min-width: 60px;
+    justify-content: flex-end;
+}
+
+.editor--phone .palette-label {
+    font-size: 0.7rem;
+    white-space: nowrap;
+}
+
+/* Horizontaal vegen scrollt de strook; omhoog slepen pakt de vorm op (zie Shapebar.tsx). */
+.editor--phone .draggables .draggable-shape {
+    touch-action: pan-x;
+}
+
+.editor--phone .draggables .draggable-shape:hover {
+    transform: none;
+}
+
+/* Instellingenpaneel. Dicht: tabbladen en knoppen; open: een vaste hoogte met eigen scroll. */
+.editor-sheet {
+    flex: 0 0 auto;
+    background-color: var(--color-bg-card);
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -4px 12px rgba(var(--shadow-color), 0.15);
+}
+
+.editor-sheet-toggle {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    height: 24px;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--color-primary);
+    cursor: pointer;
+}
+
+.editor--phone .settings-bar {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    padding: 0 12px;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.editor-sheet--open .settings-bar {
+    height: 42dvh;
+}
+
+/* Paneel open = je bent een vorm aan het aanpassen: dan is de vormenstrook niet nodig en
+   houdt het canvas de ruimte, zodat je de vorm ziet veranderen. */
+.editor--phone:has(.editor-sheet--open) .shapebar {
+    display: none;
+}
+
+.editor--phone .settings-bar-topbar {
+    margin: 0 0 6px;
+}
+
+/* De knoppen onderaan (o.a. Patroon) blijven ook bij een dicht paneel in beeld. */
+.editor-sheet:not(.editor-sheet--open) .settings-bar-scroll {
+    display: none;
+}
+
+.editor--phone .settings-bar-footer {
+    padding-top: 8px;
+}
+
+.editor--phone .settings-bar-footer .MuiButton-root:last-child {
+    margin-bottom: 0;
+}
+
+/* Pijltjestoetsen zijn er op een telefoon niet. */
+.editor--phone .settings-bar-tip {
+    display: none;
+}
