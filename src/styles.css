@@ -74,6 +74,14 @@ body {
     height: 92vh !important;
 }
 
+/* Alle vingergebaren op het canvas zijn voor de 3D-scene (camera, gizmo, TouchGestures). Zonder
+   dit nam de browser een sleepbeweging na een paar pixels over (pointercancel), waardoor de
+   gizmo en het verschuiven met een vinger steeds afbraken. */
+.threejs-canvas,
+.threejs-canvas canvas {
+    touch-action: none;
+}
+
 .navbar-button {
     height: 6vh;
     margin: 1vh 0.3vw;

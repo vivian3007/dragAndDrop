@@ -9,6 +9,7 @@ import { GridHelper } from 'three';
 import { shapeComponentFor } from './shapeComponents';
 import { GroundShadow, YarnLights } from './editor/YarnScene';
 import SceneController from "./SceneController.tsx";
+import TouchGestures from "./editor/TouchGestures";
 
 export default function ThreeJsField({
     droppedShapes,
@@ -106,6 +107,15 @@ export default function ThreeJsField({
             )}
             <YarnLights />
             <GroundShadow shapes={droppedShapes} />
+            <TouchGestures
+                activeId={activeId}
+                shapes={droppedShapes}
+                orbitControlsRef={orbitControlsRef}
+                activeTransformControlsRef={activeTransformControlsRef}
+                onUpdateShape={onUpdateShape}
+                onGestureChange={setIsDragging}
+                onMoveEnd={(id) => onTransformEnd?.(id, 'translate')}
+            />
             <OrbitControls
                 ref={orbitControlsRef}
                 enableRotate={true}

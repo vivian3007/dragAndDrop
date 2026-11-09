@@ -5,6 +5,9 @@ import type { TransformControls as TransformControlsImpl } from "three-stdlib";
 import type { OrbitControlsRef, TransformControlsRef, TransformMode } from "./editor/types";
 import { sizeFromMeshScale } from "./geometry/units";
 
+// Op een touchscreen een grotere gizmo: de pijltjes zijn anders met een vinger nauwelijks te raken.
+const GIZMO_SIZE = typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches ? 1.6 : 1;
+
 export default function TransformControlsThree ({transformRef, object, transformMode, setTransformMode, setIsDragging, orbitControlsRef, meshRef, shape, width, onUpdateShape, isSelected, activeTransformControlsRef, onTransformEnd} : {
     transformRef: React.RefObject<TransformControlsImpl | null>;
     object: THREE.Object3D | null;
@@ -82,6 +85,7 @@ export default function TransformControlsThree ({transformRef, object, transform
             ref={transformRef}
             object={object ?? undefined}
             mode={transformMode}
+            size={GIZMO_SIZE}
             onMouseDown={() => {
                 setIsDragging(true);
                 if (orbitControlsRef.current) {
