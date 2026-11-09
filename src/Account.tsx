@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
+import LanguageSelect from './i18n/LanguageSelect';
 import { Link, useNavigate } from 'react-router-dom';
 import { Alert, Button, Chip, CircularProgress, DialogContent, IconButton, InputAdornment, TextField, Typography } from '@mui/material';
 import { ArrowBack, CheckCircle, ErrorOutline, LockReset, Logout, Visibility, VisibilityOff } from '@mui/icons-material';
@@ -162,6 +164,8 @@ const Account = () => {
                     <span className="account-email">{user.email}</span>
                 </div>
                 <div className="account-header-actions">
+                    {/* In de native app is er geen navigatiebalk bovenin met de taalkeuze. */}
+                    {Capacitor.isNativePlatform() && <LanguageSelect />}
                     <Button
                         variant="contained"
                         startIcon={<Logout />}

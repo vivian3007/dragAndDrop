@@ -228,7 +228,7 @@ function ShapeSettings({
                                 />
                             </div>
                         </div>
-                        <div className="shape-settings-group">
+                        <div className="shape-settings-group shape-settings-group--xyz">
                             <h3 className="shape-settings-title">{t("shapeSettings.position")}</h3>
                             <div className="input-text">
                                 <label htmlFor="x">X: </label>
@@ -366,7 +366,7 @@ function ShapeSettings({
                             {/*</div>*/}
                         </div>
                         )}
-                        <div className="shape-settings-group">
+                        <div className="shape-settings-group shape-settings-group--xyz">
                             <h3 className="shape-settings-title">{t("shapeSettings.rotation")}</h3>
                             <div className="input-text">
                                 <label htmlFor="rotationX">{t("shapeSettings.rotationAxis", { axis: "x" })}: </label>

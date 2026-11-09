@@ -14,6 +14,7 @@ import { ToastContainer } from 'react-toastify';
 import { RequireAuth } from './auth/AuthProvider';
 import ChooseUsernameDialog from './users/ChooseUsernameDialog';
 import { useAndroidBackButton } from './native/useAndroidBackButton';
+import BottomTabBar from './native/BottomTabBar';
 import 'react-toastify/dist/ReactToastify.css';
 
 // Pagina's met three.js (editor, patroon met 3D-preview) pas laden als je ze opent: three.js
@@ -50,6 +51,7 @@ export default function App() {
                     <Route path="/profile/:username" element={<RequireAuth><Profile /></RequireAuth>} />
                 </Routes>
             </Box>
+            <BottomTabBar />
             <ChooseUsernameDialog />
             <ToastContainer position="top-right" autoClose={3000} />
         </div>

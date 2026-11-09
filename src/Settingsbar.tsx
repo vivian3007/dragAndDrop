@@ -9,7 +9,7 @@ import { FormattedMessage } from "react-intl";
 import { useT } from "./i18n/LanguageProvider";
 // Wat de editor van buitenaf kan doen: op de telefoon staat de knop Patroon in de werkbalk
 // boven het canvas, maar het waarschuwen bij niet-opgeslagen garen gebeurt hier.
-export type SettingsbarHandle = { openPattern: () => void };
+export type SettingsbarHandle = { openPattern: () => void; showTab: (tab: "shape" | "yarn") => void };
 
 function Settingsbar({
                                         amigurumiId,
@@ -67,10 +67,15 @@ function Settingsbar({
         }
     };
 
-    useImperativeHandle(actionsRef, () => ({ openPattern: handlePatternNavigation }));
+    useImperativeHandle(actionsRef, () => ({
+        openPattern: handlePatternNavigation,
+        showTab: (tab) => selectTab(tab === "yarn"),
+    }));
 
-    const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-        const wantsYarn = newValue === 1;
+    const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => selectTab(newValue === 1);
+
+    // Wissel van tabblad; van garen weg met niet-opgeslagen wijzigingen eerst vragen.
+    const selectTab = (wantsYarn: boolean) => {
         if (wantsYarn === showYarnSettings) return;
         if (showYarnSettings && yarnDirty) {
             setPendingLeaveAction(() => () => setShowYarnSettings(wantsYarn));

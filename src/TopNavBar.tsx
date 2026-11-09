@@ -19,6 +19,7 @@ import {
     useTheme,
 } from "@mui/material";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Capacitor } from "@capacitor/core";
 import MenuIcon from '@mui/icons-material/Menu';
 import { Logout, Person, Settings } from '@mui/icons-material';
 import LanguageSelect from "./i18n/LanguageSelect";
@@ -60,7 +61,13 @@ function TopNavBar() {
         }
     };
 
-    if (location.pathname === '/') {
+    // Geen navigatiebalk: bij inloggen; in de native app (daar is een tabbalk onderin, zie
+    // native/BottomTabBar), behalve in de editor op een breed scherm; en in de editor op een
+    // telefoon, die een eigen kopregel met terugknop heeft (editor/EditorHeader).
+    const inEditor = /^\/[^/]+\/editor$/.test(location.pathname);
+    if (location.pathname === '/'
+        || (Capacitor.isNativePlatform() && !(inEditor && !isCompact))
+        || (inEditor && isCompact)) {
         return null;
     }
 

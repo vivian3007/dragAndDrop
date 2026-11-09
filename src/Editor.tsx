@@ -1,12 +1,14 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { v4 as uuidv4 } from "uuid";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Box, Typography, useMediaQuery } from "@mui/material";
 import { toast } from "react-toastify";
 import ThreeJsField from "./ThreeJsField.tsx";
 import Settingsbar, { type SettingsbarHandle } from "./Settingsbar.tsx";
 import Shapebar from "./Shapebar.tsx";
 import CanvasToolbar from "./editor/CanvasToolbar";
+import EditorHeader from "./editor/EditorHeader";
+import ShapeContextBar from "./editor/ShapeContextBar";
 import { useShapeHistory } from "./useShapeHistory";
 import { saveShapeDoc } from "./shapeDocs";
 import { mirrorShape } from "./geometry/mirrorShape";
@@ -78,12 +80,35 @@ const Editor = () => {
     const history = useShapeHistory(droppedShapes, applySnapshot);
     const { checkpoint, undo, redo, reset: resetHistory } = history;
 
-    // Telefoon: het instellingenpaneel schuift open zodra je een vorm selecteert en weer
-    // dicht als je naast de vormen tikt; daartussen kun je het zelf open- en dichtklappen.
+    // Telefoon: het instellingenpaneel gaat alleen open met ⚙ (in de kopregel of de
+    // contextbalk), niet vanzelf bij selecteren; selectie opheffen klapt het weer dicht.
     const [sheetOpen, setSheetOpen] = useState(false);
     useEffect(() => {
-        setSheetOpen(activeId !== null);
+        if (activeId === null) setSheetOpen(false);
     }, [activeId]);
+
+    const navigate = useNavigate();
+    // Terug naar waar je vandaan kwam; via een gedeelde link of na herladen is er geen
+    // vorige pagina in de app, dan naar je eigen patronen.
+    const goBack = useCallback(() => {
+        if ((window.history.state?.idx ?? 0) > 0) navigate(-1);
+        else navigate("/myPatterns");
+    }, [navigate]);
+
+    // ⚙ in de kopregel: met een geselecteerde vorm de vorminstellingen, anders het garen.
+    const toggleSettings = useCallback(() => {
+        if (sheetOpen) {
+            setSheetOpen(false);
+            return;
+        }
+        settingsbarRef.current?.showTab(activeId !== null ? "shape" : "yarn");
+        setSheetOpen(true);
+    }, [sheetOpen, activeId]);
+
+    const openShapeSettings = useCallback(() => {
+        settingsbarRef.current?.showTab("shape");
+        setSheetOpen(true);
+    }, []);
 
     // Ander ontwerp (of opnieuw geladen): de geschiedenis van het vorige telt niet meer.
     useEffect(() => {
@@ -258,12 +283,12 @@ const Editor = () => {
         />
     );
 
-    // De werkbalk ligt over het canvas: op een telefoon bovenin, verder onderin in het midden
-    // (zie .canvas-toolbar in styles.css).
+    // De werkbalk ligt over het canvas (zie CanvasToolbar voor de twee varianten).
     const canvasArea = (
         <div className="editor-canvas-area">
             {threeJsField}
             <CanvasToolbar
+                variant={isPhone ? "phone" : "desktop"}
                 setView={setView}
                 transformMode={transformMode}
                 setTransformMode={setTransformMode}
@@ -274,12 +299,6 @@ const Editor = () => {
                 onRedo={redo}
                 canUndo={history.canUndo}
                 canRedo={history.canRedo}
-                {...(isPhone && {
-                    settingsOpen: sheetOpen,
-                    onToggleSettings: () => setSheetOpen((open) => !open),
-                    onOpenPattern: () => settingsbarRef.current?.openPattern(),
-                    canOpenPattern: droppedShapes.length > 0,
-                })}
             />
         </div>
     );
@@ -298,16 +317,36 @@ const Editor = () => {
         />
     );
 
-    // Telefoon: het canvas vult het scherm, de werkbalk ligt eroverheen, de vormen staan in
-    // een strook eronder (vormenbalk en canvas dus tegelijk in beeld, zodat slepen kan) en de
-    // instellingen zitten in een paneel dat van onderen openschuift.
+    // Telefoon: eigen kopregel (i.p.v. de navigatiebalk van de app), het canvas vult de rest,
+    // en onderaan de vormenstrook, of bij een geselecteerde vorm de contextbalk. Het paneel met
+    // alle instellingen schuift er pas overheen als je op ⚙ tikt.
     if (isPhone) {
         return (
             <div className="editor editor--phone">
+                <EditorHeader
+                    name={amigurumi?.name ?? ""}
+                    onBack={goBack}
+                    onUndo={undo}
+                    onRedo={redo}
+                    canUndo={history.canUndo}
+                    canRedo={history.canRedo}
+                    settingsOpen={sheetOpen}
+                    onToggleSettings={toggleSettings}
+                    onOpenPattern={() => settingsbarRef.current?.openPattern()}
+                    canOpenPattern={droppedShapes.length > 0}
+                />
                 {canvasArea}
-                {shapebar("strip")}
-                {/* Dicht: helemaal weg (wel gemonteerd, zodat bv. niet-opgeslagen garen bewaard blijft);
-                    openen kan met de knop Instellingen in de werkbalk, of door een vorm te kiezen. */}
+                {!sheetOpen && (activeShape ? (
+                    <ShapeContextBar
+                        shape={activeShape}
+                        onAttach={() => handleAttachShape(activeShape.id)}
+                        onMirror={() => handleMirrorShape(activeShape.id)}
+                        onDelete={() => deleteShape(activeShape.id)}
+                        onOpenSettings={openShapeSettings}
+                        onDeselect={() => setActiveId(null)}
+                    />
+                ) : shapebar("strip"))}
+                {/* Dicht: helemaal weg, maar wel gemonteerd, zodat bv. niet-opgeslagen garen bewaard blijft. */}
                 <div className={`editor-sheet ${sheetOpen ? "editor-sheet--open" : ""}`}>
                     {settingsbar}
                 </div>
