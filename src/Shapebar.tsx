@@ -28,10 +28,16 @@ const getEventCoordinates = (e: PointerLikeEvent) => {
     return { x: e.clientX, y: e.clientY };
 };
 
-// Zo weinig bewogen tussen neerzetten en loslaten van de vinger telt als tikken, niet slepen.
+// Zo ver moet een vinger bewegen voordat het slepen (of scrollen) telt; minder is tikken.
 const TAP_SLOP_PX = 10;
 
-function Shapebar({ amigurumiId, shapes, setDroppedShapes, setActiveId, threeJsContainerRef, dragging, setDragging, camera }: {
+// Een vinger die op een vorm in de vormenbalk is neergekomen, maar nog niet sleept.
+type PendingTouch = { type: string; x: number; y: number; width: number; height: number };
+
+// `layout`: "sidebar" is de kolom naast het canvas (laptop, tablet liggend), "strip" de
+// horizontale strook onder het canvas op een telefoon. In de strook pakt een vinger een vorm
+// pas op als hij omhoog beweegt (naar het canvas); opzij vegen scrollt alleen de strook.
+function Shapebar({ amigurumiId, shapes, setDroppedShapes, setActiveId, threeJsContainerRef, dragging, setDragging, camera, layout = "sidebar" }: {
     amigurumiId: string;
     shapes: Shape[];
     setDroppedShapes: SetState<Shape[]>;
@@ -40,33 +46,85 @@ function Shapebar({ amigurumiId, shapes, setDroppedShapes, setActiveId, threeJsC
     dragging: boolean;
     setDragging: SetState<boolean>;
     camera: Camera | null;
+    layout?: "sidebar" | "strip";
 }) {
 
     const t = useT();
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [currentShape, setCurrentShape] = useState<string | null>(null);
     const dragItemRef = useRef<HTMLDivElement | null>(null);
-    // Waar de vinger neerkwam, om tikken van slepen te onderscheiden (zie handleMouseUp).
-    const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+    const pendingTouchRef = useRef<PendingTouch | null>(null);
 
-    const handleMouseDown = (e: React.MouseEvent | React.TouchEvent, shapeType: string) => {
-        // Bij touch niet: React luistert passief naar touchstart, dan doet preventDefault niets
-        // (behalve een waarschuwing). Scrollen voorkomt touch-action in styles.css.
-        if (!("touches" in e)) e.preventDefault();
-        const start = getEventCoordinates(e);
-        touchStartRef.current = "touches" in e ? start : null;
+    const startDrag = (shapeType: string, at: { x: number; y: number }) => {
         setDragging(true);
         setCurrentShape(shapeType);
-        setPosition(start);
+        setPosition(at);
     }
 
-    // De browser neemt het gebaar over (bv. de vormenstrook horizontaal scrollen op een
-    // telefoon): dan wordt er niets neergezet.
-    const handleTouchCancel = () => {
-        touchStartRef.current = null;
+    const stopDrag = () => {
+        pendingTouchRef.current = null;
         setDragging(false);
         setCurrentShape(null);
     }
+
+    const handleMouseDown = (e: React.MouseEvent, shapeType: string) => {
+        e.preventDefault();
+        startDrag(shapeType, getEventCoordinates(e));
+    }
+
+    // Een vinger op een vorm: nog niet slepen. Pas bij bewegen blijkt of het slepen, scrollen
+    // of (bij loslaten zonder bewegen) tikken is. Zo verschijnt er geen opgepakte vorm onder
+    // je vinger als je alleen door de strook scrollt.
+    const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>, shapeType: string) => {
+        const { x, y } = getEventCoordinates(e);
+        const { offsetWidth: width, offsetHeight: height } = e.currentTarget;
+        pendingTouchRef.current = { type: shapeType, x, y, width, height };
+    }
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        const at = getEventCoordinates(e);
+        if (dragging) {
+            setPosition(at);
+            return;
+        }
+        const pending = pendingTouchRef.current;
+        if (!pending) return;
+        const dx = at.x - pending.x;
+        const dy = at.y - pending.y;
+        if (Math.hypot(dx, dy) < TAP_SLOP_PX) return;
+        const startsDrag = layout === "sidebar" || -dy > Math.abs(dx);
+        if (startsDrag) {
+            startDrag(pending.type, at);
+        } else {
+            // Opzij of omlaag: dat is scrollen, geen slepen.
+            pendingTouchRef.current = null;
+        }
+    }
+
+    const handleTouchEnd = (e: React.TouchEvent) => {
+        // Geen nagebootste muisklik na de touch: die zou de vorm opnieuw oppakken.
+        if (e.cancelable) e.preventDefault();
+        const pending = pendingTouchRef.current;
+        if (dragging) {
+            handleMouseUp(e);
+            return;
+        }
+        // Aangetikt zonder te bewegen: de vorm komt midden in het canvas.
+        const containerRect = threeJsContainerRef.current?.getBoundingClientRect();
+        if (pending && containerRect) {
+            placeShape(
+                pending.type,
+                containerRect.left + containerRect.width / 2,
+                containerRect.top + containerRect.height / 2,
+                pending.width,
+                pending.height,
+            );
+        }
+        stopDrag();
+    }
+
+    // De browser neemt het gebaar over (de strook scrollt): dan wordt er niets neergezet.
+    const handleTouchCancel = () => stopDrag();
 
     const handleMouseMove = (e: PointerLikeEvent) => {
         if (dragging) {
@@ -74,93 +132,86 @@ function Shapebar({ amigurumiId, shapes, setDroppedShapes, setActiveId, threeJsC
         }
     }
 
-    const handleMouseUp = async (e: PointerLikeEvent) => {
-        // Na een touch geen nagebootste muisklik meer: die zou de vorm opnieuw oppakken.
-        if ("touches" in e && e.cancelable) e.preventDefault();
-        if (dragging && currentShape) {
-            const width = dragItemRef.current?.offsetWidth;
-            const height = dragItemRef.current?.offsetHeight;
-            const containerRect = threeJsContainerRef.current?.getBoundingClientRect();
-            if (width === undefined || height === undefined || !containerRect) {
-                setDragging(false);
-                return;
-            }
-            // De vorm moet helemaal binnen het canvas vallen. Alles in schermcoördinaten: eerder
-            // werd de muispositie met de canvashoogte vergeleken zonder de navigatiebalk erboven
-            // mee te tellen, waardoor loslaten onderin het canvas stilletjes werd geweigerd.
-            // Een vorm aangetikt (touch, niet gesleept): dan komt hij midden in het canvas.
-            const released = getEventCoordinates(e);
-            const touchStart = touchStartRef.current;
-            const isTap = touchStart !== null
-                && Math.hypot(released.x - touchStart.x, released.y - touchStart.y) < TAP_SLOP_PX;
-            const { x: clientX, y: clientY } = isTap
-                ? { x: containerRect.left + containerRect.width / 2, y: containerRect.top + containerRect.height / 2 }
-                : released;
-            const isOutOfBounds =
-                clientX - width / 2 < containerRect.left ||
-                clientX + width / 2 > containerRect.right ||
-                clientY - height / 2 < containerRect.top ||
-                clientY + height / 2 > containerRect.bottom;
+    // Zet een nieuwe vorm neer op schermpositie (clientX, clientY), met de maat van het
+    // vormpje in de balk. Valt hij niet helemaal binnen het canvas, dan gebeurt er niets.
+    // Alles in schermcoördinaten: eerder werd de muispositie met de canvashoogte vergeleken
+    // zonder de navigatiebalk erboven mee te tellen, waardoor loslaten onderin het canvas
+    // stilletjes werd geweigerd.
+    const placeShape = async (shapeType: string, clientX: number, clientY: number, width: number, height: number) => {
+        const containerRect = threeJsContainerRef.current?.getBoundingClientRect();
+        if (!containerRect) return;
+        const isOutOfBounds =
+            clientX - width / 2 < containerRect.left ||
+            clientX + width / 2 > containerRect.right ||
+            clientY - height / 2 < containerRect.top ||
+            clientY + height / 2 > containerRect.bottom;
+        if (isOutOfBounds) return;
 
-            const mouseX = ((clientX - containerRect.left) / containerRect.width) * 2 - 1;
-            const mouseY = -((clientY - containerRect.top) / containerRect.height) * 2 + 1;
+        const mouseX = ((clientX - containerRect.left) / containerRect.width) * 2 - 1;
+        const mouseY = -((clientY - containerRect.top) / containerRect.height) * 2 + 1;
 
-            let worldPosition = { x: 0, y: 0, z: 0 };
-            if (camera) {
-                const vector = new THREE.Vector3(mouseX, mouseY, 0.5);
-                vector.unproject(camera);
+        let worldPosition = { x: 0, y: 0, z: 0 };
+        if (camera) {
+            const vector = new THREE.Vector3(mouseX, mouseY, 0.5);
+            vector.unproject(camera);
 
-                const dir = vector.sub(camera.position).normalize();
-                const distance = -camera.position.z / dir.z;
-                const pos = camera.position.clone().add(dir.multiplyScalar(distance));
-                worldPosition = { x: pos.x, y: pos.y, z: 0 };
-            }
-
-            if (!isOutOfBounds) {
-                // Een oog is een veiligheidsoogje van 10 mm (bol-maat: straal, zie units.ts).
-                const eyeSize = 1 * 37.8 / 2;
-                const isEyeShape = currentShape === "Eye";
-                const isFlat = currentShape === "Disc" || currentShape === "Oval";
-                const newShape: Shape & { zIndex: number } = {
-                    id: uuidv4(),
-                    amigurumi_id: amigurumiId,
-                    type: currentShape,
-                    x: worldPosition.x,
-                    y: worldPosition.y,
-                    z: 0,
-                    // Plat ovaal: anderhalf keer zo lang als breed.
-                    length: isEyeShape ? eyeSize : currentShape === "Oval" ? width * 1.6 : width,
-                    width: isEyeShape ? eyeSize : width,
-                    // Plat rondje/ovaal: de dikte van een laag garen; halve bol: half zo hoog als breed.
-                    height: isEyeShape ? eyeSize : isFlat ? DISC_THICKNESS : currentShape === "Dome" ? width / 2 : height,
-                    color: isEyeShape ? "#111111" : "#FFFFFF",
-                    name: null,
-                    rotation_x: 0,
-                    rotation_y: 0,
-                    rotation_z: 0,
-                    zIndex: 10,
-                    zoom: 1,
-                    // Borduursel: begint als mondje, in z'n eigen maat en kleur.
-                    ...(currentShape === "Embroidery" ? embroideryDefaults("mouth") : {}),
-                };
-
-                // Neergezet tegen (of in) een andere vorm: meteen netjes aansluiten.
-                const placed = { ...newShape, ...(snapIfTouching(newShape, shapes)?.shape ?? {}) };
-                setDroppedShapes((prevShapes) => [...prevShapes, placed]);
-                setActiveId(placed.id);
-
-                try {
-                    const { id, ...shapeData } = placed;
-                    await setDoc(doc(db, "shapes", id), shapeData);
-                } catch (error) {
-                    console.error("Fout bij opslaan van nieuwe vorm:", error);
-                    toast.error(t("errors.saveShape", { message: String(error) }));
-                }
-            }
+            const dir = vector.sub(camera.position).normalize();
+            const distance = -camera.position.z / dir.z;
+            const pos = camera.position.clone().add(dir.multiplyScalar(distance));
+            worldPosition = { x: pos.x, y: pos.y, z: 0 };
         }
-        touchStartRef.current = null;
-        setDragging(false);
-        setCurrentShape(null);
+
+        // Een oog is een veiligheidsoogje van 10 mm (bol-maat: straal, zie units.ts).
+        const eyeSize = 1 * 37.8 / 2;
+        const isEyeShape = shapeType === "Eye";
+        const isFlat = shapeType === "Disc" || shapeType === "Oval";
+        const newShape: Shape & { zIndex: number } = {
+            id: uuidv4(),
+            amigurumi_id: amigurumiId,
+            type: shapeType,
+            x: worldPosition.x,
+            y: worldPosition.y,
+            z: 0,
+            // Plat ovaal: anderhalf keer zo lang als breed.
+            length: isEyeShape ? eyeSize : shapeType === "Oval" ? width * 1.6 : width,
+            width: isEyeShape ? eyeSize : width,
+            // Plat rondje/ovaal: de dikte van een laag garen; halve bol: half zo hoog als breed.
+            height: isEyeShape ? eyeSize : isFlat ? DISC_THICKNESS : shapeType === "Dome" ? width / 2 : height,
+            color: isEyeShape ? "#111111" : "#FFFFFF",
+            name: null,
+            rotation_x: 0,
+            rotation_y: 0,
+            rotation_z: 0,
+            zIndex: 10,
+            zoom: 1,
+            // Borduursel: begint als mondje, in z'n eigen maat en kleur.
+            ...(shapeType === "Embroidery" ? embroideryDefaults("mouth") : {}),
+        };
+
+        // Neergezet tegen (of in) een andere vorm: meteen netjes aansluiten.
+        const placed = { ...newShape, ...(snapIfTouching(newShape, shapes)?.shape ?? {}) };
+        setDroppedShapes((prevShapes) => [...prevShapes, placed]);
+        setActiveId(placed.id);
+
+        try {
+            const { id, ...shapeData } = placed;
+            await setDoc(doc(db, "shapes", id), shapeData);
+        } catch (error) {
+            console.error("Fout bij opslaan van nieuwe vorm:", error);
+            toast.error(t("errors.saveShape", { message: String(error) }));
+        }
+    }
+
+    // Loslaten na slepen (muis of vinger): neerzetten waar losgelaten, in de maat van de
+    // opgepakte vorm.
+    const handleMouseUp = (e: PointerLikeEvent) => {
+        const width = dragItemRef.current?.offsetWidth;
+        const height = dragItemRef.current?.offsetHeight;
+        if (dragging && currentShape && width !== undefined && height !== undefined) {
+            const { x, y } = getEventCoordinates(e);
+            placeShape(currentShape, x, y, width, height);
+        }
+        stopDrag();
     }
 
     useEffect(() => {
@@ -200,9 +251,9 @@ function Shapebar({ amigurumiId, shapes, setDroppedShapes, setActiveId, threeJsC
                             onMouseDown={(e) => handleMouseDown(e, type)}
                             onMouseMove={handleMouseMove}
                             onMouseUp={handleMouseUp}
-                            onTouchStart={(e) => handleMouseDown(e, type)}
-                            onTouchMove={handleMouseMove}
-                            onTouchEnd={handleMouseUp}
+                            onTouchStart={(e) => handleTouchStart(e, type)}
+                            onTouchMove={handleTouchMove}
+                            onTouchEnd={handleTouchEnd}
                             onTouchCancel={handleTouchCancel}
                         />
                         <span className="palette-label">{t(`shapes.${type}`)}</span>

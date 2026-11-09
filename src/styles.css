@@ -137,15 +137,19 @@ body {
     white-space: nowrap;
 }
 
+/* Vormenbalk links: precies zo breed als zijn twee kolommen vormen (zie .draggables), niet
+   een percentage van het scherm; op een groot scherm werd hij anders onnodig breed. */
 .Navbar {
-    width: 15vw;
+    flex: 0 0 auto;
+    box-sizing: border-box;
+    width: auto;
     height: 88vh;
     background-color: var(--color-bg-card);
     display: flex;
     flex-direction: column;
     align-items: stretch;
     overflow: hidden;
-    padding: 2vh;
+    padding: 16px 12px;
 }
 
 .shapebar {
@@ -155,37 +159,12 @@ body {
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    padding-left: 10px;
     overflow-y: auto;
     overflow-x: hidden;
 }
 
-.toolbar {
-    width: 100%;
-    flex: 0 0 auto;
-    display: flex;
-    flex-direction: column;
-    align-items: start;
-    margin-top: 16px;
-    padding-top: 12px;
-    border-top: 2px solid var(--color-accent-soft-hover);
-}
 
-.toolbar-category {
-    display: flex;
-    flex-wrap: wrap;
-    width: 100%;
-    gap: 5px;
-    margin-bottom: 10px;
-}
 
-.toolbar-category button {
-    background-color: var(--color-primary);
-    color: var(--color-bg);
-    padding: 4px 10px !important;
-    font-size: 0.75rem !important;
-    min-width: 0 !important;
-}
 
 .shapes-text {
     margin: 4px 0 8px 0;
@@ -659,9 +638,9 @@ body {
 
 .draggables {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, 72px);
     justify-items: center;
-    gap: 12px;
+    gap: 12px 6px;
     width: 100%;
     margin-bottom: 20px;
 }
@@ -1920,22 +1899,7 @@ body {
         overflow-x: hidden;
     }
 
-    .toolbar {
-        width: 100%;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: start;
-        overflow-y: auto;
-        overflow-x: hidden;
-    }
 
-    .toolbar-category {
-        display: flex;
-        flex-wrap: wrap;
-        width: 100%;
-        gap: 5px;
-    }
 
     /* Geen eigen regel meer nodig: .Navbar staat nu in kolom-indeling (zie hierboven), dus
        .shapebar heeft de volle breedte en de gewone 2-koloms grid (desktop-regel, verderop
@@ -2190,9 +2154,11 @@ body {
     flex-direction: column;
 }
 
+/* Het canvas met de werkbalk erover; ook op een groot scherm (tussen vormenbalk en instellingen). */
 .editor-canvas-area {
     position: relative;
     flex: 1 1 auto;
+    min-width: 0;
     min-height: 0;
 }
 
@@ -2202,19 +2168,30 @@ body {
     height: 100% !important;
 }
 
-/* Eén rij bovenin: in een kolom liep hij bij een open paneel over de strook en het paneel heen. */
-.phone-toolbar {
+/* Werkbalk over het canvas (CanvasToolbar.tsx): onderin in het midden, en op een telefoon
+   één rij bovenin, waar hij het paneel en de vormenstrook niet in de weg zit. */
+.canvas-toolbar {
     position: absolute;
-    top: 8px;
-    left: 8px;
-    right: 8px;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
-    flex-wrap: wrap;
     gap: 8px;
     pointer-events: none;
 }
 
-.phone-toolbar-group {
+@media (max-width: 599px) {
+    .canvas-toolbar {
+        top: 8px;
+        bottom: auto;
+        left: 8px;
+        right: 8px;
+        transform: none;
+        flex-wrap: wrap;
+    }
+}
+
+.canvas-toolbar-group {
     display: flex;
     background-color: var(--color-bg-card);
     border-radius: 12px;
@@ -2222,13 +2199,13 @@ body {
     pointer-events: auto;
 }
 
-.phone-toolbar-group .MuiIconButton-root {
+.canvas-toolbar-group .MuiIconButton-root {
     width: 40px;
     height: 40px;
     color: var(--color-primary);
 }
 
-.phone-toolbar-group .MuiIconButton-root.active {
+.canvas-toolbar-group .MuiIconButton-root.active {
     background-color: var(--color-primary);
     color: var(--color-bg);
 }

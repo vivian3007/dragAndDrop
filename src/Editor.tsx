@@ -6,9 +6,8 @@ import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import { toast } from "react-toastify";
 import ThreeJsField from "./ThreeJsField.tsx";
 import Settingsbar from "./Settingsbar.tsx";
-import Sidebar from "./Sidebar.tsx";
 import Shapebar from "./Shapebar.tsx";
-import PhoneToolbar from "./editor/PhoneToolbar";
+import CanvasToolbar from "./editor/CanvasToolbar";
 import { useShapeHistory } from "./useShapeHistory";
 import { saveShapeDoc } from "./shapeDocs";
 import { mirrorShape } from "./geometry/mirrorShape";
@@ -256,37 +255,48 @@ const Editor = () => {
         />
     );
 
+    // De werkbalk ligt over het canvas: op een telefoon bovenin, verder onderin in het midden
+    // (zie .canvas-toolbar in styles.css).
+    const canvasArea = (
+        <div className="editor-canvas-area">
+            {threeJsField}
+            <CanvasToolbar
+                setView={setView}
+                transformMode={transformMode}
+                setTransformMode={setTransformMode}
+                hasSelection={activeId !== null}
+                showGrid={showGrid}
+                setShowGrid={setShowGrid}
+                onUndo={undo}
+                onRedo={redo}
+                canUndo={history.canUndo}
+                canRedo={history.canRedo}
+            />
+        </div>
+    );
+
+    const shapebar = (layout: "sidebar" | "strip") => (
+        <Shapebar
+            amigurumiId={amigurumiId}
+            shapes={droppedShapes}
+            setActiveId={setActiveId}
+            threeJsContainerRef={threeJsContainerRef}
+            dragging={dragging}
+            setDragging={setDragging}
+            camera={camera}
+            setDroppedShapes={setShapesFromUser}
+            layout={layout}
+        />
+    );
+
     // Telefoon: het canvas vult het scherm, de werkbalk ligt eroverheen, de vormen staan in
     // een strook eronder (vormenbalk en canvas dus tegelijk in beeld, zodat slepen kan) en de
     // instellingen zitten in een paneel dat van onderen openschuift.
     if (isPhone) {
         return (
             <div className="editor editor--phone">
-                <div className="editor-canvas-area">
-                    {threeJsField}
-                    <PhoneToolbar
-                        setView={setView}
-                        transformMode={transformMode}
-                        setTransformMode={setTransformMode}
-                        hasSelection={activeId !== null}
-                        showGrid={showGrid}
-                        setShowGrid={setShowGrid}
-                        onUndo={undo}
-                        onRedo={redo}
-                        canUndo={history.canUndo}
-                        canRedo={history.canRedo}
-                    />
-                </div>
-                <Shapebar
-                    amigurumiId={amigurumiId}
-                    shapes={droppedShapes}
-                    setActiveId={setActiveId}
-                    threeJsContainerRef={threeJsContainerRef}
-                    dragging={dragging}
-                    setDragging={setDragging}
-                    camera={camera}
-                    setDroppedShapes={setShapesFromUser}
-                />
+                {canvasArea}
+                {shapebar("strip")}
                 {/* Tikken op een dicht paneel (bv. op een tabblad) klapt het open. */}
                 <div
                     className={`editor-sheet ${sheetOpen ? "editor-sheet--open" : ""}`}
@@ -312,25 +322,8 @@ const Editor = () => {
 
     return (
         <div className="editor">
-            <Sidebar
-                amigurumiId={amigurumiId}
-                shapes={droppedShapes}
-                setDroppedShapes={setShapesFromUser}
-                setActiveId={setActiveId}
-                threeJsContainerRef={threeJsContainerRef}
-                dragging={dragging}
-                setDragging={setDragging}
-                camera={camera}
-                setView={setView}
-                setTransformMode={setTransformMode}
-                showGrid={showGrid}
-                setShowGrid={setShowGrid}
-                onUndo={undo}
-                onRedo={redo}
-                canUndo={history.canUndo}
-                canRedo={history.canRedo}
-            />
-            {threeJsField}
+            <nav className="Navbar">{shapebar("sidebar")}</nav>
+            {canvasArea}
             {settingsbar}
         </div>
     );

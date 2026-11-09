@@ -12,11 +12,11 @@ const TRANSFORM_MODES: { mode: TransformMode; icon: React.ReactNode }[] = [
     { mode: "rotate", icon: <Rotate90DegreesCcw fontSize="small" /> },
 ];
 
-// De werkbalk van de editor op een telefoon: kleine knoppen óver het canvas, omdat er naast
-// het canvas geen ruimte is (op een groter scherm staat Toolbar.tsx in de zijbalk). Verplaatsen,
-// schalen en draaien staan er alleen als er een vorm geselecteerd is: zonder toetsenbord
-// (T/S/R) is dit de enige manier om van modus te wisselen.
-function PhoneToolbar({ setView, transformMode, setTransformMode, hasSelection, showGrid, setShowGrid, onUndo, onRedo, canUndo, canRedo }: {
+// De werkbalk van de editor: kleine icoonknoppen óver het canvas, op een telefoon bovenin en
+// verder onderin in het midden (zie .canvas-toolbar in styles.css). Verplaatsen, schalen en
+// draaien staan er alleen als er een vorm geselecteerd is; zonder toetsenbord (T/S/R) is dit
+// de enige manier om van modus te wisselen.
+function CanvasToolbar({ setView, transformMode, setTransformMode, hasSelection, showGrid, setShowGrid, onUndo, onRedo, canUndo, canRedo }: {
     setView: SetView;
     transformMode: TransformMode;
     setTransformMode: (mode: TransformMode) => void;
@@ -32,8 +32,8 @@ function PhoneToolbar({ setView, transformMode, setTransformMode, hasSelection, 
     const [viewMenuAnchor, setViewMenuAnchor] = useState<HTMLElement | null>(null);
 
     return (
-        <div className="phone-toolbar">
-            <div className="phone-toolbar-group">
+        <div className="canvas-toolbar">
+            <div className="canvas-toolbar-group">
                 <IconButton size="small" aria-label={t("toolbar.undo")} title={t("toolbar.undo")} onClick={onUndo} disabled={!canUndo}>
                     <Undo fontSize="small" />
                 </IconButton>
@@ -41,7 +41,7 @@ function PhoneToolbar({ setView, transformMode, setTransformMode, hasSelection, 
                     <Redo fontSize="small" />
                 </IconButton>
             </div>
-            <div className="phone-toolbar-group">
+            <div className="canvas-toolbar-group">
                 <IconButton size="small" aria-label={t("toolbar.view")} title={t("toolbar.view")} onClick={(e) => setViewMenuAnchor(e.currentTarget)}>
                     <Videocam fontSize="small" />
                 </IconButton>
@@ -55,7 +55,7 @@ function PhoneToolbar({ setView, transformMode, setTransformMode, hasSelection, 
                 </IconButton>
             </div>
             {hasSelection && (
-                <div className="phone-toolbar-group">
+                <div className="canvas-toolbar-group">
                     {TRANSFORM_MODES.map(({ mode, icon }) => (
                         <IconButton
                             key={mode}
@@ -88,4 +88,4 @@ function PhoneToolbar({ setView, transformMode, setTransformMode, hasSelection, 
     );
 }
 
-export default React.memo(PhoneToolbar);
+export default React.memo(CanvasToolbar);
