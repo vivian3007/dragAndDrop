@@ -1,6 +1,6 @@
 import { memo, useImperativeHandle, useRef, useState } from "react";
 import { Button, IconButton, Tab, Tabs } from "@mui/material";
-import { Close, DeleteOutline, Flip, HelpOutline, Link } from "@mui/icons-material";
+import { Close, HelpOutline } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import YarnSettings, { YarnSettingsHandle } from "./YarnSettings.tsx";
 import ShapeSettings from "./ShapeSettings.tsx"
@@ -133,49 +133,21 @@ function Settingsbar({
                 ) : <ShapeSettings yarnWeight={yarnInfo?.weight} shapeColor={shapeColor} setShapeColor={setShapeColor} activeShape={activeShape} onUpdateShape={onUpdateShape}/>}
             </div>
             {compact ? (
-                (showYarnSettings || activeShape) && (
+                // Telefoon: aansluiten/spiegelen/verwijderen staan al in de contextbalk
+                // (editor/ShapeContextBar); hier alleen Opslaan bij het garen.
+                showYarnSettings && (
                     <div className="settings-bar-footer settings-bar-footer--compact">
-                        {!showYarnSettings && activeShape && (
-                            <>
-                                <IconButton
-                                    size="small"
-                                    aria-label={t("editor.attachShape")}
-                                    title={t("editor.attachShapeHint")}
-                                    onClick={() => onAttachShape(activeShape.id)}
-                                >
-                                    <Link fontSize="small" />
-                                </IconButton>
-                                <IconButton
-                                    size="small"
-                                    aria-label={t("editor.mirrorShape")}
-                                    title={t("editor.mirrorShape")}
-                                    onClick={() => onMirrorShape(activeShape.id)}
-                                >
-                                    <Flip fontSize="small" />
-                                </IconButton>
-                                <IconButton
-                                    size="small"
-                                    aria-label={t("editor.deleteShape")}
-                                    title={t("editor.deleteShape")}
-                                    onClick={() => onDeleteShape(activeShape.id)}
-                                >
-                                    <DeleteOutline fontSize="small" />
-                                </IconButton>
-                            </>
-                        )}
-                        {showYarnSettings && (
-                            <Button
-                                type="button"
-                                size="small"
-                                variant="outlined"
-                                color="inherit"
-                                className={yarnDirty ? "save-btn-dirty" : ""}
-                                sx={{borderColor: "var(--color-primary)", color: "var(--color-primary)"}}
-                                onClick={() => yarnSettingsRef.current?.save()}
-                            >
-                                {t("editor.save")}
-                            </Button>
-                        )}
+                        <Button
+                            type="button"
+                            size="small"
+                            variant="outlined"
+                            color="inherit"
+                            className={yarnDirty ? "save-btn-dirty" : ""}
+                            sx={{borderColor: "var(--color-primary)", color: "var(--color-primary)"}}
+                            onClick={() => yarnSettingsRef.current?.save()}
+                        >
+                            {t("editor.save")}
+                        </Button>
                     </div>
                 )
             ) : (

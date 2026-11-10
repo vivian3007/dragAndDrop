@@ -142,8 +142,13 @@ service cloud.firestore {
     // `favorite`-veld mag niemand anders meer omzetten.
     match /amigurumi/{amigurumiId} {
       allow read: if signedIn();
+      // Een kopie (copiedFromId gezet) mag alleen als de maker van het origineel kopiëren
+      // toestaat (allowCopy ontbreekt of is true), of als het je eigen ontwerp is.
       allow create: if signedIn() && request.resource.data.user_id == myUid()
-        && request.resource.data.get('favoriteCount', 0) == 0;
+        && request.resource.data.get('favoriteCount', 0) == 0
+        && (request.resource.data.get('copiedFromId', null) == null
+          || get(designPath(request.resource.data.copiedFromId)).data.get('allowCopy', true) == true
+          || get(designPath(request.resource.data.copiedFromId)).data.user_id == myUid());
       allow update: if signedIn() && (
         (resource.data.user_id == myUid() && request.resource.data.user_id == myUid()
           && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['favoriteCount']))

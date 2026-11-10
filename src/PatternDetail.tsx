@@ -29,7 +29,7 @@ import {
     FavoriteBorder,
     ViewInAr,
 } from '@mui/icons-material';
-import { collection, deleteDoc, doc, getCountFromServer, getDoc, getDocs, onSnapshot, query, where } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getCountFromServer, getDoc, getDocs, onSnapshot, query, where, limit } from 'firebase/firestore';
 import { db } from '../firebase-config.js';
 import { useAuth } from './auth/AuthProvider';
 import AppDialog from './AppDialog.tsx';
@@ -46,7 +46,7 @@ import { sizedImageUrl } from './uploadImage.ts';
 import { useFavorites } from './favorites/FavoritesProvider';
 import { timestampDate } from './timestamps.ts';
 
-type DetailTab = 'about' | 'yarn' | 'makes';
+type DetailTab = 'about' | 'yarn' | 'makes' | 'copies';
 
 const outlinedButtonSx = {
     borderColor: 'var(--color-primary)',
@@ -85,6 +85,9 @@ const PatternDetail = ({
     const [favoriteCount, setFavoriteCount] = useState(0);
     const [isHeartBouncing, setIsHeartBouncing] = useState(false);
     const [copyCount, setCopyCount] = useState(0);
+    // Remixes: ontwerpen die rechtstreeks van dit ontwerp gekopieerd zijn (pas geladen als je
+    // het tabblad opent).
+    const [copies, setCopies] = useState<Amigurumi[] | null>(null);
     const [makesCount, setMakesCount] = useState(0);
     const [editMenuAnchor, setEditMenuAnchor] = useState<HTMLElement | null>(null);
     const [editOpen, setEditOpen] = useState(false);
@@ -160,6 +163,24 @@ const PatternDetail = ({
             console.error('Fout bij ophalen van origineel:', error);
         }
     }, [amigurumi, t]);
+
+    // Een ander ontwerp in deze popup openen (bv. een kopie); "terug" gaat naar dit ontwerp.
+    const openDesign = useCallback((other: Amigurumi) => {
+        if (amigurumi) setTrail((prev) => [...prev, amigurumi]);
+        setAmigurumi(other);
+    }, [amigurumi]);
+
+    useEffect(() => {
+        setCopies(null);
+        if (tab !== 'copies' || !amigurumi?.id) return;
+        getDocs(query(collection(db, 'amigurumi'), where('copiedFromId', '==', amigurumi.id), limit(50)))
+            .then((snapshot) => {
+                const found = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as Amigurumi);
+                found.sort((a, b) => (timestampDate(b.createdAt)?.getTime() ?? 0) - (timestampDate(a.createdAt)?.getTime() ?? 0));
+                setCopies(found);
+            })
+            .catch((error) => console.error('Fout bij ophalen van kopieën:', error));
+    }, [tab, amigurumi?.id]);
 
     const goBack = useCallback(() => {
         const previous = trail[trail.length - 1];
@@ -328,10 +349,14 @@ const PatternDetail = ({
                                         </MenuItem>
                                     </Menu>
                                 </>
-                            ) : isLoggedIn ? (
+                            ) : isLoggedIn && amigurumi.allowCopy !== false ? (
                                 <Button variant="outlined" startIcon={<ContentCopy />} onClick={() => setCopyOpen(true)} sx={outlinedButtonSx}>
                                     {t('detail.useAsTemplate')}
                                 </Button>
+                            ) : isLoggedIn ? (
+                                <Typography variant="body2" className="detail-copy-not-allowed">
+                                    {t('detail.copyNotAllowed')}
+                                </Typography>
                             ) : null}
 
                             <IconButton
@@ -362,6 +387,9 @@ const PatternDetail = ({
                     <Tab value="about" label={t('detail.tab.about')} disableRipple />
                     <Tab value="yarn" label={t('detail.tab.yarn')} disableRipple />
                     <Tab value="makes" label={t('detail.tab.makes', { count: makesCount })} disableRipple />
+                    {copyCount > 0 && (
+                        <Tab value="copies" label={t('detail.tab.copies', { count: copyCount })} disableRipple />
+                    )}
                 </Tabs>
 
                 <div className="detail-tab-panel">
@@ -424,6 +452,25 @@ const PatternDetail = ({
                             </Table>
                         ) : (
                             <Typography>{t('detail.noYarn')}</Typography>
+                        )
+                    )}
+
+                    {tab === 'copies' && (
+                        copies === null ? (
+                            <CircularProgress size={20} />
+                        ) : copies.length === 0 ? (
+                            <Typography sx={{ opacity: 0.7 }}>{t('detail.copiesEmpty')}</Typography>
+                        ) : (
+                            <div className="detail-copies">
+                                {copies.map((copy) => (
+                                    <div key={copy.id} className="detail-origin-row">
+                                        <span>{sourceLine({ id: copy.id, name: copy.name, user_id: copy.user_id })}</span>
+                                        <Button size="small" variant="outlined" onClick={() => openDesign(copy)} sx={outlinedButtonSx}>
+                                            {t('detail.viewCopy')}
+                                        </Button>
+                                    </div>
+                                ))}
+                            </div>
                         )
                     )}
 

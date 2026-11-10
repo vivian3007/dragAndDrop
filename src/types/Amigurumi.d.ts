@@ -31,4 +31,7 @@ interface Amigurumi {
     // Id van de directe bron, los opgeslagen zodat Firestore kan tellen hoe vaak een
     // ontwerp gekopieerd is (op een veld binnen een array van objecten kan dat niet).
     copiedFromId?: string | null;
+    // Mogen anderen dit ontwerp als template kopiëren? Ontbreekt = ja (zo werkte het altijd).
+    // Wordt ook in firestore.rules afgedwongen; bekijken kan altijd.
+    allowCopy?: boolean;
 }

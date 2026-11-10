@@ -224,7 +224,8 @@ function ShapeSettings({
                                     value={displayName ?? ""}
                                     onChange={handleNameChange}
                                     required={true}
-                                    placeholder={t("shapeSettings.namePlaceholder")}
+                                    // Zonder eigen naam heet een onderdeel naar zijn vorm (zoals in het garenoverzicht).
+                                    placeholder={t(`shapes.${activeShape.type}`)}
                                 />
                             </div>
                         </div>

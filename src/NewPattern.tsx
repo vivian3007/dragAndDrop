@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import React, { useEffect, useState } from 'react';
-import { Typography, CircularProgress, TextField, Button, Chip, Box, DialogContent } from '@mui/material';
+import { Typography, CircularProgress, TextField, Button, Chip, Box, DialogContent, FormControlLabel, Switch } from '@mui/material';
 import { setDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase-config.js';
 import { useAuth } from './auth/AuthProvider';
@@ -44,6 +44,7 @@ const NewPattern = ({
         tags: [] as string[],
         yarn_id: '',
         notes: '',
+        allowCopy: true,
     });
     const [tagInput, setTagInput] = useState('');
     const [imageFile, setImageFile] = useState<File | null>(null);
@@ -60,6 +61,8 @@ const NewPattern = ({
                 tags: prefill?.tags ?? [],
                 yarn_id: editingAmigurumi?.yarn_id ?? '',
                 notes: prefill?.notes ?? '',
+                // Een kopie begint gewoon kopieerbaar; bewerken toont de huidige keuze.
+                allowCopy: editingAmigurumi ? editingAmigurumi.allowCopy !== false : true,
             });
             setTagInput('');
             setImageFile(null);
@@ -124,6 +127,7 @@ const NewPattern = ({
                     yarn_id: formData.yarn_id.trim() || null,
                     notes: formData.notes.trim() || null,
                     imageUrl,
+                    allowCopy: formData.allowCopy,
                     // Zoekvelden lopen mee met naam en tags (zie searchTerms.js).
                     ...searchFields(formData.name.trim(), formData.tags),
                 };
@@ -142,6 +146,7 @@ const NewPattern = ({
                     createdAt: serverTimestamp(),
                     notes: formData.notes.trim() || null,
                     imageUrl,
+                    allowCopy: formData.allowCopy,
                     favoriteCount: 0,
                     ...searchFields(formData.name.trim(), formData.tags),
                 };
@@ -246,6 +251,22 @@ const NewPattern = ({
                                 minRows={3}
                                 margin="normal"
                                 placeholder={t('newPattern.notesPlaceholder')}
+                            />
+                            <FormControlLabel
+                                sx={{ mt: 1, alignItems: 'flex-start' }}
+                                control={
+                                    <Switch
+                                        checked={formData.allowCopy}
+                                        onChange={(e) => setFormData((prev) => ({ ...prev, allowCopy: e.target.checked }))}
+                                        sx={{ mt: -0.75, '& .Mui-checked': { color: 'var(--color-primary)' }, '& .Mui-checked + .MuiSwitch-track': { backgroundColor: 'var(--color-primary)' } }}
+                                    />
+                                }
+                                label={
+                                    <Box>
+                                        <Typography>{t('newPattern.allowCopy')}</Typography>
+                                        <Typography variant="body2" sx={{ opacity: 0.7 }}>{t('newPattern.allowCopyHint')}</Typography>
+                                    </Box>
+                                }
                             />
                             <ImageDropzone previewSrc={previewSrc} onFileSelected={setImageFile} />
                             {error && (

@@ -38,6 +38,8 @@ await adminAuth.createUser({ uid: 'bob', email: 'bob@test.nl', password: 'wachtw
 const seed = {
     'amigurumi/a1': { name: 'Beer van Alice', user_id: 'alice', favorite: false },
     'amigurumi/b1': { name: 'Konijn van Bob', user_id: 'bob', favorite: false },
+    'amigurumi/a-nocopy': { name: 'Geheim van Alice', user_id: 'alice', allowCopy: false },
+    'amigurumi/a-copy': { name: 'Open van Alice', user_id: 'alice', allowCopy: true },
     'shapes/s1': { amigurumi_id: 'a1', type: 'Sphere', x: 0 },
     'makes/mb': { amigurumi_id: 'a1', amigurumi_name: 'Beer', user_id: 'bob', imageUrl: 'x' },
     'yarn/ya': { name: 'Katoen', user_id: 'alice' },
@@ -65,6 +67,17 @@ await check('mag andermans ontwerp niet verwijderen', () => denied(deleteDoc(doc
 await check('mag eigen ontwerp wijzigen', () => allowed(updateDoc(doc(bob.db, 'amigurumi/b1'), { name: 'Konijn 2' })));
 await check('mag geen ontwerp op andermans naam aanmaken', () => denied(setDoc(doc(bob.db, 'amigurumi/nep'), { name: 'Nep', user_id: 'alice' })));
 await check('mag eigen ontwerp aanmaken', () => allowed(setDoc(doc(bob.db, 'amigurumi/b2'), { name: 'Nieuw', user_id: 'bob' })));
+
+console.log('\nKopiëren als template (allowCopy)');
+await check('kopie van een ontwerp zonder allowCopy-veld: mag (standaard toegestaan)', () => allowed(setDoc(doc(bob.db, 'amigurumi/k1'), { name: 'Kopie', user_id: 'bob', copiedFromId: 'a1' })));
+await check('kopie van een ontwerp met allowCopy true: mag', () => allowed(setDoc(doc(bob.db, 'amigurumi/k2'), { name: 'Kopie', user_id: 'bob', copiedFromId: 'a-copy' })));
+await check('kopie van een ontwerp met allowCopy false: geweigerd', () => denied(setDoc(doc(bob.db, 'amigurumi/k3'), { name: 'Kopie', user_id: 'bob', copiedFromId: 'a-nocopy' })));
+await check('eigen ontwerp met allowCopy false kopiëren: mag', () => allowed(setDoc(doc(alice.db, 'amigurumi/k4'), { name: 'Eigen kopie', user_id: 'alice', copiedFromId: 'a-nocopy' })));
+await check('eigenaar mag allowCopy aanzetten en uitzetten', async () => {
+    await updateDoc(doc(alice.db, 'amigurumi/a-copy'), { allowCopy: false });
+    await updateDoc(doc(alice.db, 'amigurumi/a-copy'), { allowCopy: true });
+});
+await check('een ander mag allowCopy niet omzetten', () => denied(updateDoc(doc(bob.db, 'amigurumi/a-nocopy'), { allowCopy: true })));
 
 console.log('\nFavorieten');
 // Zoals FavoritesProvider het doet: favoriet + teller in één batch.
