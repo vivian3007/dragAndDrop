@@ -4,6 +4,9 @@ const config: CapacitorConfig = {
   appId: 'nl.vlaanderen.stitchify',
   appName: 'Stitchify',
   webDir: 'dist',
+  // Achtergrond van de WebView zolang de pagina nog laadt (gelijk aan --color-bg in
+  // styles.css), anders begint de app met een zwart scherm.
+  backgroundColor: '#F1E3E0',
   plugins: {
     // Donkere iconen in de status- en navigatiebalk van Android. Standaard volgen die het
     // systeemthema, en in donkere modus werden ze wit op de (altijd lichte) app.

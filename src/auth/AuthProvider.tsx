@@ -99,7 +99,7 @@ export async function logOut() {
 
 // Zolang Firebase de sessie herstelt (meestal een fractie van een seconde): bewust leeg i.p.v.
 // een laadicoontje. Daarna toont de pagina zelf skeletons in z'n eigen indeling.
-const AuthPending = () => <Box sx={{ minHeight: '60vh' }} aria-busy="true" />;
+export const AuthPending = () => <Box sx={{ minHeight: '60vh' }} aria-busy="true" />;
 
 // Laat de pagina alleen zien als er iemand is ingelogd; anders naar de inlogpagina, met de
 // oorspronkelijke bestemming erbij zodat je na het inloggen daar weer uitkomt.

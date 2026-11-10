@@ -9,7 +9,7 @@ import {
     signInWithEmailAndPassword,
 } from 'firebase/auth';
 import { auth } from '../firebase-config.js';
-import { useAuth } from './auth/AuthProvider';
+import { AuthPending, useAuth } from './auth/AuthProvider';
 import { authErrorKey, errorCode, MIN_PASSWORD_LENGTH } from './auth/authErrors';
 import { claimUsername, isUsernameAvailable, USERNAME_MAX, USERNAME_MIN, usernameError } from './users/usernames';
 import UsernameField, { UsernameStatus } from './users/UsernameField';
@@ -39,7 +39,12 @@ const Login = () => {
     // Na inloggen terug naar waar je heen wilde (RequireAuth geeft dat mee), anders Home.
     // Tijdens het registreren nog niet doorsturen: dan lopen naam en profiel nog.
     const destination = (location.state as { from?: string } | null)?.from ?? '/home';
-    if (!loading && user && !submitting) {
+    // Zolang Firebase de sessie nog herstelt niet het formulier tonen: wie al ingelogd is, zag
+    // anders bij elke start eerst het inlogscherm voorbijflitsen voordat Home kwam.
+    if (loading) {
+        return <AuthPending />;
+    }
+    if (user && !submitting) {
         return <Navigate to={destination} replace />;
     }
 
