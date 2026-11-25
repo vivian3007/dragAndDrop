@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import TransformControlsThree from "./TransformControlsThree.tsx";
+import { useMeshObject } from "./editor/useMeshObject";
 import type { TransformControls as TransformControlsImpl } from 'three-stdlib';
 import { isGizmoAxisActive } from "./editor/types";
 import type { ShapeComponentProps } from "./editor/types";
@@ -33,7 +34,7 @@ function Arm({
     const rotation_y = shape?.rotation_y ?? 0;
     const rotation_z = shape?.rotation_z ?? 0;
     const zoom = shape?.zoom ?? 1;
-    const meshRef = useRef<THREE.Mesh>(null);
+    const { meshRef, mesh, meshCallbackRef } = useMeshObject();
     const transformControlsRef = useRef<TransformControlsImpl | null>(null);
     const [isDragging, setIsDragging] = useState(false);
 
@@ -51,7 +52,7 @@ function Arm({
         if (meshRef.current) {
             meshRef.current.uuid = id; // Ensure mesh uuid matches shape.id
         }
-    }, [id]);
+    }, [id, meshRef]);
 
     useEffect(() => {
         // `height` staat voor de TOTALE zichtbare armlengte (cilinder + bolvormig kapje);
@@ -67,7 +68,7 @@ function Arm({
                 rotation_z * (Math.PI / 180)
             );
         }
-    }, [width, height, length, zoom, x, y, z, rotation_x, rotation_y, rotation_z, isSelected, isDragging]);
+    }, [width, height, length, zoom, x, y, z, rotation_x, rotation_y, rotation_z, isSelected, isDragging, meshRef]);
 
 
     return (
@@ -81,7 +82,7 @@ function Arm({
                     onSelect(id);
                 }}
             >
-                <mesh position={[0, 0.5, 0]} ref={meshRef}>
+                <mesh position={[0, 0.5, 0]} ref={meshCallbackRef}>
                     <mesh position={[0, 0.5, 0]} geometry={bodyGeometry}>
                         <meshStandardMaterial map={texture} bumpMap={texture} {...YARN_MATERIAL} vertexColors color={YARN_TINT} side={THREE.DoubleSide} />
                     </mesh>
@@ -91,7 +92,7 @@ function Arm({
                 </mesh>
             </group>
             {isSelected && (
-                <TransformControlsThree transformRef={transformControlsRef} object={meshRef.current} transformMode={transformMode} setTransformMode={setTransformMode} isSelected={isSelected} setIsDragging={handleDraggingChange} orbitControlsRef={orbitControlsRef} meshRef={meshRef} onUpdateShape={onUpdateShape} shape={shape} width={width} activeTransformControlsRef={activeTransformControlsRef} onTransformEnd={() => onTransformEnd?.(id, transformMode)} />
+                <TransformControlsThree transformRef={transformControlsRef} object={mesh} transformMode={transformMode} setTransformMode={setTransformMode} isSelected={isSelected} setIsDragging={handleDraggingChange} orbitControlsRef={orbitControlsRef} meshRef={meshRef} onUpdateShape={onUpdateShape} shape={shape} width={width} activeTransformControlsRef={activeTransformControlsRef} onTransformEnd={() => onTransformEnd?.(id, transformMode)} />
             )}
         </>
     );

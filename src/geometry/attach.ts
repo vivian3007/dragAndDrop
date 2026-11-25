@@ -1,8 +1,9 @@
 import * as THREE from "three";
 import { meshScaleOf, PIXELS_PER_CM, WORLD_SCALE_FACTOR } from "./units";
-import { ARM_TOTAL_LOCAL_LENGTH } from "./armGeometry";
 import { sphereOpening } from "./sphereOpening";
 import { insideLocal } from "./shapeSpace";
+import { shapeDefinition } from "../shapes/registry";
+import { eggFactor, eggTaper } from "./eggShape";
 
 // "Aansluiten": een vorm netjes tegen de dichtstbijzijnde andere vorm zetten, zodat hij er
 // rondom op aansluit — zoals een aangenaaid been, oor of snuit.
@@ -40,21 +41,7 @@ function worldMatrix(shape: Shape): THREE.Matrix4 {
 
 // Het middelpunt van de vorm (in eigen ruimte), van waaruit het oppervlak gezocht wordt.
 function localCenter(type: string): THREE.Vector3 {
-    switch (type) {
-        case "Arm":
-            return new THREE.Vector3(0, ARM_TOTAL_LOCAL_LENGTH / 3, 0);
-        case "Cylinder":
-        case "Tube":
-        case "Disc":
-        case "Oval":
-            return new THREE.Vector3(0, 0.5, 0);
-        case "Dome":
-            return new THREE.Vector3(0, 0.35, 0);
-        case "Cone":
-            return new THREE.Vector3(0, 0.3, 0);
-        default:
-            return new THREE.Vector3(0, 0, 0);
-    }
+    return new THREE.Vector3(0, shapeDefinition(type).centerY, 0);
 }
 
 class Solid {
@@ -145,15 +132,17 @@ function toDegrees(quaternion: THREE.Quaternion) {
 export type AttachResult = { shape: Shape; targetId: string };
 
 // Vormen die met hun (open of platte) onderkant aansluiten; een bol sluit aan met z'n ronding.
-const isLimb = (shape: Shape) => ["Arm", "Cylinder", "Tube", "Cone", "Disc", "Oval", "Dome"].includes(shape.type);
+// Een plat motief ook met z'n onderkant (zie shapes/types.ts).
+const isLimb = (shape: Shape) => ["limb", "applique"].includes(shapeDefinition(shape.type).attach);
 
 // Zet `shape` tegen `target`, in de richting `direction` vanuit het middelpunt van `target`.
 function attachTo(shape: Shape, solid: Solid, direction: THREE.Vector3): Shape {
     const surface = solid.surfaceTowards(direction);
     const normal = solid.normalTowards(direction);
 
-    if (sphereOpening(shape) > 0) return attachOpenSphere(shape, solid, surface, normal);
-    if (shape.type === "Embroidery") return attachEmbroidery(shape, solid, surface, normal);
+    const mode = shapeDefinition(shape.type).attach;
+    if (mode === "openSphere" && sphereOpening(shape) > 0) return attachOpenSphere(shape, solid, surface, normal);
+    if (mode === "embroidery") return attachEmbroidery(shape, solid, surface, normal);
 
     if (!isLimb(shape)) {
         // Bol: middelpunt langs de normaal naar buiten, een stukje in de andere vorm gezakt.
@@ -165,15 +154,19 @@ function attachTo(shape: Shape, solid: Solid, direction: THREE.Vector3): Shape {
                 THREE.MathUtils.degToRad(shape.rotation_z ?? 0),
             )).invert(),
         );
-        // Straal van de (mogelijk uitgerekte) bol in de richting van de normaal.
-        const radius = 1 / Math.sqrt((local.x / sx) ** 2 + (local.y / sy) ** 2 + (local.z / sz) ** 2);
+        // Straal van de (mogelijk uitgerekte) bol in de richting van de normaal. Een ei
+        // (eggShape.ts) is geen ellips: daar het oppervlak zoeken, vanuit het middelpunt.
+        const radius = eggTaper(shape) > 0
+            ? new Solid({ ...shape, x: 0, y: 0, z: 0 }).surfaceTowards(normal.clone().negate()).length()
+            : 1 / Math.sqrt((local.x / sx) ** 2 + (local.y / sy) ** 2 + (local.z / sz) ** 2);
         const overlap = shape.type === "Eye" ? EYE_OVERLAP : SPHERE_OVERLAP;
         const center = surface.clone().addScaledVector(normal, radius * (1 - overlap));
         return { ...shape, x: center.x, y: center.y, z: center.z };
     }
 
-    // Arm, cilinder, kegel: lokale y-as langs de normaal, onderkant op het oppervlak.
-    const rotation = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal);
+    // Arm, cilinder, kegel: lokale y-as langs de normaal, onderkant op het oppervlak. Een plat
+    // motief (hart, bloem) daarbij rechtop, zoals een borduursel: −z naar boven.
+    const rotation = mode === "applique" ? uprightOn(normal) : new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal);
     const [sx, , sz] = meshScaleOf(shape);
     const t1 = new THREE.Vector3(1, 0, 0).applyQuaternion(rotation);
     const t2 = new THREE.Vector3(0, 0, 1).applyQuaternion(rotation);
@@ -197,6 +190,8 @@ function attachTo(shape: Shape, solid: Solid, direction: THREE.Vector3): Shape {
 // oppervlak — net als de open onderkant van een arm, maar het midden zit verder naar buiten.
 function attachOpenSphere(shape: Shape, solid: Solid, surface: THREE.Vector3, normal: THREE.Vector3): Shape {
     const opening = sphereOpening(shape);
+    // Bij een ei is de rand van de opening smaller dan bij een bol (zie eggShape.ts).
+    const rimRadius = opening * eggFactor(-Math.sqrt(1 - opening * opening), eggTaper(shape));
     // De opening zit aan de lokale onderkant: lokale y-as langs de normaal.
     const rotation = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal);
     const [sx, sy, sz] = meshScaleOf(shape);
@@ -208,8 +203,8 @@ function attachOpenSphere(shape: Shape, solid: Solid, surface: THREE.Vector3, no
     for (let i = 0; i < RIM_SAMPLES; i++) {
         const angle = (i / RIM_SAMPLES) * Math.PI * 2;
         const rim = surface.clone()
-            .addScaledVector(t1, Math.cos(angle) * opening * sx * RIM_MARGIN)
-            .addScaledVector(t2, Math.sin(angle) * opening * sz * RIM_MARGIN);
+            .addScaledVector(t1, Math.cos(angle) * rimRadius * sx * RIM_MARGIN)
+            .addScaledVector(t2, Math.sin(angle) * rimRadius * sz * RIM_MARGIN);
         sink = Math.max(sink, solid.depthUntilInside(rim, inward));
     }
 
@@ -223,12 +218,9 @@ function attachOpenSphere(shape: Shape, solid: Solid, surface: THREE.Vector3, no
 // naar boven, zodat een mondje niet scheef komt te staan. Hoe bol het oppervlak eronder is,
 // gaat mee als `curvature`, zodat de draadjes meebuigen (zie embroideryGeometry.ts).
 function attachEmbroidery(shape: Shape, solid: Solid, surface: THREE.Vector3, normal: THREE.Vector3): Shape {
-    const worldUp = new THREE.Vector3(0, 1, 0);
-    const right = new THREE.Vector3().crossVectors(worldUp, normal);
-    if (right.lengthSq() < 1e-6) right.set(1, 0, 0); // boven- of onderop: gewoon wereld-x
-    right.normalize();
-    const down = new THREE.Vector3().crossVectors(right, normal).normalize();
-    const rotation = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(right, normal, down));
+    const rotation = uprightOn(normal);
+    const right = new THREE.Vector3(1, 0, 0).applyQuaternion(rotation);
+    const down = new THREE.Vector3(0, 0, 1).applyQuaternion(rotation);
 
     // Kromming 2·diepte/afstand² op een halve breedte (en halve hoogte) van het midden.
     const [sx, , sz] = meshScaleOf(shape);
@@ -244,13 +236,24 @@ function attachEmbroidery(shape: Shape, solid: Solid, surface: THREE.Vector3, no
     return { ...shape, x: surface.x, y: surface.y, z: surface.z, ...toDegrees(rotation), curvature };
 }
 
+// Draaiing die de lokale y-as langs `normal` zet, met lokale x horizontaal en −z naar boven:
+// zo staat iets plats op een oppervlak rechtop (een mondje, een hartje).
+function uprightOn(normal: THREE.Vector3): THREE.Quaternion {
+    const worldUp = new THREE.Vector3(0, 1, 0);
+    const right = new THREE.Vector3().crossVectors(worldUp, normal);
+    if (right.lengthSq() < 1e-6) right.set(1, 0, 0); // boven- of onderop: gewoon wereld-x
+    right.normalize();
+    const down = new THREE.Vector3().crossVectors(right, normal).normalize();
+    return new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(right, normal, down));
+}
+
 function directionFrom(solid: Solid, point: THREE.Vector3): THREE.Vector3 {
     const direction = point.clone().sub(solid.center);
     return direction.lengthSq() < 1e-9 ? new THREE.Vector3(0, 1, 0) : direction;
 }
 
 // Op een borduursel sluit niets aan: dat ligt zelf al op een onderdeel.
-const canHold = (other: Shape) => other.type !== "Embroidery";
+const canHold = (other: Shape) => shapeDefinition(other.type).canHold !== false;
 
 // Zet `shape` netjes tegen de dichtstbijzijnde van `others`. Null als er geen andere vorm is.
 export function attachToNearest(shape: Shape, others: Shape[]): AttachResult | null {
@@ -274,7 +277,7 @@ function contactPoint(shape: Shape, other: Solid): THREE.Vector3 {
     const point = attachPoint(shape);
     if (isLimb(shape)) return point;
     // Borduursel: net onder het oppervlak waar het op ligt (één draaddikte).
-    if (shape.type === "Embroidery") return new THREE.Vector3(0, -1, 0).applyMatrix4(worldMatrix(shape));
+    if (shapeDefinition(shape.type).attach === "embroidery") return new THREE.Vector3(0, -1, 0).applyMatrix4(worldMatrix(shape));
     const opening = sphereOpening(shape);
     if (opening > 0) {
         // Het midden van de opening, een klein stukje erbuiten (eigen ruimte: bol met straal 1).

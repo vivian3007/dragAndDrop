@@ -14,7 +14,44 @@ export type PatternTerms = {
     ovalStart: (chains: number, middle: number) => string;
     // Ronde 1 van een open buis: een ring van lossen (zie generateTubePattern.ts).
     tubeStart: (chains: number) => string;
+    // Platte motieven (shapes/definitions/heart.ts enz.): heen en weer in rijen in plaats van in
+    // rondes ("Rij 3"), andere steken, en een begin met lossen of een magische ring.
+    flatRow: (row: number | string) => string;
+    rowsStart: (chains: number, stitches: number) => string;
+    magicRing: (stitches: number) => string;
+    ch: (count: number) => string;
+    slst: (count: number) => string;
+    hdc: (count: number) => string;
+    dc: (count: number) => string;
+    tr: (count: number) => string;
+    // Zinnetjes voor de platte motieven ("1 l, keer", "(…) in de volgende steek", ...): zie
+    // PHRASES hieronder. Uit de vertalingen als pattern.phrase.<naam>.
+    phrase: (id: PhraseId, values?: Record<string, string | number>) => string;
 };
+
+// De zinnetjes waarmee de platte motieven hun instructies opbouwen, met de Engelse tekst (voor
+// aanroepen zonder vertaling). De vertalingen staan als pattern.phrase.<naam> in de
+// taalbestanden, met dezelfde {plekken}.
+export const PHRASES = {
+    // Aan het eind van een rij die heen en weer gaat.
+    turn: "ch 1, turn",
+    inNextSt: "({stitches}) in the next st",
+    inEachOfNext: "{stitch} in each of the next {count} st",
+    chainStart: "ch {chains}; starting in the 2nd ch from the hook: {stitches}",
+    inLastChain: "({stitches}) in the last ch",
+    otherSide: "along the other side of the chain: {stitches}",
+    joinRound: "1sl st in the first st",
+    roundAround: "1sc in each st around, with ({tip}) in the ch-space at the tip",
+    firstLobe: "First lobe: continue over the first {stitches} stitches only",
+    secondLobe: "Second lobe: join the yarn in the next stitch of row {row} and work over the remaining {stitches} stitches",
+    intoSecondChain: "ch {chains}; {stitches} in the 2nd ch from the hook",
+    heartBorder: "Border: do not turn; work 1sc in each row end and each stitch all around the heart, with 2sc in the point at the bottom; join with 1sl st in the first st",
+} as const;
+export type PhraseId = keyof typeof PHRASES;
+
+function fillIn(template: string, values: Record<string, string | number> = {}): string {
+    return template.replace(/\{(\w+)\}/g, (_, key: string) => String(values[key] ?? `{${key}}`));
+}
 
 // Eén regel van een patroon: één ronde of een reeks rondes met dezelfde instructie. Als
 // gegevens (niet als kant-en-klare tekst), zodat een reeks voor een kleurwissel opgesplitst
@@ -24,8 +61,17 @@ export type PatternRow = {
     to: number;
     instruction: string;
     stitches: number;
+    // Heen en weer gehaakte rijen ("Rij 3") in plaats van rondes.
+    inRows?: boolean;
+    // Een losse aanwijzing tussen de rijen (bv. "Eerste boog: ..."), zonder rijnummer.
+    note?: boolean;
+    // Een eigen label in plaats van "Ronde 3"/"Rij 3" (bv. de rijen van een sterpunt, die
+    // weer bij 1 beginnen, terwijl `from`/`to` doortellen voor de kleurwissels).
+    label?: string;
     // Kleur van deze rondes, als die afwijkt van de kleur van de vorm (zie colorChanges.ts).
     color?: string | null;
+    // In de achterste lus gehaakt: dan staat die uitleg bij de afkortingen (Pattern.tsx).
+    backLoop?: boolean;
 };
 
 // Steken van ronde 1: de magische ring (6), tenzij de vorm anders begint (`firstRow`, bv. een
@@ -35,7 +81,8 @@ export function firstRowStitches(pattern: object): number {
 }
 
 export function formatRow(t: PatternTerms, row: PatternRow): string {
-    const label = row.from === row.to ? t.row(row.from) : t.row(`${row.from}-${row.to}`);
+    if (row.note) return row.instruction;
+    const label = row.label ?? (row.inRows ? t.flatRow : t.row)(row.from === row.to ? row.from : `${row.from}-${row.to}`);
     return `${label}: ${row.instruction} (${row.stitches})`;
 }
 
@@ -48,12 +95,16 @@ export function increaseRow(t: PatternTerms, row: number, previous: number): Pat
 
 // Minderingsronde naar `stitches` steken: in elk van de zes delen één mindering.
 export function decreaseRow(t: PatternTerms, row: number, stitches: number): PatternRow {
-    return { from: row, to: row, instruction: `[${t.dec(1)}, ${t.sc(stitches / 6 - 1)}] * 6`, stitches };
+    // Naar 6 steken: elke steek is een mindering ("6 min"), net als "6 meer" bij het meerderen.
+    const instruction = stitches === 6 ? t.dec(6) : `[${t.dec(1)}, ${t.sc(stitches / 6 - 1)}] * 6`;
+    return { from: row, to: row, instruction, stitches };
 }
 
 // Rondes zonder meerderen of minderen, eventueel alleen in de achterste lus.
 export function evenRows(t: PatternTerms, from: number, to: number, stitches: number, backLoop = false): PatternRow {
-    return { from, to, instruction: backLoop ? t.scBackLoop(stitches) : t.sc(stitches), stitches };
+    return backLoop
+        ? { from, to, instruction: t.scBackLoop(stitches), stitches, backLoop: true }
+        : { from, to, instruction: t.sc(stitches), stitches };
 }
 
 // Terugval voor aanroepen zonder vertaling (bv. in een los script of test).
@@ -65,4 +116,13 @@ export const englishPatternTerms: PatternTerms = {
     scBackLoop: (count) => `${count}sc BLO`,
     ovalStart: (chains, middle) => `ch ${chains}; starting in the 2nd ch from the hook: 3sc in that ch, ${middle}sc, 3sc in the last ch, then along the other side of the chain ${middle}sc`,
     tubeStart: (chains) => `ch ${chains} and join with a sl st into a ring without twisting; 1sc in each ch`,
+    flatRow: (row) => `Row ${row}`,
+    rowsStart: (chains, stitches) => `ch ${chains}; starting in the 2nd ch from the hook: ${stitches}sc`,
+    magicRing: (stitches) => `${stitches}sc in a magic ring`,
+    ch: (count) => `${count}ch`,
+    slst: (count) => `${count}sl st`,
+    hdc: (count) => `${count}hdc`,
+    dc: (count) => `${count}dc`,
+    tr: (count) => `${count}tr`,
+    phrase: (id, values) => fillIn(PHRASES[id], values),
 };

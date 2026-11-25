@@ -1,27 +1,20 @@
 import type React from "react";
 import Sphere from "./Sphere";
 import Arm from "./Arm";
-import { Cone, Cylinder, Disc, Dome, Embroidery, Oval, Tube } from "./SolidShape";
+import SolidShape from "./SolidShape";
 import type { ShapeComponentProps } from "./editor/types";
-import type { ShapeType } from "./shapeTypes";
+import { shapeDefinition } from "./shapes/registry";
+import type { ShapeSpace } from "./shapes/types";
 
-// Welk 3D-component bij welk vormtype hoort (editor en patroonpreview). Een oog is een bol
-// met een ander materiaal, een open bol een bol met een opening (zie Sphere.tsx); een
-// borduursel is een paar draadjes garen (zie geometry/embroideryGeometry.ts).
-export const SHAPE_COMPONENTS: Record<ShapeType, React.ComponentType<ShapeComponentProps>> = {
-    Sphere,
-    OpenSphere: Sphere,
-    Arm,
-    Cylinder,
-    Tube,
-    Cone,
-    Disc,
-    Oval,
-    Dome,
-    Eye: Sphere,
-    Embroidery,
+// Welk 3D-component bij een vorm hoort (editor en patroonpreview), naar de eigen ruimte van de
+// vorm (zie shapes/types.ts): een bol (ook oog en open bol, Sphere.tsx), de oude arm (Arm.tsx),
+// of al het andere (SolidShape.tsx, met de geometrie uit shapes/geometry3d.ts).
+const COMPONENTS: Record<ShapeSpace, React.ComponentType<ShapeComponentProps>> = {
+    sphere: Sphere,
+    arm: Arm,
+    solid: SolidShape,
 };
 
 export function shapeComponentFor(type: string): React.ComponentType<ShapeComponentProps> {
-    return SHAPE_COMPONENTS[type as ShapeType] ?? Sphere;
+    return COMPONENTS[shapeDefinition(type).space];
 }

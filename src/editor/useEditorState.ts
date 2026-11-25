@@ -77,6 +77,9 @@ export function useEditorState(amigurumiId: string) {
                 zoom: updatedShape.zoom,
                 stripes: updatedShape.stripes ?? [],
                 opening: updatedShape.opening ?? 0,
+                taper: updatedShape.taper ?? 0,
+                topWidth: updatedShape.topWidth ?? 0,
+                petals: updatedShape.petals ?? null,
                 detail: updatedShape.detail ?? null,
                 curvature: updatedShape.curvature ?? 0,
             });

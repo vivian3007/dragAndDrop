@@ -4,6 +4,9 @@ import type { ShapeMesh } from "./editor/types";
 import { isSolidShapeType } from "./geometry/solidGeometry";
 import {computeSphereSphereIntersection} from "./geometry/sphereIntersection";
 import {ARM_TOTAL_LOCAL_LENGTH} from "./geometry/armGeometry";
+import {applyEggShape} from "./geometry/sphereGeometry";
+import {eggTaper} from "./geometry/eggShape";
+import {shapeDefinition} from "./shapes/registry";
 
 // CSG boolean intersecties zijn duur en schalen met het aantal driehoeken van
 // de operanden. De zichtbare vormen (Sphere/Arm) zijn vrij hoog-poly voor een
@@ -24,7 +27,7 @@ function getCsgProxyGeometry(geometry: THREE.BufferGeometry): THREE.BufferGeomet
     }
 
     if (geometry.type === 'SphereGeometry') {
-        return new THREE.SphereGeometry(
+        const proxy = new THREE.SphereGeometry(
             params.radius,
             Math.min(params.widthSegments ?? MAX_CSG_SEGMENTS, MAX_CSG_SEGMENTS),
             Math.min(params.heightSegments ?? MAX_CSG_SEGMENTS, MAX_CSG_SEGMENTS),
@@ -33,6 +36,9 @@ function getCsgProxyGeometry(geometry: THREE.BufferGeometry): THREE.BufferGeomet
             params.thetaStart,
             params.thetaLength
         );
+        // Ei of peer (zie geometry/eggShape.ts): de grove kopie op dezelfde manier vervormen.
+        applyEggShape(proxy, geometry.userData.eggTaper ?? 0);
+        return proxy;
     }
 
     if (geometry.type === 'CylinderGeometry') {
@@ -127,7 +133,7 @@ export default function calculateIntersections(
     droppedShapes.forEach((shape) => {
         // Een borduursel ligt óp een onderdeel en wordt niet vastgenaaid; waar het zit rekent
         // patterns/embroidery.ts zelf uit.
-        if (shape.type === "Embroidery") return;
+        if (shapeDefinition(shape.type).attach === "embroidery") return;
         const mesh = scene.getObjectByProperty('uuid', shape.id);
         if (mesh instanceof THREE.Mesh) {
             if (!meshesArray.find((m) => m.id === shape.id)) {
@@ -164,7 +170,9 @@ export default function calculateIntersections(
                 const shapeB = shapeById.get(meshesArray[j].id);
 
                 // Oog en open bol = ook een bol (zie patterns/eyes.ts, geometry/sphereOpening.ts).
-                const isRound = (shape?: Shape) => shape?.type === "Sphere" || shape?.type === "OpenSphere" || shape?.type === "Eye";
+                // Een ei of peer niet: die is geen bol meer, dus via CSG hieronder.
+                const isRound = (shape?: Shape) =>
+                    !!shape && shapeDefinition(shape.type).space === "sphere" && eggTaper(shape) === 0;
                 if (isRound(shapeA) && isRound(shapeB)) {
                     const radiusA = getSphereWorldRadius(meshA);
                     const radiusB = getSphereWorldRadius(meshB);
@@ -319,7 +327,7 @@ export default function calculateIntersections(
                                 // T·R·S-opbouw en geometry/armGeometry.ts voor de kapje-afleiding.
                                 // Cilinder en kegel: zelfde opbouw als de Arm, maar lokale hoogte 1
                                 // (zie geometry/solidGeometry.ts).
-                                const referenceSize = self.shape?.type === "Arm"
+                                const referenceSize = shapeDefinition(self.shape?.type).space === "arm"
                                     ? self.mesh.scale.y * ARM_TOTAL_LOCAL_LENGTH
                                     : isSolidShapeType(self.shape?.type)
                                         ? self.mesh.scale.y

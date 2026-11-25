@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import { stripeColorAt } from "../patterns/colorChanges";
-import { meshScaleOf } from "./units";
-import { sphereOpening } from "./sphereOpening";
+import { shapeDefinition } from "../shapes/registry";
 import { crochetFraction } from "./shapeSpace";
 
 // Kleurwissels in 3D: elk hoekpunt van een vorm krijgt de kleur van de ronde waar het op ligt
@@ -34,16 +33,13 @@ export function paintStripes(geometry: THREE.BufferGeometry, shape: Shape, offse
     return geometry;
 }
 
-// Sleutel om geometrie opnieuw op te bouwen als kleur, kleurwissels of (bij vormen waar de
-// verhoudingen ertoe doen) de maat veranderen. Een borduursel hangt ook af van z'n soort en
-// de bolling van het oppervlak eronder.
-const SIZE_DEPENDENT = ["Cylinder", "Dome", "Oval", "Embroidery"];
+// Sleutel om geometrie opnieuw op te bouwen als kleur, kleurwissels of de vorm zelf veranderen
+// (wat dat laatste is, weet elke vorm zelf: geometryKey in shapes/definitions/).
 export function stripeKey(shape: Shape): string {
     return JSON.stringify([
+        shape.type,
         shape.color,
         shape.stripes ?? [],
-        SIZE_DEPENDENT.includes(shape.type) ? meshScaleOf(shape) : null,
-        sphereOpening(shape),
-        shape.type === "Embroidery" ? [shape.detail ?? null, shape.curvature ?? 0] : null,
+        shapeDefinition(shape.type).geometryKey?.(shape) ?? null,
     ]);
 }

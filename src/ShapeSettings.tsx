@@ -1,19 +1,28 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import {Checkbox} from "@mui/material";
-import { HexColorPicker } from "react-colorful";
+import { HexColorInput, HexColorPicker } from "react-colorful";
 import StripeEditor from "./editor/StripeEditor";
 import SphereOpeningEditor from "./editor/SphereOpeningEditor";
+import EggShapeEditor from "./editor/EggShapeEditor";
+import ConeTopEditor from "./editor/ConeTopEditor";
+import PetalsEditor from "./editor/PetalsEditor";
+import { shapeDefinition } from "./shapes/registry";
+import type { ShapeSetting } from "./shapes/types";
 import EmbroideryEditor from "./editor/EmbroideryEditor";
 import { pixelsPerCm } from "./geometry/units";
 import { useT } from "./i18n/LanguageProvider";
 
 const ColorPicker = memo(function ColorPicker({ color, onColorChange }: { color: string; onColorChange: (newColor: string) => void }) {
     return (
-        <HexColorPicker
-            style={{marginTop: "20px", marginBottom: "20px", marginLeft: "auto", marginRight: "auto", width: "180px", height: "140px"}}
-            color={color}
-            onChange={onColorChange}
-        />
+        // Volle breedte van het paneel, net als de velden erboven, met de hexcode eronder om een
+        // precieze kleur te typen of over te nemen.
+        <div className="color-picker">
+            <HexColorPicker color={color} onChange={onColorChange} />
+            <div className="input-text">
+                <label htmlFor="shape-color-hex">Hex</label>
+                <HexColorInput id="shape-color-hex" color={color} onChange={onColorChange} prefixed />
+            </div>
+        </div>
     );
 });
 
@@ -48,6 +57,8 @@ function ShapeSettings({
     activeShapeRef.current = activeShape;
     // Bollen zijn in 3D 2× zo groot als hun width (straal vs diameter), zie pixelsPerCm.
     const pxPerCm = pixelsPerCm(activeShape?.type);
+    // Welke extra instellingen deze vorm heeft, staat in z'n definitie (shapes/definitions/).
+    const hasSetting = (setting: ShapeSetting) => !!activeShape && shapeDefinition(activeShape.type).settings.includes(setting);
 
     const handleUpdate = (updates: Partial<Shape>) => {
         if (activeShape) {
@@ -268,14 +279,14 @@ function ShapeSettings({
                                 />
                             </div>
                         </div>
-                        {activeShape.type === "Embroidery" && (
+                        {hasSetting("embroidery") && (
                             <div className="shape-settings-group">
                                 <h3 className="shape-settings-title">{t("embroidery.title")}</h3>
                                 <EmbroideryEditor shape={activeShape} onChange={handleUpdate} />
                             </div>
                         )}
                         {/* Een borduursel krijgt z'n maat in millimeters in de EmbroideryEditor. */}
-                        {activeShape.type !== "Embroidery" && (
+                        {!hasSetting("embroidery") && (
                         <div className="shape-settings-group">
                             <h3 className="shape-settings-title">{t("shapeSettings.scaling")}</h3>
                             <div
@@ -288,11 +299,6 @@ function ShapeSettings({
                             >
                                 <label
                                     htmlFor="aspect-ratio"
-                                    style={{
-                                        fontWeight: 500,
-                                        fontSize: "1rem",
-                                        color: "#333",
-                                    }}
                                 >
                                     {t("shapeSettings.lockAspectRatio")}
                                 </label>
@@ -413,13 +419,31 @@ function ShapeSettings({
                             <h3 className="shape-settings-title">{t("shapeSettings.color")}</h3>
                             <ColorPicker color={shapeColor} onColorChange={handleColorChange} />
                         </div>
-                        {activeShape.type === "OpenSphere" && (
+                        {hasSetting("opening") && (
                             <div className="shape-settings-group">
                                 <h3 className="shape-settings-title">{t("opening.title")}</h3>
                                 <SphereOpeningEditor shape={activeShape} onChange={handleUpdate} />
                             </div>
                         )}
-                        {activeShape.type !== "Eye" && activeShape.type !== "Embroidery" && (
+                        {hasSetting("egg") && (
+                            <div className="shape-settings-group">
+                                <h3 className="shape-settings-title">{t("egg.title")}</h3>
+                                <EggShapeEditor shape={activeShape} onChange={handleUpdate} />
+                            </div>
+                        )}
+                        {hasSetting("coneTop") && (
+                            <div className="shape-settings-group">
+                                <h3 className="shape-settings-title">{t("coneTop.title")}</h3>
+                                <ConeTopEditor shape={activeShape} onChange={handleUpdate} />
+                            </div>
+                        )}
+                        {hasSetting("petals") && (
+                            <div className="shape-settings-group">
+                                <h3 className="shape-settings-title">{t(`petals.title.${activeShape.type}`)}</h3>
+                                <PetalsEditor shape={activeShape} onChange={handleUpdate} />
+                            </div>
+                        )}
+                        {hasSetting("stripes") && (
                             <div className="shape-settings-group">
                                 <h3 className="shape-settings-title">{t("stripes.title")}</h3>
                                 <StripeEditor shape={activeShape} yarnWeight={yarnWeight} onChange={(stripes) => handleUpdate({ stripes })} />

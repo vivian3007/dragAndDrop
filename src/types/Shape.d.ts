@@ -21,6 +21,14 @@ interface Shape {
     // Alleen bol: breedte van de opening als deel van de breedste doorsnede (0/leeg = dicht),
     // zie geometry/sphereOpening.ts.
     opening?: number | null;
+    // Alleen bol en open bol: hoe sterk hij aan de onderkant smaller toeloopt, van 0 (bol) via
+    // ei naar peer. Zie geometry/eggShape.ts.
+    taper?: number | null;
+    // Alleen kegel: breedte van de platte bovenkant als deel van de onderkant (0/leeg = punt),
+    // zie geometry/coneShape.ts.
+    topWidth?: number | null;
+    // Alleen bloem en ster: hoeveel blaadjes of punten (4–8, leeg = 5), zie shapes/motifs.ts.
+    petals?: number | null;
     // Alleen borduursel: welk detail ("mouth", "nose", "brow", "cheek") en hoe bol het oppervlak
     // eronder is (1/straal in cm), zodat het er plat op ligt. Zie patterns/embroidery.ts.
     detail?: string | null;

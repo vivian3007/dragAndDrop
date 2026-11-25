@@ -3,6 +3,7 @@
 // (zie Sphere.tsx/Arm.tsx voor de mesh.scale-berekening en ShapeSettings.tsx voor de
 // cm-conversie in de UI) — hou deze twee getallen hier als enige bron van waarheid.
 import { ARM_TOTAL_LOCAL_LENGTH } from "./armGeometry";
+import { shapeDefinition } from "../shapes/registry";
 
 export const PIXELS_PER_CM = 37.8;
 export const WORLD_SCALE_FACTOR = 0.01;
@@ -14,7 +15,7 @@ export const WORLD_SCALE_FACTOR = 0.01;
 // (vorminstellingen, patroongenerators) moet deze functie gebruiken, anders zijn bollen in
 // cijfers half zo groot als in 3D.
 export function pixelsPerCm(shapeType: string | null | undefined): number {
-    return shapeType === "Sphere" || shapeType === "OpenSphere" || shapeType === "Eye" ? PIXELS_PER_CM / 2 : PIXELS_PER_CM;
+    return shapeDefinition(shapeType).space === "sphere" ? PIXELS_PER_CM / 2 : PIXELS_PER_CM;
 }
 
 // Echte afmeting in cm van één as van een vorm (zoom meegerekend).
@@ -25,7 +26,7 @@ export function shapeDimensionCm(shape: Shape, axis: "width" | "height" | "lengt
 // Lokale hoogte van de 3D-geometrie per vormtype: de Arm heeft een kapje bovenop de cilinder
 // (zie armGeometry.ts), de andere vormen zijn 1 hoog (de bol: straal 1, zie pixelsPerCm).
 function localHeight(shapeType: string | null | undefined): number {
-    return shapeType === "Arm" ? ARM_TOTAL_LOCAL_LENGTH : 1;
+    return shapeDefinition(shapeType).space === "arm" ? ARM_TOTAL_LOCAL_LENGTH : 1;
 }
 
 // mesh.scale voor een vorm: width/height/length × zoom × WORLD_SCALE_FACTOR, waarbij de

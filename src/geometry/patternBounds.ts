@@ -1,5 +1,6 @@
 import { ARM_TOTAL_LOCAL_LENGTH } from "./armGeometry";
 import { PIXELS_PER_CM, WORLD_SCALE_FACTOR } from "./units";
+import { shapeDefinition } from "../shapes/registry";
 
 // Bewust zonder three.js: de detail-popup (op Home) gebruikt dit voor de afmetingen, en
 // three.js hoort pas geladen te worden als er echt een 3D-scene getoond wordt. Wie een
@@ -12,12 +13,13 @@ export type Bounds = { min: Vec3; max: Vec3 };
 // Lokale (ongeschaalde) bounding box per vorm-type, exact zoals de geometrie die
 // Sphere.tsx/Arm.tsx ook renderen — zie die bestanden voor de bijbehorende mesh-opbouw.
 function getLocalBounds(shape: Shape): Bounds {
-    if (shape.type === "Arm") {
+    const { space } = shapeDefinition(shape.type);
+    if (space === "arm") {
         return { min: [-0.5, 0, -0.5], max: [0.5, ARM_TOTAL_LOCAL_LENGTH, 0.5] };
     }
-    // Cilinder, buis, kegel, plat rondje/ovaal, halve bol, borduursel: diameter 1, hoogte 0..1
-    // (zie solidGeometry.ts).
-    if (["Cylinder", "Tube", "Cone", "Disc", "Oval", "Dome", "Embroidery"].includes(shape.type)) {
+    // Cilinder, kegel, plat rondje, halve bol, motieven enz.: diameter 1, hoogte 0..1 (zie
+    // shapes/types.ts).
+    if (space === "solid") {
         return { min: [-0.5, 0, -0.5], max: [0.5, 1, 0.5] };
     }
     // Sphere: eenheidsbol (radius 1) rond de oorsprong.
@@ -28,7 +30,7 @@ function getLocalBounds(shape: Shape): Bounds {
 // canvasHeight-termen daar vallen wiskundig weg, dus hier niet nodig).
 function getWorldScale(shape: Shape): Vec3 {
     const zoom = shape.zoom ?? 1;
-    const yScale = shape.type === "Arm" ? shape.height * zoom / ARM_TOTAL_LOCAL_LENGTH : shape.height * zoom;
+    const yScale = shapeDefinition(shape.type).space === "arm" ? shape.height * zoom / ARM_TOTAL_LOCAL_LENGTH : shape.height * zoom;
     return [shape.width * zoom * WORLD_SCALE_FACTOR, yScale * WORLD_SCALE_FACTOR, shape.length * zoom * WORLD_SCALE_FACTOR];
 }
 

@@ -5,15 +5,13 @@ import * as THREE from "three";
 import type {Camera} from "three";
 import { toast } from "react-toastify";
 import type { SetState } from "./editor/types";
-import { PALETTE_SHAPE_TYPES } from "./shapeTypes";
+import { PALETTE_GROUPS } from "./shapeTypes";
+import { hasShapeIcon, shapeDefinition } from "./shapes/registry";
+import ShapeIcon from "./ShapeIcon";
 import { snapIfTouching } from "./geometry/attach";
-import { embroideryDefaults } from "./patterns/embroidery";
 import {setDoc, doc} from "firebase/firestore";
 import {db} from "../firebase-config.js";
 
-
-// Dikte van een plat rondje (een laag vasten), in opslag-eenheden (zie units.ts): ±0,3 cm.
-const DISC_THICKNESS = 0.3 * 37.8;
 
 // Muis of vinger, als React-event of als gewoon DOM-event (de window-listeners hieronder).
 type PointerLikeEvent = MouseEvent | TouchEvent | React.MouseEvent | React.TouchEvent;
@@ -161,10 +159,8 @@ function Shapebar({ amigurumiId, shapes, setDroppedShapes, setActiveId, threeJsC
             worldPosition = { x: pos.x, y: pos.y, z: 0 };
         }
 
-        // Een oog is een veiligheidsoogje van 10 mm (bol-maat: straal, zie units.ts).
-        const eyeSize = 1 * 37.8 / 2;
-        const isEyeShape = shapeType === "Eye";
-        const isFlat = shapeType === "Disc" || shapeType === "Oval";
+        // In de maat van het vormpje in de balk; elke vorm kan daar z'n eigen standaard op zetten
+        // (een plat rondje is een laag garen dik, een oog 10 mm, ...: dropDefaults in z'n definitie).
         const newShape: Shape & { zIndex: number } = {
             id: uuidv4(),
             amigurumi_id: amigurumiId,
@@ -172,20 +168,17 @@ function Shapebar({ amigurumiId, shapes, setDroppedShapes, setActiveId, threeJsC
             x: worldPosition.x,
             y: worldPosition.y,
             z: 0,
-            // Plat ovaal: anderhalf keer zo lang als breed.
-            length: isEyeShape ? eyeSize : shapeType === "Oval" ? width * 1.6 : width,
-            width: isEyeShape ? eyeSize : width,
-            // Plat rondje/ovaal: de dikte van een laag garen; halve bol: half zo hoog als breed.
-            height: isEyeShape ? eyeSize : isFlat ? DISC_THICKNESS : shapeType === "Dome" ? width / 2 : height,
-            color: isEyeShape ? "#111111" : "#FFFFFF",
+            length: width,
+            width,
+            height,
+            color: "#FFFFFF",
             name: null,
             rotation_x: 0,
             rotation_y: 0,
             rotation_z: 0,
             zIndex: 10,
             zoom: 1,
-            // Borduursel: begint als mondje, in z'n eigen maat en kleur.
-            ...(shapeType === "Embroidery" ? embroideryDefaults("mouth") : {}),
+            ...shapeDefinition(shapeType).dropDefaults?.({ width, height }),
         };
 
         // Neergezet tegen (of in) een andere vorm: meteen netjes aansluiten.
@@ -240,13 +233,16 @@ function Shapebar({ amigurumiId, shapes, setDroppedShapes, setActiveId, threeJsC
         <div className="shapebar">
 
             <h1 className="shapes-text">{t("shapebar.title")}</h1>
+            {PALETTE_GROUPS.map(({ category, types }) => (
+            <React.Fragment key={category}>
+            <h2 className="palette-group-title">{t(`shapebar.group.${category}`)}</h2>
             <div className={"draggables"}>
-                {PALETTE_SHAPE_TYPES.map((type) => (
+                {types.map((type) => (
                     <div key={type} className="palette-item">
                         {/* Vak om de vorm heen: in de vormenstrook op de telefoon kleiner (zie styles.css). */}
                         <div className="palette-shape-box">
                         <div
-                            className={`draggable-shape ${type}`}
+                            className={`draggable-shape ${type}${hasShapeIcon(type) ? " has-icon" : ""}`}
                             role="button"
                             aria-label={t(`shapes.${type}`)}
                             title={t(`shapes.${type}.hint`)}
@@ -257,16 +253,20 @@ function Shapebar({ amigurumiId, shapes, setDroppedShapes, setActiveId, threeJsC
                             onTouchMove={handleTouchMove}
                             onTouchEnd={handleTouchEnd}
                             onTouchCancel={handleTouchCancel}
-                        />
+                        >
+                            <ShapeIcon type={type} />
+                        </div>
                         </div>
                         <span className="palette-label">{t(`shapes.${type}`)}</span>
                     </div>
                 ))}
             </div>
+            </React.Fragment>
+            ))}
             {dragging && currentShape && (
                 <div
                     ref={dragItemRef}
-                    className={`draggable-shape ${currentShape}`}
+                    className={`draggable-shape ${currentShape}${hasShapeIcon(currentShape) ? " has-icon" : ""}`}
                     style={{
                         // Fixed: de positie is in schermcoördinaten, ook als de pagina gescrold is.
                         position: "fixed",
@@ -275,7 +275,7 @@ function Shapebar({ amigurumiId, shapes, setDroppedShapes, setActiveId, threeJsC
                         zIndex: 10,
                     }}
                 >
-                    {/*{shapes.find((shape) => shape.type === currentShape)?.label}*/}
+                    <ShapeIcon type={currentShape} />
                 </div>
             )}
         </div>

@@ -2,6 +2,8 @@ import { decreaseRow, englishPatternTerms, evenRows, increaseRow, PatternRow, Pa
 import { shapeDimensionCm } from "../geometry/units";
 import { maxStitchesForDiameter, STITCH_WIDTH_PER_ROW_HEIGHT } from "./stitchGeometry";
 import { sphereEndAngle, sphereOpening } from "../geometry/sphereOpening";
+import { eggFactor, eggTaper } from "../geometry/eggShape";
+import { stitchesToRows } from "./stitchSequence";
 
 const generateSpherePattern = (singleShape: Shape, yarnWeight: string, rowHeights: Record<string, number>, intersections: Intersection[], t: PatternTerms = englishPatternTerms) => {
     const rowHeightCm = rowHeights[yarnWeight] ?? rowHeights.Medium;
@@ -12,9 +14,11 @@ const generateSpherePattern = (singleShape: Shape, yarnWeight: string, rowHeight
     // loodrecht op is het gemiddelde van de twee andere assen (een "cirkel met
     // gelijkwaardige omtrek").
     // Met een opening (geometry/sphereOpening.ts) wordt er altijd naar de opening toe gehaakt:
-    // langs de eigen hoogte-as, met breedte en lengte als doorsnede.
+    // langs de eigen hoogte-as, met breedte en lengte als doorsnede. Een ei (eggShape.ts) ook:
+    // dat loopt langs z'n eigen hoogte-as toe.
+    const taper = eggTaper(singleShape);
     const isOpen = sphereOpening(singleShape) > 0;
-    const [crossA, crossB, axisCm] = isOpen
+    const [crossA, crossB, axisCm] = isOpen || taper > 0
         ? [shapeDimensionCm(singleShape, "width"), shapeDimensionCm(singleShape, "length"), shapeDimensionCm(singleShape, "height")]
         : [
             shapeDimensionCm(singleShape, "width"),
@@ -35,11 +39,32 @@ const generateSpherePattern = (singleShape: Shape, yarnWeight: string, rowHeight
     // en blijft de bol open; anders tot 6 en naai je dicht.
     const opening = sphereOpening(singleShape);
     const closed = opening === 0;
-    const openingStitches = closed ? 6 : Math.min(maxStitches, Math.max(6, Math.round((opening * maxStitches) / 6) * 6));
+    // Bij een ei zit de opening aan de smalle kant, en is hij dus smaller dan bij een bol.
+    const openingWidth = opening * eggFactor(-Math.sqrt(1 - opening * opening), taper);
+    const openingStitches = closed ? 6 : Math.min(maxStitches, Math.max(6, Math.round((openingWidth * maxStitches) / 6) * 6));
     const decRows = (maxStitches - openingStitches) / 6; // M-6 t/m de opening (of 6)
     const endAngle = sphereEndAngle(opening);
     const scRows = Math.max(0, maxStitches / 6 + Math.round((axisCm - crossCm) / rowHeightCm));
     const rows = incRows + scRows + decRows;
+
+    // Wat elk patroon van een bol meegeeft, naast de rondes zelf.
+    const result = (incRowCount: number, lastRow: number, stitchCount: number) => ({
+        type: singleShape.type,
+        color: singleShape.color,
+        name: singleShape.name,
+        width: singleShape.width,
+        height: singleShape.height,
+        rotation_x: singleShape.rotation_x,
+        rotation_y: singleShape.rotation_y,
+        rotation_z: singleShape.rotation_z,
+        rows,
+        incRows: incRowCount,
+        // Dicht: Pattern.tsx zet er "begin met vullen" en de slotronde (6 min) bij.
+        closed,
+        flat: false,
+        lastRow,
+        stitchCount,
+    });
 
     const rowArray: number[] = [];
     const incArray: PatternRow[] = [];
@@ -107,6 +132,26 @@ const generateSpherePattern = (singleShape: Shape, yarnWeight: string, rowHeight
         rowArray.push(i);
     }
 
+    if (taper > 0) {
+        const egg = eggRows(rows, incRows, scRows, maxStitches, openingStitches, closed, endAngle, taper);
+        const lastSplit = closed ? rows - 1 : rows; // de slotronde (6 min) schrijft Pattern.tsx
+        const split = (from: number, to: number) => stitchesToRows(t, egg, from, to);
+        const peak = Math.max(...egg);
+        const firstPeak = egg.indexOf(peak) + 1;
+        const lastPeak = egg.lastIndexOf(peak) + 1;
+        incArray.push(...split(2, firstPeak));
+        scArray.push(...split(firstPeak + 1, lastPeak));
+        decArray.push(...split(lastPeak + 1, lastSplit));
+        return {
+            ...result(firstPeak, rows, egg.reduce((sum, n) => sum + n, 0)),
+            incArray,
+            scArray,
+            decArray,
+            rowArray,
+            intersectionRows,
+        };
+    }
+
     // Ronde 1 (magische ring, 6) schrijft Pattern.tsx zelf; vanaf ronde 2 komen ze hier vandaan.
     for (let row = 2; row <= incRows; row++) {
         incArray.push(increaseRow(t, row, (row - 1) * 6));
@@ -134,21 +179,7 @@ const generateSpherePattern = (singleShape: Shape, yarnWeight: string, rowHeight
     for (let stitches = maxStitches - 6; stitches >= openingStitches; stitches -= 6) stitchCount += stitches;
 
     return {
-        type: singleShape.type,
-        color: singleShape.color,
-        name: singleShape.name,
-        width: singleShape.width,
-        height: singleShape.height,
-        rotation_x: singleShape.rotation_x,
-        rotation_y: singleShape.rotation_y,
-        rotation_z: singleShape.rotation_z,
-        rows,
-        incRows,
-        // Dicht: Pattern.tsx zet er "begin met vullen" en de slotronde (6 min) bij.
-        closed,
-        flat: false,
-        lastRow,
-        stitchCount,
+        ...result(incRows, lastRow, stitchCount),
         incArray,
         scArray,
         decArray,
@@ -156,5 +187,36 @@ const generateSpherePattern = (singleShape: Shape, yarnWeight: string, rowHeight
         intersectionRows,
     };
 };
+
+// Steken per ronde (index 0 = ronde 1) van een ei (geometry/eggShape.ts): de rondes van de
+// gewone bol met dezelfde maat, elk zo veel smaller als het ei op die hoogte is. Aan de brede
+// kant meerder je dus net zo snel als bij een bol; naar de smalle kant toe begint het minderen
+// eerder en gaat het geleidelijker, met rechte rondes ertussen. Altijd per ronde 0 of 6 steken
+// erbij of eraf, eerst alleen erbij en dan alleen eraf. De laatste ronde is bij een open bol
+// precies de opening; een dichte bol mindert tot 12 en sluit af met de slotronde (6 min).
+function eggRows(rows: number, incRows: number, scRows: number, maxStitches: number, opening: number, closed: boolean, endAngle: number, taper: number): number[] {
+    // Tot en met de ronde vóór de slotronde.
+    const last = closed ? rows - 1 : rows;
+    const end = closed ? 12 : opening;
+    const sphereAt = (row: number) =>
+        row <= incRows ? row * 6 : row <= incRows + scRows ? maxStitches : maxStitches - (row - incRows - scRows) * 6;
+    const result = [6];
+    let decreasing = false;
+    for (let row = 2; row <= last; row++) {
+        const previous = result[row - 2];
+        // Hoogte van deze ronde op de bol: gelijke stappen in de poolhoek (zoals toRow).
+        const y = Math.cos((endAngle * (row - 1)) / Math.max(1, rows - 1));
+        const target = Math.min(maxStitches, Math.round((sphereAt(row) * eggFactor(y, taper)) / 6) * 6);
+        // Niet meer dan je vóór de laatste ronde nog kunt minderen.
+        const reachable = end + (last - row) * 6;
+        const high = Math.min(decreasing ? previous : previous + 6, reachable);
+        const low = row === last ? end : Math.max(end, previous - 6);
+        const stitches = Math.max(low, Math.min(high, target));
+        if (stitches < previous) decreasing = true;
+        result.push(stitches);
+    }
+    if (closed) result.push(6);
+    return result;
+}
 
 export default generateSpherePattern;

@@ -1,11 +1,11 @@
 import * as THREE from 'three';
 import { ARM_TOTAL_LOCAL_LENGTH } from './geometry/armGeometry';
 import { computePatternBox } from './geometry/patternBox';
-import { createSolidGeometry, isSolidShapeType } from './geometry/solidGeometry';
+import { createShapeGeometry } from './shapes/geometry3d';
+import { shapeDefinition } from './shapes/registry';
 import { WORLD_SCALE_FACTOR } from './geometry/units';
 import { addYarnLights, STITCH_TEXTURE_URL, stitchTextureFor, YARN_MATERIAL, YARN_TINT } from './geometry/yarnLook';
 import { paintStripes } from './geometry/stripes';
-import { sphereEndAngle, sphereOpening } from './geometry/sphereOpening';
 
 // Maakt een stilstaand plaatje van een ontwerp, als fallback voor kaarten zonder foto.
 // Bewust geen <Canvas> per kaart: browsers staan maar ~16 WebGL-contexten tegelijk toe,
@@ -50,7 +50,7 @@ function buildShape(shape: Shape, baseTexture: THREE.Texture): THREE.Object3D {
     });
     const object = new THREE.Group();
 
-    if (shape.type === 'Arm') {
+    if (shapeDefinition(shape.type).space === 'arm') {
         const cylinder = new THREE.Mesh(paintStripes(new THREE.CylinderGeometry(0.5, 0.5, 1, 48, 1, true), shape, 0.5), material);
         cylinder.position.y = 0.5;
         const cap = new THREE.Mesh(paintStripes(new THREE.SphereGeometry(0.5, 48, 24), shape, 1), material);
@@ -64,13 +64,12 @@ function buildShape(shape: Shape, baseTexture: THREE.Texture): THREE.Object3D {
     } else {
         // Bol: eenheidsbol; cilinder en kegel: zie geometry/solidGeometry.ts. Alle drie met
         // dezelfde schaal (width/height/length × zoom).
-        const geometry = isSolidShapeType(shape.type)
-            ? createSolidGeometry(shape.type, shape)
-            : new THREE.SphereGeometry(1, 64, 48, 0, Math.PI * 2, 0, sphereEndAngle(sphereOpening(shape)));
+        const geometry = createShapeGeometry(shape);
         const eyeMaterial = new THREE.MeshPhysicalMaterial({ color: shape.color ?? '#111111', roughness: 0.15, clearcoat: 1 });
         // Borduurdraad: gewoon mat garen in z'n kleur (zie SolidShape.tsx).
         const threadMaterial = new THREE.MeshStandardMaterial({ roughness: 1, metalness: 0, vertexColors: true, color: YARN_TINT });
-        const materialFor = { Eye: eyeMaterial, Embroidery: threadMaterial }[shape.type] ?? material;
+        const definition = shapeDefinition(shape.type);
+        const materialFor = shape.type === 'Eye' ? eyeMaterial : definition.attach === 'embroidery' ? threadMaterial : material;
         object.add(new THREE.Mesh(paintStripes(geometry, shape), materialFor));
         object.scale.set(
             (shape.width ?? 50) * zoom * WORLD_SCALE_FACTOR,

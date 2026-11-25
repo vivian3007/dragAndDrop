@@ -1,35 +1,14 @@
-import generateSpherePattern from "./generateSpherePattern";
-import generateArmPattern from "./generateArmPattern";
-import generateCylinderPattern from "./generateCylinderPattern";
-import generateConePattern from "./generateConePattern";
-import generateDiscPattern from "./generateDiscPattern";
-import generateDomePattern from "./generateDomePattern";
-import generateOvalPattern from "./generateOvalPattern";
-import generateTubePattern from "./generateTubePattern";
 import { englishPatternTerms, PatternTerms } from "./patternTerms";
 import { applyStripes } from "./colorChanges";
-
-// Welke patroongenerator bij welk vormtype hoort. Eén plek, zodat de patroonpagina en de
-// garenschatting altijd dezelfde vormen kennen. Ogen en borduursels hebben geen eigen
-// patroon (zie eyes.ts en embroidery.ts).
-const generators = {
-    Sphere: generateSpherePattern,
-    OpenSphere: generateSpherePattern,
-    Arm: generateArmPattern,
-    Cylinder: generateCylinderPattern,
-    Tube: generateTubePattern,
-    Cone: generateConePattern,
-    Disc: generateDiscPattern,
-    Oval: generateOvalPattern,
-    Dome: generateDomePattern,
-};
-
-type GeneratedPattern = ReturnType<(typeof generators)[keyof typeof generators]>;
+import { shapeDefinition, isKnownShapeType } from "../shapes/registry";
+import type { GeneratedPattern } from "../shapes/types";
 
 // Het uitgewerkte patroon van één vorm, met de kleurwissels erin verwerkt (zie colorChanges.ts).
 export type PatternPart = ReturnType<typeof applyStripes<GeneratedPattern>>;
 
-// Het uitgewerkte patroon van één vorm, of null voor een onbekend vormtype.
+// Het uitgewerkte patroon van één vorm, of null voor een onbekend vormtype en voor iets dat
+// geen eigen onderdeel is (ogen en borduursels, zie eyes.ts en embroidery.ts). Welke generator
+// bij een vorm hoort, staat in z'n definitie (shapes/definitions/).
 export function generatePattern(
     shape: Shape,
     yarnWeight: string,
@@ -37,6 +16,7 @@ export function generatePattern(
     intersections: Intersection[],
     t: PatternTerms = englishPatternTerms,
 ): PatternPart | null {
-    const generate = generators[shape.type as keyof typeof generators];
+    if (!isKnownShapeType(shape.type)) return null;
+    const generate = shapeDefinition(shape.type).pattern;
     return generate ? applyStripes(generate(shape, yarnWeight, rowHeights, intersections, t), shape.stripes) : null;
 }

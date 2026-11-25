@@ -1,8 +1,6 @@
 import * as THREE from "three";
-import { ARM_TOTAL_LOCAL_LENGTH } from "./armGeometry";
-import { halfEllipsePerimeter } from "../patterns/stitchGeometry";
 import { shapeDimensionCm } from "./units";
-import { domeCapFraction, domeLengths } from "./domeShape";
+import { shapeDefinition } from "../shapes/registry";
 
 // Hoe een vorm er in 3D uitziet: als gehaakt garen. Gedeeld door de editor, de
 // patroonpreview (via useStitchTexture/YarnLights) en de ontwerp-snapshots.
@@ -23,41 +21,8 @@ export function stitchRepeat(shape: Shape): [number, number] {
     const height = shapeDimensionCm(shape, "height");
     const length = shapeDimensionCm(shape, "length");
     const diameter = (width + length) / 2;
-    let around = Math.PI * diameter;
-
-    let along: number;
-    switch (shape.type) {
-        case "Arm":
-            // De textuur ligt over het cilinderdeel; het kapje is de rest van de lengte.
-            along = height / ARM_TOTAL_LOCAL_LENGTH;
-            break;
-        case "Cylinder":
-        case "Tube":
-            along = height;
-            break;
-        case "Cone":
-            along = Math.hypot(height, diameter / 2);
-            break;
-        case "Disc":
-            // Vanuit het midden naar de rand.
-            along = diameter / 2;
-            break;
-        case "Oval": {
-            // Rond het rechte middenstuk: de omtrek van een ovaal met rechte zijkanten, en
-            // vanuit het middenstuk naar de rand.
-            const short = Math.min(width, length);
-            around = Math.PI * short + 2 * Math.abs(width - length);
-            along = short / 2;
-            break;
-        }
-        case "Dome":
-            // Over het kapje en (als die er is) de buis.
-            along = domeLengths(diameter, height, domeCapFraction(shape)).total;
-            break;
-        default:
-            // Bol: van pool tot pool.
-            along = halfEllipsePerimeter(diameter / 2, height / 2);
-    }
+    // Elke vorm weet zelf hoe ver het rond en langs het werk is (zie shapes/definitions/).
+    const { around, along } = shapeDefinition(shape.type).yarnSize(shape, { width, height, length, diameter });
     return [Math.max(around / TILE_WIDTH_CM, 0.05), Math.max(along / TILE_HEIGHT_CM, 0.05)];
 }
 
