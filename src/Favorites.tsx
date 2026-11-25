@@ -1,3 +1,4 @@
+import { FavoriteBorder } from '@mui/icons-material';
 import PatternBrowser from './PatternBrowser.tsx';
 import { useDesignsWhereIn } from './useDesignsWhereIn.ts';
 import { useFavorites } from './favorites/FavoritesProvider';
@@ -15,6 +16,7 @@ const Favorites = () => {
             loading={loading || !favoritesLoaded}
             error={error}
             emptyMessage={t('favorites.empty')}
+            emptyIcon={<FavoriteBorder />}
         />
     );
 };

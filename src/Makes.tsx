@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Box, Button, Card, CircularProgress, DialogContent, IconButton, TextField, Typography } from '@mui/material';
-import { CameraAlt, Delete } from '@mui/icons-material';
+import { CameraAlt, Delete, PhotoCameraOutlined } from '@mui/icons-material';
+import EmptyState from './EmptyState.tsx';
 import { collection, deleteDoc, doc, getDocs, onSnapshot, query, serverTimestamp, setDoc, where } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '../firebase-config.js';
@@ -230,26 +231,32 @@ const Makes = ({
 
     const previewSrc = imageFile ? URL.createObjectURL(imageFile) : null;
 
+    const addButton = loggedInUser && (
+        <Button
+            size="small"
+            variant="outlined"
+            startIcon={<CameraAlt />}
+            sx={{ flexDirection: 'row' }}
+            onClick={openForm}
+        >
+            {t('makes.add')}
+        </Button>
+    );
+    const isEmpty = !loading && makes.length === 0;
+
     return (
         <Box sx={{ mt: showTitle ? 3 : 0 }}>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 1, mb: 1.5 }}>
-                {showTitle ? <h3 style={{ margin: 0 }}>{t('makes.title')}</h3> : <span />}
-                {loggedInUser && (
-                    <Button
-                        size="small"
-                        variant="outlined"
-                        startIcon={<CameraAlt />}
-                        sx={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)', flexDirection: 'row' }}
-                        onClick={openForm}
-                    >
-                        {t('makes.add')}
-                    </Button>
-                )}
-            </Box>
+            {/* Leeg: de knop staat in de lege staat zelf, dus de kopregel alleen bij een titel. */}
+            {(showTitle || !isEmpty) && (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 1, mb: 1.5 }}>
+                    {showTitle ? <h3 style={{ margin: 0 }}>{t('makes.title')}</h3> : <span />}
+                    {!isEmpty && addButton}
+                </Box>
+            )}
             {loading ? (
                 <CardGridSkeleton count={2} columnWidth={240} withTags={false} withActions={false} />
-            ) : makes.length === 0 ? (
-                <Typography sx={{ opacity: 0.8 }}>{t('makes.empty')}</Typography>
+            ) : isEmpty ? (
+                <EmptyState icon={<PhotoCameraOutlined />} actions={addButton || undefined}>{t('makes.empty')}</EmptyState>
             ) : (
                 <MakeGrid makes={makes} caption="maker" onDelete={handleDelete} onNavigate={onNavigate} columnWidth={240} />
             )}
@@ -276,7 +283,7 @@ const Makes = ({
                             variant="contained"
                             fullWidth
                             disabled={saving}
-                            sx={{ mt: 2, backgroundColor: 'var(--color-primary)', color: 'var(--color-bg)', paddingY: 2 }}
+                            sx={{ mt: 2, paddingY: 2 }}
                         >
                             {saving ? <CircularProgress size={24} /> : t('makes.save')}
                         </Button>

@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Typography } from '@mui/material';
+import { Button } from '@mui/material';
+import { ErrorOutline, Inventory2Outlined, SearchOff } from '@mui/icons-material';
+import EmptyState from './EmptyState.tsx';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase-config.js';
@@ -13,11 +15,11 @@ import { filterAndSortAmigurumis, SortOption } from './filterAmigurumis.ts';
 import { useDebouncedValue } from './useDebouncedValue.ts';
 import { useDesignSearch } from './useDesignSearch.ts';
 import { useStableArray } from './useStableArray.ts';
+import { uniqueTags } from './tags.ts';
 import { useResponsiveMinColumns } from './useResponsiveMinColumns.ts';
 import { useT } from './i18n/LanguageProvider';
 import { useFavorites } from './favorites/FavoritesProvider';
 
-const messageSx = { px: { xs: '8px', sm: '24px', md: '40px' } };
 
 const NO_DESIGNS: Amigurumi[] = [];
 
@@ -40,7 +42,7 @@ const LoadMore = ({ onLoadMore, busy }: { onLoadMore: () => void; busy: boolean 
     }, [onLoadMore, busy]);
     return (
         <div ref={ref} className="load-more">
-            <Button variant="outlined" onClick={onLoadMore} disabled={busy} sx={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}>
+            <Button variant="outlined" onClick={onLoadMore} disabled={busy}>
                 {t(busy ? 'patterns.loadingMore' : 'patterns.loadMore')}
             </Button>
         </div>
@@ -63,6 +65,8 @@ const PatternBrowser = ({
     serverSide = false,
     actions,
     emptyMessage,
+    emptyIcon,
+    showOwner = true,
 }: {
     amigurumis?: Amigurumi[];
     loading?: boolean;
@@ -72,6 +76,10 @@ const PatternBrowser = ({
     actions?: React.ReactNode;
     // Getoond als er überhaupt geen ontwerpen zijn (los van zoeken/filteren).
     emptyMessage?: React.ReactNode;
+    // Icoon bij die lege staat (bv. een hartje bij Favorieten).
+    emptyIcon?: React.ReactNode;
+    // Van wie elk ontwerp is op de kaarten tonen (uit op Mijn patronen: altijd van jou).
+    showOwner?: boolean;
 }) => {
     const navigate = useNavigate();
     const minColumns = useResponsiveMinColumns();
@@ -98,7 +106,8 @@ const PatternBrowser = ({
         });
     }, [serverSide, server.amigurumis]);
     const availableTags = useStableArray(
-        Array.from(new Set(serverSide ? [...seenTags, ...selectedTags] : amigurumis.flatMap((a) => a.tags ?? []))).sort()
+        // Eén keer per tag, ongeacht hoofdletters ("Dier" en "dier" zijn dezelfde).
+        uniqueTags(serverSide ? [...seenTags, ...selectedTags] : amigurumis.flatMap((a) => a.tags ?? [])).sort((a, b) => a.localeCompare(b))
     );
 
     const filteredAmigurumis = useMemo(
@@ -133,7 +142,25 @@ const PatternBrowser = ({
     }, [navigate]);
 
     if (loadError) {
-        return <Typography color="error">{t('patterns.loadError', { message: loadError.message })}</Typography>;
+        return (
+            <div className="my-pattern">
+                <EmptyState icon={<ErrorOutline />} tone="error">
+                    {t('patterns.loadError', { message: loadError.message })}
+                </EmptyState>
+            </div>
+        );
+    }
+
+    // Nog helemaal niets (los van zoeken/filteren): geen filterbalk om niets te filteren, maar
+    // een lege staat met uitleg; de knoppen uit de filterbalk (bv. Nieuw patroon) staan erin.
+    if (!isLoading && amigurumis.length === 0 && emptyMessage && !serverSide) {
+        return (
+            <div className="my-pattern">
+                <EmptyState icon={emptyIcon ?? <Inventory2Outlined />} actions={actions}>
+                    {emptyMessage}
+                </EmptyState>
+            </div>
+        );
     }
 
     return (
@@ -152,10 +179,8 @@ const PatternBrowser = ({
             />
             {isLoading ? (
                 <CardGridSkeleton className="my-pattern-container" />
-            ) : amigurumis.length === 0 && emptyMessage ? (
-                <Typography component="div" sx={messageSx}>{emptyMessage}</Typography>
             ) : filteredAmigurumis.length === 0 ? (
-                <Typography sx={messageSx}>{t('patterns.noResults')}</Typography>
+                <EmptyState icon={<SearchOff />}>{t('patterns.noResults')}</EmptyState>
             ) : (
                 <MasonryGrid
                     className="my-pattern-container"
@@ -170,6 +195,7 @@ const PatternBrowser = ({
                             amigurumi={amigurumi}
                             onPatternClick={handlePatternClick}
                             onCardClick={setSelectedAmigurumi}
+                            showOwner={showOwner}
                         />
                     )}
                 />

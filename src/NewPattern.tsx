@@ -12,6 +12,7 @@ import { uploadPatternImage } from './uploadImage.ts';
 import { useT } from './i18n/LanguageProvider';
 import { buildCopiedFrom, saveAmigurumiCopy } from './copyAmigurumi.ts';
 import { searchFields } from './searchTerms.js';
+import { formatTag, sameTag, uniqueTags } from './tags.ts';
 
 // Dient als "nieuw patroon aanmaken" (navigeert na opslaan naar de editor),
 // "patroon-details bewerken" (via editingAmigurumi, blijft in de details-dialoog) én
@@ -58,7 +59,8 @@ const NewPattern = ({
             setFormData({
                 name: isCopying ? t('newPattern.copyName', { name: copySource!.name }) : prefill?.name ?? '',
                 height: prefill?.height ? String(prefill.height) : '',
-                tags: prefill?.tags ?? [],
+                // Oude tags ("dier", dubbel met andere hoofdletters) meteen netjes.
+                tags: uniqueTags(prefill?.tags ?? []),
                 yarn_id: editingAmigurumi?.yarn_id ?? '',
                 notes: prefill?.notes ?? '',
                 // Een kopie begint gewoon kopieerbaar; bewerken toont de huidige keuze.
@@ -82,14 +84,17 @@ const NewPattern = ({
         setTagInput(e.target.value);
     };
 
+    // "dier" wordt "Dier"; een tag die er al is (ook met andere hoofdletters) komt er niet dubbel bij.
     const handleAddTag = () => {
-        if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
+        const tag = formatTag(tagInput);
+        if (!tag) return;
+        if (!formData.tags.some((existing) => sameTag(existing, tag))) {
             setFormData((prev) => ({
                 ...prev,
-                tags: [...prev.tags, tagInput.trim()],
+                tags: [...prev.tags, tag],
             }));
-            setTagInput('');
         }
+        setTagInput('');
     };
 
     const handleDeleteTag = (tagToDelete: string) => {
@@ -123,13 +128,13 @@ const NewPattern = ({
                 const updatedFields = {
                     name: formData.name.trim(),
                     height: formData.height ? Number(formData.height) : null,
-                    tags: formData.tags,
+                    tags: uniqueTags(formData.tags),
                     yarn_id: formData.yarn_id.trim() || null,
                     notes: formData.notes.trim() || null,
                     imageUrl,
                     allowCopy: formData.allowCopy,
                     // Zoekvelden lopen mee met naam en tags (zie searchTerms.js).
-                    ...searchFields(formData.name.trim(), formData.tags),
+                    ...searchFields(formData.name.trim(), uniqueTags(formData.tags)),
                 };
                 await updateDoc(doc(db, 'amigurumi', editingAmigurumi.id), updatedFields);
                 onSaved?.({ ...editingAmigurumi, ...updatedFields });
@@ -140,7 +145,7 @@ const NewPattern = ({
                     id: amigurumiId,
                     name: formData.name.trim(),
                     height: formData.height ? Number(formData.height) : null,
-                    tags: formData.tags,
+                    tags: uniqueTags(formData.tags),
                     yarn_id: formData.yarn_id.trim() || null,
                     user_id: loggedInUser,
                     createdAt: serverTimestamp(),
@@ -148,7 +153,7 @@ const NewPattern = ({
                     imageUrl,
                     allowCopy: formData.allowCopy,
                     favoriteCount: 0,
-                    ...searchFields(formData.name.trim(), formData.tags),
+                    ...searchFields(formData.name.trim(), uniqueTags(formData.tags)),
                 };
 
                 if (isCopying && copySource) {
@@ -225,13 +230,14 @@ const NewPattern = ({
                                 <Button
                                     onClick={handleAddTag}
                                     variant="contained"
-                                    sx={{ ml: 1, backgroundColor: "var(--color-primary)", color: "var(--color-bg)" }}
+                                    sx={{ ml: 1 }}
                                     disabled={!tagInput.trim()}
                                 >
                                     {t('newPattern.addTag')}
                                 </Button>
                             </Box>
-                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                            {/* Alleen ruimte innemen als er tags zijn; anders stond er een leeg gat. */}
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: formData.tags.length > 0 ? 2 : 0 }}>
                                 {formData.tags.map((tag) => (
                                     <Chip
                                         key={tag}
@@ -278,7 +284,7 @@ const NewPattern = ({
                                 type="submit"
                                 variant="contained"
                                 fullWidth
-                                sx={{ width: 1, backgroundColor: "var(--color-primary)", color: "var(--color-bg)", paddingY: 2 }}
+                                sx={{ width: 1, paddingY: 2 }}
                                 disabled={loading}
                             >
                                 {loading ? <CircularProgress size={24} /> : t('newPattern.save')}

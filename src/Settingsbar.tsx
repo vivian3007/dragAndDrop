@@ -15,9 +15,6 @@ function Settingsbar({
                                         amigurumiId,
                                         activeShape,
                                         onUpdateShape,
-                                        onDeleteShape,
-                                        onMirrorShape,
-                                        onAttachShape,
                                         shapeColor,
                                         setShapeColor,
                                         droppedShapes,
@@ -30,16 +27,14 @@ function Settingsbar({
     amigurumiId: string,
     activeShape: Shape | undefined,
     onUpdateShape: (shape: Shape) => void,
-    onDeleteShape: (id: string) => void,
-    onMirrorShape: (id: string) => void,
-    onAttachShape: (id: string) => void,
     shapeColor: string,
     setShapeColor: (color: string) => void,
     droppedShapes: Shape[],
     onUpdateYarnInfo: (yarn: Yarn) => void,
     yarnInfo: Yarn,
-    // Telefoon (instellingenpaneel onderin de editor): de knoppen onderaan in één rij, met
-    // iconen voor aansluiten/spiegelen/verwijderen, zodat de instellingen zelf ruimte houden.
+    // Telefoon (instellingenpaneel onderin de editor): onderaan alleen Opslaan bij het garen.
+    // Aansluiten/spiegelen/verwijderen staan op de laptop in de balk over het canvas
+    // (CanvasToolbar) en op de telefoon in de contextbalk (ShapeContextBar).
     compact?: boolean,
     // Telefoon: sluitknop naast de tabbladen, om het paneel dicht te klappen.
     onClose?: () => void,
@@ -141,9 +136,8 @@ function Settingsbar({
                             type="button"
                             size="small"
                             variant="outlined"
-                            color="inherit"
+                            color="primary"
                             className={yarnDirty ? "save-btn-dirty" : ""}
-                            sx={{borderColor: "var(--color-primary)", color: "var(--color-primary)"}}
                             onClick={() => yarnSettingsRef.current?.save()}
                         >
                             {t("editor.save")}
@@ -152,51 +146,16 @@ function Settingsbar({
                 )
             ) : (
             <div className="settings-bar-footer" style={{marginBottom: 20, alignItems: "center", display: "flex", flexDirection: "column"}}>
-                {!showYarnSettings && activeShape && (
-                    <div style={{ display: "flex", gap: 8, width: "100%", marginBottom: 10 }}>
-                        <Button
-                            type="button"
-                            variant="outlined"
-                            color="inherit"
-                            title={t("editor.attachShapeHint")}
-                            sx={{flex: 1, borderColor: "var(--color-primary)", color: "var(--color-primary)"}}
-                            onClick={() => onAttachShape(activeShape.id)}
-                        >
-                            {t("editor.attachShape")}
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="outlined"
-                            color="inherit"
-                            sx={{flex: 1, borderColor: "var(--color-primary)", color: "var(--color-primary)"}}
-                            onClick={() => onMirrorShape(activeShape.id)}
-                        >
-                            {t("editor.mirrorShape")}
-                        </Button>
-                    </div>
-                )}
-                {!showYarnSettings && activeShape && (
-                    <p className="settings-bar-tip">{t("editor.arrowKeysTip")}</p>
-                )}
-                {!showYarnSettings && activeShape && (
-                    <Button
-                        type="button"
-                        variant="contained"
-                        color="inherit"
-                        sx={{width: 1, backgroundColor: "var(--color-primary)", color: "var(--color-bg)", marginBottom: "10px"}}
-                        onClick={() => onDeleteShape(activeShape.id)}
-                    >
-                        {t("editor.deleteShape")}
-                    </Button>
-                )}
                 {showYarnSettings && (
                     <div style={{width: "100%", position: "relative", marginBottom: "10px"}}>
+                        {/* Pas een hoofdknop als er iets op te slaan valt; anders rustig omlijnd, zodat
+                            er niet twee gevulde knoppen onder elkaar staan. */}
                         <Button
                             type="button"
-                            variant="contained"
-                            color="inherit"
+                            variant={yarnDirty ? "contained" : "outlined"}
+                            color="primary"
                             className={yarnDirty ? "save-btn-dirty" : ""}
-                            sx={{width: 1, backgroundColor: "var(--color-primary)", color: "var(--color-bg)"}}
+                            sx={{width: 1}}
                             onClick={() => yarnSettingsRef.current?.save()}
                         >
                             {t("editor.save")}
@@ -208,8 +167,8 @@ function Settingsbar({
                 )}
                 <Button
                     variant="contained"
-                    color="inherit"
-                    sx={{width: 1, backgroundColor: "var(--color-primary)", color: "var(--color-bg)", marginBottom: "10px"}}
+                    color="primary"
+                    sx={{width: 1, marginBottom: "10px"}}
                     disabled={!droppedShapes || droppedShapes.length < 1}
                     onClick={handlePatternNavigation}
                 >
@@ -224,8 +183,8 @@ function Settingsbar({
                     <div style={{display: "flex", flexDirection: "column", gap: "10px", marginTop: "20px"}}>
                         <Button
                             variant="contained"
-                            color="inherit"
-                            sx={{width: 1, backgroundColor: "var(--color-primary)", color: "var(--color-bg)"}}
+                            color="primary"
+                            sx={{width: 1}}
                             onClick={handleSaveAndLeave}
                         >
                             {t("editor.unsavedYarn.saveAndLeave")}
@@ -270,6 +229,7 @@ function Settingsbar({
                         <div className="shortcut-row"><kbd>Ctrl+Z</kbd><span>{t("editor.shortcut.undo")}</span></div>
                         <div className="shortcut-row"><kbd>Ctrl+Y</kbd><span>{t("editor.shortcut.redo")}</span></div>
                     </div>
+                    <p className="help-tip">{t("editor.arrowKeysTip")}</p>
                 </div>
             </AppDialog>
         </nav>

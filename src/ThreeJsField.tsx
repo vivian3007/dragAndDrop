@@ -83,7 +83,7 @@ export default function ThreeJsField({
             camera={{ position: [40, 0, 0], fov: 75, zoom: 3 }}
             ref={threeJsContainerRef}
             className="threejs-canvas"
-            style={{ backgroundColor: 'var(--color-accent-soft)' }}
+            // Achtergrond (zacht verloop) staat in styles.css bij .threejs-canvas.
             onPointerMissed={() => {
                 // Klik op een as van de gizmo telt niet als "naast de vormen klikken".
                 if (isGizmoAxisActive(activeTransformControlsRef)) return;

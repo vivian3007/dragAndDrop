@@ -269,9 +269,6 @@ const Editor = () => {
             amigurumiId={amigurumiId}
             activeShape={activeShape}
             onUpdateShape={updateShapeFromSettings}
-            onDeleteShape={deleteShape}
-            onMirrorShape={handleMirrorShape}
-            onAttachShape={handleAttachShape}
             shapeColor={shapeColor}
             setShapeColor={setShapeColor}
             droppedShapes={droppedShapes}
@@ -292,13 +289,16 @@ const Editor = () => {
                 setView={setView}
                 transformMode={transformMode}
                 setTransformMode={setTransformMode}
-                hasSelection={activeId !== null}
+                selectedId={activeId}
                 showGrid={showGrid}
                 setShowGrid={setShowGrid}
                 onUndo={undo}
                 onRedo={redo}
                 canUndo={history.canUndo}
                 canRedo={history.canRedo}
+                onAttachShape={handleAttachShape}
+                onMirrorShape={handleMirrorShape}
+                onDeleteShape={deleteShape}
             />
         </div>
     );

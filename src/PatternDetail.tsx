@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
     Box,
     Button,
@@ -23,11 +23,13 @@ import {
     ArrowBack,
     ContentCopy,
     Delete,
-    Edit,
-    ExpandMore,
+    EditOutlined,
     Favorite,
     FavoriteBorder,
+    MoreHoriz,
+    NotesOutlined,
     ViewInAr,
+    ViewInArOutlined,
 } from '@mui/icons-material';
 import { collection, deleteDoc, doc, getCountFromServer, getDoc, getDocs, onSnapshot, query, where, limit } from 'firebase/firestore';
 import { db } from '../firebase-config.js';
@@ -36,10 +38,11 @@ import AppDialog from './AppDialog.tsx';
 import { computePatternHeightCm, computePatternWidthCm } from './geometry/patternBounds';
 import { estimateYarnByColor } from './patterns/estimateYarn';
 import NewPattern from './NewPattern.tsx';
+import { uniqueTags } from './tags.ts';
 import DesignSnapshot from './DesignSnapshot.tsx';
 import { FormattedMessage, useIntl } from 'react-intl';
 import { toast } from 'react-toastify';
-import UserLink from './UserLink.tsx';
+import UserLink, { profilePath } from './UserLink.tsx';
 import Makes from './Makes.tsx';
 import { useT } from './i18n/LanguageProvider';
 import { sizedImageUrl } from './uploadImage.ts';
@@ -68,7 +71,7 @@ const PatternDetail = ({
     onClose: () => void;
 }) => {
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const { user, username } = useAuth();
     const intl = useIntl();
     const t = useT();
 
@@ -287,12 +290,21 @@ const PatternDetail = ({
                     <div className="detail-heading">
                         <h1 className="detail-title">{amigurumi.name}</h1>
                         <div className="detail-byline">
-                            {t('detail.by')} <UserLink userId={amigurumi.user_id} onNavigate={onClose} />
+                            {t('detail.by')}{' '}
+                            {isOwner && username ? (
+                                // Je eigen ontwerp: "door jou", met dezelfde chip naar je profiel.
+                                <Link to={profilePath(username)} className="user-chip" onClick={onClose}>
+                                    <span className="user-chip-avatar" aria-hidden="true">{username.charAt(0).toUpperCase()}</span>
+                                    <span className="user-chip-name">{t('detail.byYou')}</span>
+                                </Link>
+                            ) : (
+                                <UserLink userId={amigurumi.user_id} onNavigate={onClose} />
+                            )}
                         </div>
 
                         {amigurumi.tags?.length ? (
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
-                                {amigurumi.tags.map((tag) => (
+                                {uniqueTags(amigurumi.tags).map((tag) => (
                                     <Chip key={tag} label={tag} size="small" sx={{ backgroundColor: 'var(--color-accent-soft)', color: 'var(--color-text)' }} />
                                 ))}
                             </Box>
@@ -303,53 +315,16 @@ const PatternDetail = ({
                         <div className="detail-actions">
                             <Button
                                 variant="contained"
-                                color="inherit"
+                                color="primary"
                                 startIcon={<ViewInAr />}
                                 disabled={!shapes}
                                 onClick={handlePatternClick}
-                                sx={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-bg)', flexDirection: 'row', px: 2.5 }}
+                                sx={{ flexDirection: 'row', px: 2.5 }}
                             >
                                 {t('detail.viewPattern')}
                             </Button>
 
-                            {isOwner ? (
-                                <>
-                                    <Button
-                                        variant="outlined"
-                                        startIcon={<Edit />}
-                                        endIcon={<ExpandMore />}
-                                        onClick={(e) => setEditMenuAnchor(e.currentTarget)}
-                                        aria-haspopup="menu"
-                                        aria-expanded={Boolean(editMenuAnchor)}
-                                        sx={outlinedButtonSx}
-                                    >
-                                        {t('detail.editMenu')}
-                                    </Button>
-                                    <Menu
-                                        anchorEl={editMenuAnchor}
-                                        open={Boolean(editMenuAnchor)}
-                                        onClose={() => setEditMenuAnchor(null)}
-                                    >
-                                        <MenuItem onClick={() => { setEditMenuAnchor(null); setEditOpen(true); }}>
-                                            <ListItemIcon><Edit fontSize="small" /></ListItemIcon>
-                                            {t('detail.editDetails')}
-                                        </MenuItem>
-                                        <MenuItem onClick={handleEditShapesClick} disabled={!shapes}>
-                                            <ListItemIcon><ViewInAr fontSize="small" /></ListItemIcon>
-                                            {t('detail.editShapesMenu')}
-                                        </MenuItem>
-                                        <MenuItem onClick={() => { setEditMenuAnchor(null); setCopyOpen(true); }}>
-                                            <ListItemIcon><ContentCopy fontSize="small" /></ListItemIcon>
-                                            {t('detail.duplicate')}
-                                        </MenuItem>
-                                        <Divider />
-                                        <MenuItem onClick={handleDelete} sx={{ color: 'var(--color-favorite)' }}>
-                                            <ListItemIcon><Delete fontSize="small" sx={{ color: 'var(--color-favorite)' }} /></ListItemIcon>
-                                            {t('detail.delete')}
-                                        </MenuItem>
-                                    </Menu>
-                                </>
-                            ) : isLoggedIn && amigurumi.allowCopy !== false ? (
+                            {isOwner ? null : isLoggedIn && amigurumi.allowCopy !== false ? (
                                 <Button variant="outlined" startIcon={<ContentCopy />} onClick={() => setCopyOpen(true)} sx={outlinedButtonSx}>
                                     {t('detail.useAsTemplate')}
                                 </Button>
@@ -373,7 +348,64 @@ const PatternDetail = ({
                                 )}
                                 {favoriteCount > 0 && <span className="favorite-count">{favoriteCount}</span>}
                             </IconButton>
+                            {isOwner && (
+                                <>
+                                    <IconButton
+                                        onClick={(e) => setEditMenuAnchor(e.currentTarget)}
+                                        aria-label={t('detail.more')}
+                                        title={t('detail.more')}
+                                        aria-haspopup="menu"
+                                        aria-expanded={Boolean(editMenuAnchor)}
+                                        className="detail-more"
+                                    >
+                                        <MoreHoriz />
+                                    </IconButton>
+                                    <Menu
+                                        anchorEl={editMenuAnchor}
+                                        open={Boolean(editMenuAnchor)}
+                                        onClose={() => setEditMenuAnchor(null)}
+                                    >
+                                        <MenuItem onClick={() => { setEditMenuAnchor(null); setCopyOpen(true); }}>
+                                            <ListItemIcon><ContentCopy fontSize="small" /></ListItemIcon>
+                                            {t('detail.duplicate')}
+                                        </MenuItem>
+                                        <Divider />
+                                        <MenuItem onClick={handleDelete} sx={{ color: 'var(--color-danger)' }}>
+                                            <ListItemIcon><Delete fontSize="small" sx={{ color: 'var(--color-danger)' }} /></ListItemIcon>
+                                            {t('detail.delete')}
+                                        </MenuItem>
+                                    </Menu>
+                                </>
+                            )}
                         </div>
+                        {/* Eigen ontwerp: twee knoppen die zeggen wat je bewerkt, in een eigen rij net
+                            als op de kaart. Kopiëren en verwijderen staan onder ⋯ hierboven. */}
+                        {isOwner && (
+                            <div className="detail-edit-row">
+                                    {/* Twee knoppen die zeggen wat je bewerkt (net als op de kaart);
+                                    kopiëren en verwijderen onder ⋯, zodat verwijderen niet naast
+                                    een gewone bewerkknop staat. */}
+                                <Button
+                                    variant="outlined"
+                                    startIcon={<ViewInArOutlined />}
+                                    onClick={handleEditShapesClick}
+                                    disabled={!shapes}
+                                    title={t('card.editShapesHint')}
+                                    sx={outlinedButtonSx}
+                                >
+                                    {t('card.editShapes')}
+                                </Button>
+                                <Button
+                                    variant="outlined"
+                                    startIcon={<EditOutlined />}
+                                    onClick={() => setEditOpen(true)}
+                                    title={t('card.editDetailsHint')}
+                                    sx={outlinedButtonSx}
+                                >
+                                    {t('card.editDetails')}
+                                </Button>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -395,9 +427,15 @@ const PatternDetail = ({
                 <div className="detail-tab-panel">
                     {tab === 'about' && (
                         <>
-                            <Typography sx={{ whiteSpace: 'pre-wrap', opacity: amigurumi.notes ? 1 : 0.7 }}>
-                                {amigurumi.notes || t('detail.noNotes')}
-                            </Typography>
+                            {amigurumi.notes ? (
+                                <Typography sx={{ whiteSpace: 'pre-wrap' }}>{amigurumi.notes}</Typography>
+                            ) : (
+                                // Rustige lege staat, zodat het vak (vaste minimumhoogte) niet leeg oogt.
+                                <div className="detail-empty">
+                                    <NotesOutlined aria-hidden="true" />
+                                    <span>{t('detail.noNotes')}</span>
+                                </div>
+                            )}
                             <Typography className="detail-meta">
                                 {t('detail.created')}: {createdDate ?? t('detail.unknown')}
                             </Typography>

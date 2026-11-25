@@ -1,9 +1,7 @@
 import React, { useState } from "react";
 import {
-    AppBar,
     Avatar,
     Box,
-    Container,
     Divider,
     Drawer,
     IconButton,
@@ -14,7 +12,6 @@ import {
     Menu,
     MenuItem,
     Skeleton,
-    Toolbar,
     useMediaQuery,
     useTheme,
 } from "@mui/material";
@@ -72,85 +69,62 @@ function TopNavBar() {
     }
 
     return (
-        <AppBar
-            position="static"
-            style={{
-                background: "linear-gradient(135deg, var(--color-secondary) 0%, var(--color-secondary-hover) 100%)",
-                width: "100vw",
-                boxShadow: "0 4px 14px rgba(var(--shadow-color), 0.3)",
-            }}
-            sx={{ minHeight: { xs: "auto", md: "8vh" } }}
-        >
-            <Container maxWidth={false} disableGutters sx={{ marginLeft: 0, marginRight: 0, width: 1 }}>
-                <Toolbar
-                    disableGutters
-                    sx={{
-                        minHeight: { xs: "auto", md: "8vh" },
-                        alignItems: "center",
-                        width: 1,
-                        px: { xs: 2, md: 0 },
-                        py: { xs: 1, md: 0 },
-                    }}
+        <header className="navbar">
+            {isCompact && (
+                <IconButton
+                    onClick={() => setDrawerOpen(true)}
+                    aria-label={t("nav.openMenu")}
+                    sx={{ color: "var(--color-text)" }}
                 >
-                    {isCompact ? (
-                        <IconButton
-                            onClick={() => setDrawerOpen(true)}
-                            aria-label={t("nav.openMenu")}
-                            sx={{ color: "var(--color-bg)" }}
+                    <MenuIcon />
+                </IconButton>
+            )}
+            <Link to="/home" className="navbar-brand">Stitchify</Link>
+            {!isCompact && (
+                <nav style={{ display: "flex", gap: 4 }}>
+                    {navLinks.map((link) => (
+                        <NavLink
+                            key={link.to}
+                            to={link.to}
+                            className={({ isActive }) => `navbar-button ${isActive ? 'active' : ''}`}
                         >
-                            <MenuIcon fontSize="large" />
-                        </IconButton>
+                            {t(link.labelId)}
+                        </NavLink>
+                    ))}
+                </nav>
+            )}
+            <div className="navbar-actions">
+                {!isCompact && <LanguageSelect variant="dark" />}
+                <button
+                    type="button"
+                    className={`navbar-avatar-button ${accountActive || menuAnchor ? 'active' : ''}`}
+                    onClick={(e) => setMenuAnchor(e.currentTarget)}
+                    aria-label={t("nav.account")}
+                    aria-haspopup="menu"
+                    aria-expanded={!!menuAnchor}
+                    aria-controls={menuAnchor ? 'account-menu' : undefined}
+                >
+                    {/* Initiaal van de ingelogde gebruiker, i.p.v. één vaste foto voor iedereen.
+                        Zolang die nog niet bekend is een lege cirkel, geen "?". */}
+                    {authLoading || (user && username === undefined) ? (
+                        <Skeleton variant="circular" width={36} height={36} sx={{ bgcolor: 'var(--color-accent-soft)' }} />
                     ) : (
-                        navLinks.map((link) => (
-                            <NavLink
-                                key={link.to}
-                                to={link.to}
-                                className={({ isActive }) => `navbar-button ${isActive ? 'active' : ''}`}
-                            >
-                                {t(link.labelId)}
-                            </NavLink>
-                        ))
-                    )}
-                    <Box sx={{ ml: "auto", mr: { xs: "2vw", md: "1.5vw" }, display: "flex", alignItems: "center", gap: 2 }}>
-                        <LanguageSelect />
-                        <button
-                            type="button"
-                            className={`navbar-button navbar-avatar-button ${accountActive || menuAnchor ? 'active' : ''}`}
-                            onClick={(e) => setMenuAnchor(e.currentTarget)}
-                            aria-label={t("nav.account")}
-                            aria-haspopup="menu"
-                            aria-expanded={!!menuAnchor}
-                            aria-controls={menuAnchor ? 'account-menu' : undefined}
+                        <Avatar
+                            sx={{
+                                width: 36,
+                                height: 36,
+                                fontSize: 'var(--fs-md)',
+                                fontFamily: 'var(--font-heading)',
+                                fontWeight: 700,
+                                backgroundColor: 'var(--color-primary)',
+                                color: 'var(--color-bg)',
+                            }}
                         >
-                            {/* Initiaal van de ingelogde gebruiker, i.p.v. één vaste foto voor iedereen.
-                                Zolang die nog niet bekend is een lege cirkel, geen "?". */}
-                            {authLoading || (user && username === undefined) ? (
-                                <Skeleton
-                                    variant="circular"
-                                    sx={{
-                                        height: { xs: "5.5vh", md: "6vh" },
-                                        width: { xs: "5.5vh", md: "6vh" },
-                                        bgcolor: 'rgba(var(--light-overlay-color), 0.35)',
-                                    }}
-                                />
-                            ) : (
-                                <Avatar
-                                    sx={{
-                                        height: { xs: "5.5vh", md: "6vh" },
-                                        width: { xs: "5.5vh", md: "6vh" },
-                                        mx: 'auto',
-                                        backgroundColor: 'var(--color-bg)',
-                                        color: 'var(--color-primary)',
-                                        fontWeight: 700,
-                                    }}
-                                >
-                                    {initial}
-                                </Avatar>
-                            )}
-                        </button>
-                    </Box>
-                </Toolbar>
-            </Container>
+                            {initial}
+                        </Avatar>
+                    )}
+                </button>
+            </div>
 
             {/* Accountmenu onder de avatar: je profiel (wat anderen zien) en je instellingen
                 zijn twee aparte bestemmingen, dus de avatar kiest er niet zelf één. */}
@@ -209,8 +183,11 @@ function TopNavBar() {
                         ))}
                     </List>
                 </Box>
+                <Box sx={{ px: 2, pb: 2 }}>
+                    <LanguageSelect variant="dark" />
+                </Box>
             </Drawer>
-        </AppBar>
+        </header>
     );
 }
 

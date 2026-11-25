@@ -1,6 +1,11 @@
 import React, { useCallback, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Box, Button, Card, Chip, IconButton } from '@mui/material';
-import { Favorite, FavoriteBorder } from '@mui/icons-material';
+import { EditOutlined, Favorite, FavoriteBorder, ViewInArOutlined } from '@mui/icons-material';
+import { useAuth } from './auth/AuthProvider';
+import { uniqueTags } from './tags.ts';
+import UserLink from './UserLink.tsx';
+import NewPattern from './NewPattern.tsx';
 import { useStableArray } from './useStableArray.ts';
 import DesignSnapshot from './DesignSnapshot.tsx';
 import { sizedImageUrl } from './uploadImage.ts';
@@ -12,9 +17,11 @@ const ACTION_HEIGHT = 40;
 // Kaarten zijn hooguit ~300px breed; 600px is scherp op een retina-scherm.
 export const CARD_IMAGE_WIDTH = 600;
 
+// Rustig omlijnd naast de gevulde Patroon-knop.
 const actionIconButtonSx = {
-    backgroundColor: 'var(--color-accent-soft)',
-    '&:hover': { backgroundColor: 'var(--color-accent-soft-hover)' },
+    border: '1.5px solid var(--color-accent-soft-hover)',
+    borderRadius: 'var(--radius-md)',
+    '&:hover': { backgroundColor: 'var(--color-accent-soft)', borderColor: 'var(--color-secondary)' },
     width: ACTION_HEIGHT,
     height: ACTION_HEIGHT,
 };
@@ -29,25 +36,35 @@ type AmigurumiCardMediaProps = {
     name: string;
     tags: string[];
     imageUrl?: string | null;
+    // Van wie (chip op de foto): "Jouw ontwerp" (isMine) of de maker; null = niet tonen (bv. op Mijn
+    // patronen en op een profiel, waar het altijd dezelfde persoon is).
+    ownerId: string | null;
+    isMine: boolean;
 };
 
 const areMediaPropsEqual = (prev: AmigurumiCardMediaProps, next: AmigurumiCardMediaProps) =>
     prev.id === next.id &&
     prev.name === next.name &&
     prev.tags === next.tags &&
-    prev.imageUrl === next.imageUrl;
+    prev.imageUrl === next.imageUrl &&
+    prev.ownerId === next.ownerId &&
+    prev.isMine === next.isMine;
 
 // Does not depend on `favorite`, so it stays out of the re-render caused by toggling the heart.
-const AmigurumiCardMedia = React.memo(({ id, name, tags, imageUrl }: AmigurumiCardMediaProps) => (
+const AmigurumiCardMedia = React.memo(({ id, name, tags, imageUrl, ownerId, isMine }: AmigurumiCardMediaProps) => (
     <>
-        {imageUrl ? (
-            <img src={sizedImageUrl(imageUrl, CARD_IMAGE_WIDTH)} alt={name} className="amigurumi-image" loading="lazy" decoding="async" />
-        ) : (
-            <DesignSnapshot amigurumiId={id} alt={name} className="amigurumi-image" />
-        )}
-        <h1 style={{marginTop: 20, marginBottom: 20}}>{name}</h1>
-        <Box sx={{display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2}}>
-            {tags.map((tag) => (
+        {/* Van wie het ontwerp is staat als chip linksboven over de foto. */}
+        <div className="card-media">
+            {imageUrl ? (
+                <img src={sizedImageUrl(imageUrl, CARD_IMAGE_WIDTH)} alt={name} className="amigurumi-image" loading="lazy" decoding="async" />
+            ) : (
+                <DesignSnapshot amigurumiId={id} alt={name} className="amigurumi-image" />
+            )}
+            {ownerId !== null && <CardOwner userId={ownerId} isMine={isMine} />}
+        </div>
+        <h1 className="card-title">{name}</h1>
+        <Box sx={{display: 'flex', flexWrap: 'wrap', gap: 0.75}}>
+            {uniqueTags(tags).map((tag) => (
                 <Chip
                     key={tag}
                     label={tag}
@@ -59,6 +76,20 @@ const AmigurumiCardMedia = React.memo(({ id, name, tags, imageUrl }: AmigurumiCa
     </>
 ), areMediaPropsEqual);
 
+// Linksboven op de foto: van wie dit ontwerp is.
+const CardOwner = ({ userId, isMine }: { userId: string; isMine: boolean }) => {
+    const t = useT();
+    return (
+        <div className="card-owner">
+            {isMine ? (
+                <span className="card-owner-mine">{t('card.yours')}</span>
+            ) : (
+                <UserLink userId={userId} />
+            )}
+        </div>
+    );
+};
+
 type AmigurumiCardButtonsProps = {
     onPatternClick: (e: React.MouseEvent) => void;
 };
@@ -69,7 +100,7 @@ const areButtonsPropsEqual = (prev: AmigurumiCardButtonsProps, next: AmigurumiCa
 // Rendered as a Fragment (no wrapping element) so it can live inside the same flex row as the
 // heart button below, while still being skippable on its own when only `favorite` changes.
 // Verwijderen staat bewust niet op de kaart (te makkelijk per ongeluk, naast het hartje);
-// dat zit in het bewerk-menu van de detailweergave.
+// dat zit in het menu ⋯ van de detailweergave.
 export const AmigurumiCardButtons = React.memo(({ onPatternClick }: AmigurumiCardButtonsProps) => {
     const t = useT();
     return (
@@ -77,8 +108,8 @@ export const AmigurumiCardButtons = React.memo(({ onPatternClick }: AmigurumiCar
         <Button
             type="button"
             variant="contained"
-            color="inherit"
-            sx={{flex: 1, backgroundColor: "var(--color-primary)", color: "var(--color-bg)", height: ACTION_HEIGHT}}
+            color="primary"
+            sx={{flex: 1, height: ACTION_HEIGHT}}
             onClick={onPatternClick}
         >
             {t('card.pattern')}
@@ -110,7 +141,7 @@ export const FavoriteButton = ({ amigurumiId, count = 0 }: { amigurumiId: string
             aria-label={t(favorite ? 'card.unfavorite' : 'card.favorite')}
             aria-pressed={favorite}
             title={t('card.favoriteCount', { count })}
-            sx={{ ...actionIconButtonSx, ...(count > 0 ? { width: 'auto', minWidth: ACTION_HEIGHT, px: 1.25, borderRadius: `${ACTION_HEIGHT / 2}px`, gap: 0.5 } : {}) }}
+            sx={{ ...actionIconButtonSx, ...(count > 0 ? { width: 'auto', minWidth: ACTION_HEIGHT, px: 1.25, gap: 0.5 } : {}) }}
         >
             {favorite ? (
                 <Favorite {...iconProps} sx={{color: 'var(--color-favorite)', fontSize: '1.25rem'}} />
@@ -122,15 +153,68 @@ export const FavoriteButton = ({ amigurumiId, count = 0 }: { amigurumiId: string
     );
 };
 
+// Bewerkknoppen op je eigen kaart: elk zegt wat je gaat bewerken. "3D-vormen" opent de editor,
+// "Naam & foto" het formulier met naam, tags, notities en foto. Kopie maken en verwijderen
+// staan in de detailweergave (verwijderen hoort niet naast deze knoppen).
+const OwnerEditButtons = ({ amigurumi }: { amigurumi: Amigurumi }) => {
+    const t = useT();
+    const navigate = useNavigate();
+    const [detailsOpen, setDetailsOpen] = useState(false);
+    return (
+        <>
+            <Box className="card-edit-row">
+                <Button
+                    type="button"
+                    variant="outlined"
+                    size="small"
+                    startIcon={<ViewInArOutlined />}
+                    title={t('card.editShapesHint')}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/${amigurumi.id}/editor`);
+                    }}
+                >
+                    {t('card.editShapes')}
+                </Button>
+                <Button
+                    type="button"
+                    variant="outlined"
+                    size="small"
+                    startIcon={<EditOutlined />}
+                    title={t('card.editDetailsHint')}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setDetailsOpen(true);
+                    }}
+                >
+                    {t('card.editDetails')}
+                </Button>
+            </Box>
+            {/* Alleen gemonteerd als hij open is: anders een formulier per kaart in het raster.
+                Klikken in het formulier mag de detailweergave van de kaart niet openen. */}
+            {detailsOpen && (
+                <div onClick={(e) => e.stopPropagation()}>
+                    <NewPattern open onClose={() => setDetailsOpen(false)} editingAmigurumi={amigurumi} />
+                </div>
+            )}
+        </>
+    );
+};
+
 const AmigurumiCard = ({
     amigurumi,
     onPatternClick,
     onCardClick,
+    showOwner = true,
 }: {
     amigurumi: Amigurumi;
     onPatternClick: (amigurumi: Amigurumi) => void;
     onCardClick?: (amigurumi: Amigurumi) => void;
+    // Van wie het ontwerp is onder de titel tonen; uit op Mijn patronen en op een profiel.
+    showOwner?: boolean;
 }) => {
+    const { user } = useAuth();
+    const isMine = !!user && amigurumi.user_id === user.uid;
     // Keeps handlers below referentially stable across renders even though `amigurumi` itself is a fresh object on every Firestore snapshot.
     const amigurumiRef = useRef(amigurumi);
     amigurumiRef.current = amigurumi;
@@ -153,11 +237,14 @@ const AmigurumiCard = ({
                 name={amigurumi.name}
                 tags={stableTags}
                 imageUrl={amigurumi.imageUrl}
+                ownerId={showOwner ? amigurumi.user_id ?? '' : null}
+                isMine={isMine}
             />
-            <Box sx={{display: 'flex', alignItems: 'center', gap: 1, marginTop: '20px'}}>
+            <Box sx={{display: 'flex', alignItems: 'center', gap: 1, marginTop: '16px'}}>
                 <AmigurumiCardButtons onPatternClick={handlePatternClick} />
                 <FavoriteButton amigurumiId={amigurumi.id} count={amigurumi.favoriteCount} />
             </Box>
+            {isMine && <OwnerEditButtons amigurumi={amigurumi} />}
         </Card>
     );
 };
@@ -168,6 +255,10 @@ const arePropsEqual = (prev: AmigurumiCardProps, next: AmigurumiCardProps) =>
     prev.amigurumi.id === next.amigurumi.id &&
     prev.amigurumi.name === next.amigurumi.name &&
     prev.amigurumi.imageUrl === next.amigurumi.imageUrl &&
+    prev.amigurumi.user_id === next.amigurumi.user_id &&
+    prev.amigurumi.notes === next.amigurumi.notes &&
+    prev.amigurumi.allowCopy === next.amigurumi.allowCopy &&
+    prev.showOwner === next.showOwner &&
     prev.amigurumi.favoriteCount === next.amigurumi.favoriteCount &&
     (prev.amigurumi.tags ?? []).length === (next.amigurumi.tags ?? []).length &&
     (prev.amigurumi.tags ?? []).every((tag, i) => tag === next.amigurumi.tags[i]) &&

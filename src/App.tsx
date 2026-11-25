@@ -23,7 +23,7 @@ const Editor = lazy(() => import("./Editor"));
 const Pattern = lazy(() => import("./Pattern"));
 
 // Even leeg (geen laadicoontje) zolang de code van een lazy pagina binnenkomt.
-const RouteFallback = () => <Box sx={{ minHeight: "92vh" }} aria-busy="true" />;
+const RouteFallback = () => <Box sx={{ minHeight: "calc(100vh - var(--navbar-height))" }} aria-busy="true" />;
 
 export default function App() {
     useAndroidBackButton();

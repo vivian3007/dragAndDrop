@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { IconButton, Menu, MenuItem } from "@mui/material";
-import { AspectRatio, GridOff, GridOn, OpenWith, Redo, Rotate90DegreesCcw, Undo, Videocam } from "@mui/icons-material";
+import { AspectRatio, DeleteOutline, Flip, GridOff, GridOn, Link, OpenWith, Redo, Rotate90DegreesCcw, Undo, Videocam } from "@mui/icons-material";
 import { useT } from "../i18n/LanguageProvider";
 import type { SetState, SetView, TransformMode, ViewKey } from "./types";
 
@@ -18,20 +18,25 @@ const TRANSFORM_MODES: { mode: TransformMode; icon: React.ReactNode }[] = [
 // - "phone": ongedaan maken/opnieuw staan dan in de kopregel (EditorHeader); weergave en
 //   raster zijn twee knopjes rechtsboven, de modi een groep onderin het midden.
 // De modi staan er alleen bij een geselecteerde vorm; zonder toetsenbord (T/S/R) is dit de
-// enige manier om van modus te wisselen.
-function CanvasToolbar({ variant, setView, transformMode, setTransformMode, hasSelection, showGrid, setShowGrid, onUndo, onRedo, canUndo, canRedo }: {
+// enige manier om van modus te wisselen. Op de laptop staan daarnaast ook aansluiten,
+// spiegelen en verwijderen (op de telefoon zitten die in de contextbalk, ShapeContextBar).
+function CanvasToolbar({ variant, setView, transformMode, setTransformMode, selectedId, showGrid, setShowGrid, onUndo, onRedo, canUndo, canRedo, onAttachShape, onMirrorShape, onDeleteShape }: {
     variant: "desktop" | "phone";
     setView: SetView;
     transformMode: TransformMode;
     setTransformMode: (mode: TransformMode) => void;
-    hasSelection: boolean;
+    selectedId: string | null;
     showGrid: boolean;
     setShowGrid: SetState<boolean>;
     onUndo: () => void;
     onRedo: () => void;
     canUndo: boolean;
     canRedo: boolean;
+    onAttachShape: (id: string) => void;
+    onMirrorShape: (id: string) => void;
+    onDeleteShape: (id: string) => void;
 }) {
+    const hasSelection = selectedId !== null;
     const t = useT();
     const [viewMenuAnchor, setViewMenuAnchor] = useState<HTMLElement | null>(null);
 
@@ -80,6 +85,22 @@ function CanvasToolbar({ variant, setView, transformMode, setTransformMode, hasS
         </div>
     );
 
+    const shapeActionsGroup = selectedId !== null && (
+        <div className="canvas-toolbar-group">
+            <IconButton size="small" aria-label={t("editor.attachShape")} title={`${t("editor.attachShape")}: ${t("editor.attachShapeHint")}`} onClick={() => onAttachShape(selectedId)}>
+                <Link fontSize="small" />
+            </IconButton>
+            <IconButton size="small" aria-label={t("editor.mirrorShape")} title={t("editor.mirrorShape")} onClick={() => onMirrorShape(selectedId)}>
+                <Flip fontSize="small" />
+            </IconButton>
+            {/* Iets apart en in de waarschuwingskleur, zodat je hem niet per ongeluk raakt. */}
+            <span className="canvas-toolbar-separator" aria-hidden="true" />
+            <IconButton size="small" className="danger" aria-label={t("editor.deleteShape")} title={t("editor.deleteShape")} onClick={() => onDeleteShape(selectedId)}>
+                <DeleteOutline fontSize="small" />
+            </IconButton>
+        </div>
+    );
+
     const viewMenu = (
         <Menu anchorEl={viewMenuAnchor} open={viewMenuAnchor !== null} onClose={() => setViewMenuAnchor(null)}>
             {VIEWS.map((view) => (
@@ -111,6 +132,7 @@ function CanvasToolbar({ variant, setView, transformMode, setTransformMode, hasS
             {historyGroup}
             {viewGroup}
             {modesGroup}
+            {shapeActionsGroup}
             {viewMenu}
         </div>
     );

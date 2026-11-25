@@ -165,12 +165,12 @@ const Account = () => {
                 </div>
                 <div className="account-header-actions">
                     {/* In de native app is er geen navigatiebalk bovenin met de taalkeuze. */}
-                    {Capacitor.isNativePlatform() && <LanguageSelect />}
+                    {Capacitor.isNativePlatform() && <LanguageSelect variant="dark" />}
                     <Button
-                        variant="contained"
+                        variant="outlined"
                         startIcon={<Logout />}
                         onClick={handleLogout}
-                        sx={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-bg)', flexDirection: 'row' }}
+                        sx={{ flexDirection: 'row' }}
                     >
                         {t('account.logOut')}
                     </Button>
@@ -191,7 +191,7 @@ const Account = () => {
                         type="submit"
                         variant="contained"
                         disabled={!usernameChanged || savingUsername || usernameStatus === 'taken' || usernameStatus === 'invalid'}
-                        sx={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-bg)', alignSelf: 'flex-start', mt: '16px' }}
+                        sx={{ alignSelf: 'flex-start', mt: '16px' }}
                     >
                         {savingUsername ? <CircularProgress size={20} sx={{ color: 'var(--color-bg)' }} /> : t('account.save')}
                     </Button>
@@ -223,7 +223,7 @@ const Account = () => {
                     variant="outlined"
                     startIcon={<LockReset />}
                     onClick={() => setPasswordDialogOpen(true)}
-                    sx={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)', alignSelf: 'flex-start' }}
+                    sx={{ alignSelf: 'flex-start', mt: 2 }}
                 >
                     {t('account.changePassword')}
                 </Button>
@@ -272,7 +272,7 @@ const Account = () => {
                             type="submit"
                             variant="contained"
                             disabled={savingPassword || !currentPassword || !newPassword}
-                            sx={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-bg)', alignSelf: 'flex-start' }}
+                            sx={{ alignSelf: 'flex-start' }}
                         >
                             {savingPassword ? <CircularProgress size={20} sx={{ color: 'var(--color-bg)' }} /> : t('account.changePassword')}
                         </Button>

@@ -1,57 +1,68 @@
-@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap');
+/* Fredoka (rond, speels) alleen voor koppen, knoppen en tabs; Quicksand voor lopende tekst,
+   omdat Fredoka op kleine maten slecht leest. MUI-onderdelen krijgen hetzelfde via theme.ts. */
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Quicksand:wght@500;600;700&display=swap');
 
 :root {
-    --toastify-font-family: 'Fredoka', sans-serif;
+    /* Kleuren (dezelfde waarden staan in theme.ts) */
     --color-bg: #F1E3E0;
     --color-bg-card: #FAF5F4;
+    --color-surface: #FFFFFF;
     --color-primary: #7D3A45;
     --color-primary-hover: #642E37;
     --color-secondary: #97616A;
     --color-secondary-hover: #80525A;
     --color-accent-soft: #E3D3CE;
     --color-accent-soft-hover: #D2BBB6;
+    --color-field-border: #A88580;
     --color-text: #2A1E1B;
     --color-favorite: #96323D;
+    --color-danger: #B3261E;
     --shadow-color: 42, 30, 27;
     --light-overlay-color: 241, 227, 224;
+
+    /* Letters */
+    --font-heading: 'Fredoka', sans-serif;
+    --font-body: 'Quicksand', sans-serif;
+    --toastify-font-family: var(--font-body);
+    --fs-xs: 0.75rem;
+    --fs-sm: 0.875rem;
+    --fs-md: 1rem;
+    --fs-lg: 1.25rem;
+    --fs-xl: 1.5rem;
+    --fs-2xl: 2rem;
+
+    /* Vormen */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+    --radius-pill: 999px;
+    --shadow-card: 0 1px 2px rgba(var(--shadow-color), 0.06), 0 4px 14px rgba(var(--shadow-color), 0.08);
+
+    /* Vaste hoogte van de navigatiebalk; de editor rekent zijn hoogte daarmee uit. */
+    --navbar-height: 64px;
 }
 
 body {
     margin: 0;
-    /*overflow: hidden;*/
     background-color: var(--color-bg);
     color: var(--color-text);
     height: 100vh;
     overflow-x: hidden;
-    font-family: 'Fredoka', sans-serif;
+    font-family: var(--font-body);
+    font-weight: 500;
+    -webkit-font-smoothing: antialiased;
 }
 
-.MuiButton-root {
-    border-radius: 12px !important;
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    font-weight: 600;
 }
 
-.MuiOutlinedInput-root {
-    border-radius: 12px !important;
-}
-
-.MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline {
-    border-radius: 12px !important;
-    border: 2px solid var(--color-secondary) !important;
-    transition: border-color 0.2s ease;
-}
-
-.MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
-    border-color: var(--color-secondary-hover) !important;
-}
-
-.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
-    border-color: var(--color-primary) !important;
-    border-width: 2px !important;
-}
-
-.MuiInputLabel-root.Mui-focused {
-    color: var(--color-primary) !important;
+/* Rustige, smalle scrollbalken in de kleuren van de app in plaats van de grijze standaard. */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-accent-soft-hover) transparent;
 }
 
 .App {
@@ -71,7 +82,10 @@ body {
 /* !important: <Canvas> van react-three-fiber zet zelf inline height:100% op zijn
    wrapper, en dat wint anders van deze klasse (canvas krimpt dan naar 150px). */
 .threejs-canvas {
-    height: 92vh !important;
+    height: calc(100vh - var(--navbar-height)) !important;
+    /* Zacht licht in het midden achter het model, iets donkerder naar de randen: geeft diepte
+       zonder af te leiden. Het WebGL-canvas zelf is doorzichtig. */
+    background: radial-gradient(ellipse 70% 60% at 50% 45%, #F6EEEC 0%, var(--color-accent-soft) 100%);
 }
 
 /* Alle vingergebaren op het canvas zijn voor de 3D-scene (camera, gizmo, TouchGestures). Zonder
@@ -82,39 +96,90 @@ body {
     touch-action: none;
 }
 
-.navbar-button {
-    height: 6vh;
-    margin: 1vh 0.3vw;
-    padding: 0 1.5vw;
-    text-align: center;
-    align-content: center;
-    text-decoration: none;
-    color: var(--color-bg);
-    font-weight: bold;
-    font-size: 1.5em;
-    cursor: pointer;
+/* ===== Navigatiebalk (TopNavBar.tsx) ===== */
+
+.navbar {
+    position: sticky;
+    top: 0;
+    z-index: 1100;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: var(--navbar-height);
+    padding: 0 24px;
     box-sizing: border-box;
-    border-radius: 14px;
-    transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+    background-color: var(--color-bg-card);
+    border-bottom: 1px solid var(--color-accent-soft-hover);
 }
 
-.navbar-button:hover{
-    background-color: rgba(var(--light-overlay-color), 0.18);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 14px rgba(var(--shadow-color), 0.25);
+.navbar-brand {
+    margin-right: 20px;
+    font-family: var(--font-heading);
+    font-size: var(--fs-xl);
+    font-weight: 700;
+    color: var(--color-primary);
+    text-decoration: none;
 }
 
-.navbar-button.active{
-    background-color: rgba(var(--light-overlay-color), 0.26);
+.navbar-button {
+    display: inline-flex;
+    align-items: center;
+    height: 40px;
+    padding: 0 14px;
+    border-radius: var(--radius-md);
+    color: var(--color-text);
+    font-family: var(--font-heading);
+    font-size: var(--fs-md);
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.navbar-button:hover {
+    background-color: var(--color-accent-soft);
+}
+
+.navbar-button.active {
+    background-color: var(--color-accent-soft);
+    color: var(--color-primary);
+}
+
+.navbar-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
 /* Avatar in de navbar is een knop die het accountmenu opent (TopNavBar.tsx). */
 .navbar-avatar-button {
     display: flex;
     align-items: center;
+    padding: 2px;
     background: none;
-    border: none;
+    border: 2px solid transparent;
+    border-radius: 50%;
     font: inherit;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+}
+
+.navbar-avatar-button:hover,
+.navbar-avatar-button.active {
+    border-color: var(--color-accent-soft-hover);
+}
+
+@media (max-width: 899px) {
+    .navbar {
+        padding: 0 8px 0 4px;
+    }
+
+    .navbar-brand {
+        margin-right: 0;
+        font-size: var(--fs-lg);
+    }
 }
 
 .account-menu-header {
@@ -137,7 +202,7 @@ body {
 }
 
 .account-menu-email {
-    font-size: 0.85rem;
+    font-size: var(--fs-sm);
     color: var(--color-text);
     opacity: 0.7;
     overflow: hidden;
@@ -151,16 +216,20 @@ body {
     flex: 0 0 auto;
     box-sizing: border-box;
     width: auto;
-    height: 88vh;
+    height: calc(100vh - var(--navbar-height));
     background-color: var(--color-bg-card);
     display: flex;
     flex-direction: column;
     align-items: stretch;
     overflow: hidden;
     padding: 16px 12px;
+    border-right: 1px solid var(--color-accent-soft-hover);
 }
 
 .shapebar {
+    /* Slepen uit de balk mag geen tekst (de labels) selecteren. */
+    user-select: none;
+    -webkit-user-select: none;
     width: 100%;
     flex: 1 1 auto;
     min-height: 0;
@@ -171,20 +240,18 @@ body {
     overflow-x: hidden;
 }
 
-
-
-
 .shapes-text {
-    margin: 4px 0 8px 0;
-    font-size: 1.1rem;
+    margin: 4px 0 12px 0;
+    font-size: var(--fs-md);
 }
 
 .settings-bar {
-    /* height: 100vh; */
-    width: 20vw;
-    height: 92vh;
-    /*background-color: #DFAEB4;*/
+    width: clamp(300px, 24vw, 380px);
+    box-sizing: border-box;
+    flex: 0 0 auto;
+    height: calc(100vh - var(--navbar-height));
     background-color: var(--color-bg-card);
+    border-left: 1px solid var(--color-accent-soft-hover);
     padding-left: 20px;
     padding-right: 20px;
     display: flex;
@@ -192,8 +259,6 @@ body {
     justify-content: space-between;
     position: relative;
     overflow: hidden;
-    /*left: 70vw;*/
-    /* overflow: scroll; */
 }
 
 .settings-bar-topbar {
@@ -227,6 +292,13 @@ body {
     gap: 16px 20px;
 }
 
+.help-tip {
+    margin: 20px 0 0;
+    font-size: var(--fs-sm);
+    line-height: 1.5;
+    opacity: 0.8;
+}
+
 .shortcut-row {
     display: flex;
     align-items: center;
@@ -240,12 +312,12 @@ body {
     min-width: 30px;
     height: 28px;
     padding: 0 8px;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     background-color: var(--color-accent-soft);
     border: 2px solid var(--color-secondary);
     font-family: inherit;
     font-weight: 700;
-    font-size: 0.85rem;
+    font-size: var(--fs-sm);
     color: var(--color-primary);
     flex: 0 0 auto;
 }
@@ -262,10 +334,10 @@ body {
     margin: 0 3px;
     padding-left: 4px;
     padding-right: 4px;
-    border-radius: 9px;
+    border-radius: var(--radius-sm);
     font-family: inherit;
     font-weight: 600;
-    font-size: 0.8rem;
+    font-size: var(--fs-sm);
     text-transform: none;
     color: var(--color-secondary);
     white-space: nowrap;
@@ -308,10 +380,10 @@ body {
     right: 8px;
     background-color: var(--color-favorite);
     color: var(--color-bg);
-    font-size: 0.68rem;
+    font-size: var(--fs-xs);
     font-weight: 600;
     padding: 2px 8px;
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     white-space: nowrap;
     box-shadow: 0 2px 4px rgba(var(--shadow-color), 0.25);
     pointer-events: none;
@@ -346,7 +418,9 @@ body {
 
 .shape {
     z-index: 10;
-    border: 3px solid var(--color-text);
+    border: 1.5px solid rgba(var(--shadow-color), 0.45);
+    box-sizing: border-box;
+    box-shadow: inset 0 -6px 12px rgba(var(--shadow-color), 0.12), inset 0 4px 8px rgba(255, 255, 255, 0.25);
 }
 
 /* Kleurwissel-regel in een patroon: iets nadrukkelijker dan een gewone ronde. */
@@ -464,20 +538,10 @@ body {
     position: fixed;
 }
 
-/* Korte uitleg onder de vormknoppen in de editor (pijltjestoetsen). */
-.settings-bar-tip {
-    margin: -4px 0 10px;
-    font-size: 0.75rem;
-    line-height: 1.35;
-    color: var(--color-text);
-    opacity: 0.75;
-    text-align: center;
-}
-
 /* Kleurwissels in de vorminstellingen (StripeEditor.tsx). */
 .stripe-editor-hint {
     margin: 0 0 6px;
-    font-size: 0.75rem;
+    font-size: var(--fs-xs);
     opacity: 0.75;
 }
 
@@ -510,7 +574,7 @@ body {
 }
 
 .stripe-range-label {
-    font-size: 0.75rem;
+    font-size: var(--fs-xs);
     line-height: 1;
 }
 
@@ -535,6 +599,36 @@ body {
     border-radius: 50%;
 }
 
+/* Kleurkiezer in de vorminstellingen (ShapeSettings.tsx). */
+.color-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.color-picker .react-colorful {
+    width: 100%;
+    height: 160px;
+}
+
+.color-picker .react-colorful__saturation {
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+.color-picker .react-colorful__last-control {
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+.color-picker .input-text {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.color-picker .input-text input {
+    text-transform: uppercase;
+}
+
 .palette-item {
     display: flex;
     flex-direction: column;
@@ -543,8 +637,9 @@ body {
 }
 
 .palette-label {
-    font-size: 0.8rem;
+    font-size: var(--fs-xs);
     font-weight: 600;
+    white-space: nowrap;
     color: var(--color-text);
 }
 
@@ -562,11 +657,11 @@ body {
     width: 56px;
     height: 56px;
     border: none;
-    background: no-repeat center / contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'%3E%3Cpath d='M28 3 L53 53 L3 53 Z' fill='%23FFFFFF'/%3E%3Cpath d='M3 53 L28 3 L53 53' fill='none' stroke='%232A1E1B' stroke-width='3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M3 53 L53 53' stroke='%232A1E1B' stroke-width='3' stroke-dasharray='5 4'/%3E%3C/svg%3E");
+    background: no-repeat center / contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'%3E%3Cpath d='M28 3 L53 53 L3 53 Z' fill='%23FFFFFF'/%3E%3Cpath d='M3 53 L28 3 L53 53' fill='none' stroke='%232A1E1B' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M3 53 L53 53' stroke='%232A1E1B' stroke-width='2' stroke-dasharray='5 4'/%3E%3C/svg%3E");
 }
 
 .draggable-shape.Cone:hover {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'%3E%3Cpath d='M28 3 L53 53 L3 53 Z' fill='%23FFFFFF'/%3E%3Cpath d='M3 53 L28 3 L53 53' fill='none' stroke='%237D3A45' stroke-width='3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M3 53 L53 53' stroke='%237D3A45' stroke-width='3' stroke-dasharray='5 4'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'%3E%3Cpath d='M28 3 L53 53 L3 53 Z' fill='%23FFFFFF'/%3E%3Cpath d='M3 53 L28 3 L53 53' fill='none' stroke='%237D3A45' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M3 53 L53 53' stroke='%237D3A45' stroke-width='2' stroke-dasharray='5 4'/%3E%3C/svg%3E");
 }
 
 .draggable-shape.Arm {
@@ -621,11 +716,11 @@ body {
     width: 56px;
     height: 56px;
     border: none;
-    background: no-repeat center / contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'%3E%3Ccircle cx='28' cy='28' r='25' fill='%23FFFFFF' stroke='%232A1E1B' stroke-width='3'/%3E%3Cpath d='M16 30 Q28 42 40 30' fill='none' stroke='%232A1E1B' stroke-width='3' stroke-linecap='round' stroke-dasharray='4 3'/%3E%3Cpath d='M24 19 L32 19 L28 24 Z' fill='%232A1E1B'/%3E%3C/svg%3E");
+    background: no-repeat center / contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'%3E%3Ccircle cx='28' cy='28' r='25' fill='%23FFFFFF' stroke='%232A1E1B' stroke-width='2'/%3E%3Cpath d='M16 30 Q28 42 40 30' fill='none' stroke='%232A1E1B' stroke-width='2' stroke-linecap='round' stroke-dasharray='4 3'/%3E%3Cpath d='M24 19 L32 19 L28 24 Z' fill='%232A1E1B'/%3E%3C/svg%3E");
 }
 
 .draggable-shape.Embroidery:hover {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'%3E%3Ccircle cx='28' cy='28' r='25' fill='%23FFFFFF' stroke='%237D3A45' stroke-width='3'/%3E%3Cpath d='M16 30 Q28 42 40 30' fill='none' stroke='%237D3A45' stroke-width='3' stroke-linecap='round' stroke-dasharray='4 3'/%3E%3Cpath d='M24 19 L32 19 L28 24 Z' fill='%237D3A45'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'%3E%3Ccircle cx='28' cy='28' r='25' fill='%23FFFFFF' stroke='%237D3A45' stroke-width='2'/%3E%3Cpath d='M16 30 Q28 42 40 30' fill='none' stroke='%237D3A45' stroke-width='2' stroke-linecap='round' stroke-dasharray='4 3'/%3E%3Cpath d='M24 19 L32 19 L28 24 Z' fill='%237D3A45'/%3E%3C/svg%3E");
 }
 
 /* Knoppen voor het soort borduursel: twee per rij. */
@@ -636,12 +731,21 @@ body {
 }
 
 /* Oog: klein, zwart, glanzend. */
+/* Oog: als lijntekening, net als de andere vormen in de balk: witte cirkel met rand en een
+   pupil. De maat van een neergezet oog komt uit z'n definitie (dropDefaults), niet hiervan. */
 .Eye {
-    width: 24px;
-    height: 24px;
-    margin: 16px 0;
+    width: 32px;
+    height: 32px;
+    margin: 12px 0;
     border-radius: 50%;
-    background: radial-gradient(circle at 35% 35%, #8a8a8a 0, #111111 45%);
+}
+
+.draggable-shape.Eye {
+    background: radial-gradient(circle, var(--color-text) 0 34%, #FFFFFF calc(34% + 0.5px));
+}
+
+.draggable-shape.Eye:hover {
+    background: radial-gradient(circle, var(--color-primary) 0 34%, #FFFFFF calc(34% + 0.5px));
 }
 
 .draggables {
@@ -650,7 +754,7 @@ body {
     justify-items: center;
     gap: 12px 6px;
     width: 100%;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
 }
 
 .draggable-shape {
@@ -660,7 +764,7 @@ body {
     cursor: grab;
     /* Slepen met de vinger mag de pagina niet laten meescrollen. */
     touch-action: none;
-    border: 3px solid var(--color-text);
+    border: 2px solid var(--color-text);
     transition: transform 0.15s ease, border-color 0.15s ease;
 }
 
@@ -674,19 +778,27 @@ body {
     margin-bottom: 20px;
     margin-top: 20px;
     background-color: var(--color-bg-card);
-    border-radius: 12px;
+    border-radius: var(--radius-md);
 }
 
 .shape-settings-group {
     background-color: var(--color-bg-card);
-    padding: 10px;
-    margin-bottom: 10px;
+    padding: 14px 4px;
     gap: 10px;
-    border-radius: 12px;
+}
+
+/* Groepen gescheiden door een dunne lijn i.p.v. losse blokken. */
+.shape-settings-group + .shape-settings-group {
+    border-top: 1px solid var(--color-accent-soft);
+}
+
+.input-text label {
+    font-size: var(--fs-sm);
 }
 
 .shape-settings-title {
-    margin-top: 0;
+    margin: 0 0 8px;
+    font-size: var(--fs-md);
 }
 
 .shape-settings-group .input-text {
@@ -700,15 +812,17 @@ body {
 
 .input-text input, .input-text select {
     box-sizing: border-box;
-    height: 36px;
+    height: 34px;
     width: 45%;
-    padding: 0 14px;
-    border-radius: 12px;
-    border: 2px solid var(--color-secondary);
-    background-color: var(--color-bg);
+    padding: 0 10px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-field-border);
+    background-color: var(--color-surface);
     color: var(--color-text);
-    font-size: 0.95rem;
+    font-size: var(--fs-sm);
     font-family: inherit;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
     outline: none;
     cursor: text;
     transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
@@ -720,15 +834,13 @@ body {
 }
 
 .input-text input:hover, .input-text select:hover {
-    border-color: var(--color-secondary-hover);
-    background-color: var(--color-bg-card);
+    border-color: var(--color-secondary);
 }
 
 .input-text input:focus, .input-text select:focus,
 .input-text input:active, .input-text select:active {
     border-color: var(--color-primary);
-    background-color: var(--color-bg-card);
-    box-shadow: 0 0 0 3px rgba(var(--shadow-color), 0.15);
+    box-shadow: 0 0 0 3px rgba(125, 58, 69, 0.18);
 }
 
 @keyframes checkbox-jump {
@@ -765,19 +877,89 @@ body {
     width: 360px;
     flex-shrink: 0;
     position: sticky;
-    top: 20px;
+    top: calc(var(--navbar-height) + 20px);
     display: flex;
     flex-direction: column;
     gap: 16px;
 }
 
+/* Inhoudsopgave onder het 3D-voorbeeld (Pattern.tsx). */
+.pattern-toc {
+    padding: 14px 8px 10px;
+    background-color: var(--color-bg-card);
+    border: 1px solid var(--color-accent-soft-hover);
+    border-radius: var(--radius-lg);
+}
+
+.pattern-toc-title {
+    margin: 0 8px 8px;
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-secondary);
+}
+
+.pattern-toc ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    max-height: calc(100vh - var(--navbar-height) - 420px);
+    min-height: 120px;
+    overflow-y: auto;
+}
+
+.pattern-toc button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 6px 8px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: none;
+    font: inherit;
+    font-size: var(--fs-sm);
+    color: var(--color-text);
+    text-align: left;
+    cursor: pointer;
+}
+
+.pattern-toc button:hover {
+    background-color: var(--color-accent-soft);
+}
+
+.pattern-toc-number {
+    flex: 0 0 22px;
+    font-weight: 700;
+    color: var(--color-primary);
+    font-variant-numeric: tabular-nums;
+}
+
+.pattern-toc-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Bij springen vanuit de inhoudsopgave niet onder de vaste navigatiebalk verdwijnen. */
+.pattern-container > .MuiCard-root {
+    scroll-margin-top: calc(var(--navbar-height) + 20px);
+}
+
+.MuiButton-root.pattern-back {
+    align-self: flex-start;
+    margin: 0 0 -10px -8px;
+}
+
 .pattern-preview-3d {
     width: 100%;
     aspect-ratio: 4 / 3;
-    border-radius: 16px;
+    border-radius: var(--radius-lg);
     overflow: hidden;
-    background-color: var(--color-bg-card);
-    box-shadow: 0 4px 14px rgba(var(--shadow-color), 0.14);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-card);
 }
 
 .pattern-preview-canvas {
@@ -811,14 +993,14 @@ body {
     width: 100%;
     height: auto;
     box-sizing: border-box;
-    background-color: var(--color-bg-card) !important;
-    border-radius: 16px !important;
-    box-shadow: 0 4px 14px rgba(var(--shadow-color), 0.14) !important;
+    background-color: var(--color-surface) !important;
+    border-radius: var(--radius-lg) !important;
+    box-shadow: var(--shadow-card) !important;
 }
 
 .pattern-page-title {
     margin: 0 0 8px 0;
-    font-size: 2rem;
+    font-size: var(--fs-2xl);
     color: var(--color-text);
 }
 
@@ -826,7 +1008,7 @@ body {
     margin: 0 0 14px 0;
     display: flex;
     align-items: center;
-    font-size: 1.25rem;
+    font-size: var(--fs-lg);
     color: var(--color-text);
 }
 
@@ -841,7 +1023,8 @@ body {
 }
 
 .pattern-card--legend {
-    background-color: var(--color-accent-soft) !important;
+    background-color: var(--color-bg-card) !important;
+    border: 1px solid var(--color-accent-soft-hover);
     box-shadow: none !important;
 }
 
@@ -849,7 +1032,7 @@ body {
    eronder), dan de rest als eenvoudige boodschappenlijst. */
 .pattern-supplies-heading {
     margin: 0 0 6px;
-    font-size: 0.8rem;
+    font-size: var(--fs-sm);
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -902,7 +1085,7 @@ body {
 
 .pattern-yarn-uses {
     display: block;
-    font-size: 0.85rem;
+    font-size: var(--fs-sm);
     opacity: 0.8;
 }
 
@@ -916,7 +1099,7 @@ body {
 .pattern-info-muted {
     display: block;
     margin: 6px 0 0;
-    font-size: 0.8rem;
+    font-size: var(--fs-sm);
     opacity: 0.7;
 }
 
@@ -926,9 +1109,15 @@ body {
     line-height: 1.6;
 }
 
+/* Kleurbolletje midden in een regel (borduurgaren): inline-block, anders heeft het geen maat. */
+.pattern-supplies-list .pattern-color-swatch {
+    display: inline-block;
+    vertical-align: -2px;
+}
+
 .pattern-supplies-size {
     margin: 14px 0 0;
-    font-size: 0.9rem;
+    font-size: var(--fs-sm);
 }
 
 .pattern-color-swatch {
@@ -961,8 +1150,8 @@ body {
 .pattern-legend-grid dt {
     justify-self: start;
     padding: 2px 10px;
-    border-radius: 999px;
-    background-color: var(--color-bg-card);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-accent-soft);
     color: var(--color-primary);
     font-weight: 600;
     white-space: nowrap;
@@ -975,7 +1164,7 @@ body {
 
 .pattern-legend-subtitle {
     margin: 10px 0 2px;
-    font-size: 0.8rem;
+    font-size: var(--fs-sm);
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -986,9 +1175,9 @@ body {
     margin: 16px 0 0;
     padding: 10px 12px;
     border-left: 4px solid var(--color-secondary);
-    border-radius: 8px;
-    background-color: var(--color-bg-card);
-    font-size: 0.95rem;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-surface);
+    font-size: var(--fs-md);
     line-height: 1.4;
 }
 
@@ -998,11 +1187,11 @@ body {
     border-left: 6px solid var(--color-primary);
 }
 
-/* Vaste kolombreedte voor het swatch-blokje (matcht maxDimension in Pattern.tsx) zodat
+/* Vaste kolombreedte voor het swatch-blokje (matcht maxDimension = 120 in Pattern.tsx) zodat
    de rijenlijst in elke kaart op dezelfde plek begint, ongeacht de afmetingen van de vorm. */
 .pattern-card-body {
     display: grid;
-    grid-template-columns: 1fr 180px;
+    grid-template-columns: 1fr 120px;
     gap: 20px;
     align-items: start;
 }
@@ -1022,7 +1211,7 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.9rem;
+    font-size: var(--fs-sm);
     font-weight: 700;
 }
 
@@ -1069,8 +1258,12 @@ body {
     background-color: var(--color-secondary);
 }
 
+/* Rondenummers moeten tijdens het haken in één oogopslag te vinden zijn. */
 .pattern-row-label {
-    font-weight: 600;
+    font-weight: 700;
+    color: var(--color-primary);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
 }
 
 .pattern-row-text {
@@ -1096,20 +1289,104 @@ body {
 .my-pattern-text-container {
     position: relative;
     margin: 0;
-    padding: 20px;
+    padding: 14px 14px 16px;
     height: auto;
     cursor: pointer;
-    background-color: var(--color-bg-card);
-    border-radius: 16px !important;
-    box-shadow: 0 4px 14px rgba(var(--shadow-color), 0.14) !important;
-    transform: translate3d(0, 0, 0);
-    backface-visibility: hidden;
-    transition: transform 0.45s ease-out;
+    background-color: var(--color-surface) !important;
+    border-radius: var(--radius-lg) !important;
+    box-shadow: var(--shadow-card) !important;
+    transition: box-shadow 0.2s ease;
 }
 
-/* .my-pattern-text-container:hover {
-    transform: translate3d(0, -6px, 0);
-} */
+.my-pattern-text-container:hover {
+    box-shadow: 0 2px 4px rgba(var(--shadow-color), 0.08), 0 10px 24px rgba(var(--shadow-color), 0.14) !important;
+}
+
+/* Van wie: "Jouw ontwerp" of de maker (UserLink-chip), linksboven over de foto. */
+.card-media {
+    position: relative;
+}
+
+.card-owner {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    display: flex;
+    pointer-events: none;
+}
+
+.card-owner > * {
+    pointer-events: auto;
+    max-width: 100%;
+    box-shadow: 0 1px 3px rgba(var(--shadow-color), 0.18);
+}
+
+.card-owner .user-chip {
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    background-color: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(4px);
+}
+
+.card-owner .user-chip:hover {
+    background-color: var(--color-surface);
+}
+
+.card-owner-mine {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 10px 2px 8px;
+    border-radius: var(--radius-pill);
+    background-color: var(--color-primary);
+    color: var(--color-bg);
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    line-height: 1.6;
+}
+
+.card-owner-mine::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--color-bg);
+}
+
+/* Bewerkknoppen op je eigen kaart: twee even brede knoppen onder Patroon. */
+.card-edit-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.card-edit-row .MuiButton-root {
+    min-width: 0;
+    white-space: nowrap;
+}
+
+/* Smalle kaarten (2-3 kolommen op tablet/telefoon): de twee knoppen onder elkaar. */
+@media (max-width: 899px) {
+    .card-edit-row {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+
+    .card-edit-row .MuiButton-startIcon {
+        margin-right: 4px;
+    }
+}
+
+.card-title {
+    margin: 14px 0 8px;
+    font-size: var(--fs-lg);
+    line-height: 1.25;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 
 @keyframes heart-bounce {
     0% { transform: scale(1); }
@@ -1121,7 +1398,7 @@ body {
 
 /* Aantal favorieten naast het hartje (FavoriteButton in AmigurumiCard.tsx). */
 .favorite-count {
-    font-size: 0.9rem;
+    font-size: var(--fs-sm);
     font-weight: 600;
     color: var(--color-text);
     font-variant-numeric: tabular-nums;
@@ -1135,7 +1412,7 @@ body {
     width: 100%;
     aspect-ratio: 4 / 3;
     object-fit: cover;
-    border-radius: 4px;
+    border-radius: var(--radius-md);
 }
 
 /* Snapshot van het 3D-ontwerp als fallback voor een ontbrekende foto (DesignSnapshot.tsx):
@@ -1151,40 +1428,58 @@ body {
     object-fit: contain;
 }
 
-/* border-style:dashed couples dash length to border-width, which isn't enough control for
-   "much longer" dashes — four tiled linear-gradient backgrounds (one per edge) give the
-   dash/gap length independently of thickness. --dash-color is overridden on hover/drag. */
+/* Foto-picker (ImageDropzone.tsx): rustige stippelrand die bij hover of slepen kleurt. */
 .pattern-image-dropzone {
-    --dash-color: var(--color-primary);
     display: flex;
     align-items: center;
     justify-content: center;
     width: 100%;
-    aspect-ratio: 4 / 3;
+    aspect-ratio: 16 / 9;
     margin: 16px 0;
-    border-radius: 8px;
-    background-color: var(--color-bg-card);
-    background-image:
-        linear-gradient(to right, var(--dash-color) 0 60%, transparent 0),
-        linear-gradient(to right, var(--dash-color) 0 60%, transparent 0),
-        linear-gradient(to bottom, var(--dash-color) 0 60%, transparent 0),
-        linear-gradient(to bottom, var(--dash-color) 0 60%, transparent 0);
-    background-position: top left, bottom left, top left, top right;
-    background-size: 28px 4px, 28px 4px, 4px 28px, 4px 28px;
-    background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
+    box-sizing: border-box;
+    border: 1.5px dashed var(--color-field-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
     cursor: pointer;
     overflow: hidden;
-    transition: background-color 0.15s ease;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
 .pattern-image-dropzone:hover,
 .pattern-image-dropzone[data-active="true"] {
-    --dash-color: var(--color-primary-hover);
+    border-color: var(--color-primary);
+    background-color: var(--color-bg-card);
+}
+
+.pattern-image-dropzone-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    text-align: center;
 }
 
 .pattern-image-dropzone-icon {
-    font-size: 4.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    margin-bottom: 6px;
+    border-radius: 50%;
+    background-color: var(--color-accent-soft);
     color: var(--color-primary);
+}
+
+.pattern-image-dropzone-label {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    color: var(--color-primary);
+}
+
+.pattern-image-dropzone-hint {
+    font-size: var(--fs-sm);
+    color: var(--color-secondary);
 }
 
 .pattern-image-dropzone-preview {
@@ -1217,7 +1512,7 @@ body {
     max-width: 100%;
     aspect-ratio: 4 / 3;
     object-fit: cover;
-    border-radius: 16px;
+    border-radius: var(--radius-lg);
     flex-shrink: 0;
 }
 
@@ -1241,12 +1536,12 @@ body {
     align-items: center;
     gap: 6px;
     max-width: 100%;
-    font-size: 0.95rem;
+    font-size: var(--fs-md);
 }
 
 .detail-summary {
     margin: 0;
-    font-size: 0.95rem;
+    font-size: var(--fs-md);
     opacity: 0.8;
 }
 
@@ -1258,14 +1553,36 @@ body {
     margin-top: 6px;
 }
 
+.detail-edit-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 2px;
+}
+
+/* "Meer acties" (kopie maken, verwijderen) en het hartje: omlijnde vierkantjes, zoals op de kaarten. */
+.detail-more {
+    border: 1.5px solid var(--color-accent-soft-hover) !important;
+    border-radius: var(--radius-md) !important;
+    color: var(--color-text) !important;
+}
+
+.detail-more:hover {
+    background-color: var(--color-accent-soft) !important;
+    border-color: var(--color-secondary) !important;
+}
+
+/* Zelfde omlijnde stijl als het hartje op de kaarten. */
 .detail-favorite {
     gap: 4px;
-    border-radius: 999px !important;
-    background-color: var(--color-accent-soft) !important;
+    border: 1.5px solid var(--color-accent-soft-hover) !important;
+    border-radius: var(--radius-md) !important;
+    background-color: transparent !important;
 }
 
 .detail-favorite:hover {
-    background-color: var(--color-accent-soft-hover) !important;
+    background-color: var(--color-accent-soft) !important;
+    border-color: var(--color-secondary) !important;
 }
 
 /* Tabbladen in dezelfde stijl als die in de editor (.settings-bar-tabs). */
@@ -1285,7 +1602,7 @@ body {
     min-height: 40px;
     font-family: inherit;
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: var(--fs-sm);
     text-transform: none;
     color: var(--color-secondary);
 }
@@ -1301,9 +1618,22 @@ body {
     min-height: 210px;
 }
 
+.detail-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 120px;
+    border: 1.5px dashed var(--color-accent-soft-hover);
+    border-radius: var(--radius-md);
+    color: var(--color-secondary);
+    font-size: var(--fs-sm);
+}
+
 .detail-meta {
     margin-top: 12px !important;
-    font-size: 0.9rem !important;
+    font-size: var(--fs-sm) !important;
     opacity: 0.75;
 }
 
@@ -1312,12 +1642,12 @@ body {
     margin-top: 18px;
     padding: 12px 14px;
     border: 2px solid var(--color-accent-soft);
-    border-radius: 14px;
+    border-radius: var(--radius-md);
 }
 
 .detail-origin-label {
     margin-bottom: 6px;
-    font-size: 0.75rem;
+    font-size: var(--fs-xs);
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -1337,7 +1667,7 @@ body {
 }
 
 .detail-origin-row--older {
-    font-size: 0.9rem;
+    font-size: var(--fs-sm);
     opacity: 0.85;
 }
 
@@ -1366,7 +1696,7 @@ body {
 
 .detail-yarn-table {
     background-color: var(--color-accent-soft);
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     overflow: hidden;
 }
 
@@ -1411,7 +1741,7 @@ body {
     padding: 32px 32px 28px;
     box-sizing: border-box;
     background-color: var(--color-bg-card);
-    border-radius: 24px;
+    border-radius: var(--radius-xl);
     box-shadow: 0 10px 40px rgba(var(--shadow-color), 0.16);
 }
 
@@ -1423,19 +1753,19 @@ body {
 
 .auth-brand {
     margin: 0;
-    font-size: 2.2rem;
+    font-size: var(--fs-2xl);
     color: var(--color-primary);
 }
 
 .auth-tagline {
     margin: 4px 0 20px;
-    font-size: 0.95rem;
+    font-size: var(--fs-md);
     opacity: 0.8;
 }
 
 .auth-heading {
     margin: 0 0 6px;
-    font-size: 1.25rem;
+    font-size: var(--fs-lg);
 }
 
 .auth-tabs {
@@ -1451,7 +1781,7 @@ body {
 .auth-tabs .MuiTab-root {
     font-family: inherit;
     font-weight: 600;
-    font-size: 0.95rem;
+    font-size: var(--fs-md);
     text-transform: none;
     color: var(--color-secondary);
 }
@@ -1465,7 +1795,7 @@ body {
     border: none;
     background: none;
     font: inherit;
-    font-size: 0.9rem;
+    font-size: var(--fs-sm);
     color: var(--color-primary);
     text-decoration: underline;
     cursor: pointer;
@@ -1488,7 +1818,7 @@ body {
 .MuiButton-root.auth-submit {
     margin-top: 20px;
     padding: 12px 0;
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     background-color: var(--color-primary);
     color: var(--color-bg);
     font-weight: 600;
@@ -1546,7 +1876,7 @@ body {
     border-radius: 50%;
     background-color: var(--color-primary);
     color: var(--color-bg);
-    font-size: 2rem;
+    font-size: var(--fs-2xl);
     font-weight: 700;
 }
 
@@ -1576,13 +1906,13 @@ body {
     margin-bottom: 20px;
     padding: 24px;
     background-color: var(--color-bg-card);
-    border-radius: 18px;
-    box-shadow: 0 4px 14px rgba(var(--shadow-color), 0.1);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
 }
 
 .account-section h2 {
     margin: 0 0 16px;
-    font-size: 1.15rem;
+    font-size: var(--fs-lg);
 }
 
 .account-form {
@@ -1609,7 +1939,7 @@ body {
 
 .account-note {
     margin: -6px 0 0;
-    font-size: 0.9rem;
+    font-size: var(--fs-sm);
     opacity: 0.75;
 }
 
@@ -1630,7 +1960,7 @@ body {
 }
 
 .account-label {
-    font-size: 0.8rem;
+    font-size: var(--fs-sm);
     font-weight: 600;
     color: var(--color-secondary);
 }
@@ -1682,6 +2012,62 @@ body {
     color: var(--color-primary-hover);
 }
 
+/* Lege staat van een overzicht (EmptyState.tsx). */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    max-width: 440px;
+    margin: 32px auto;
+    padding: 40px 24px;
+    box-sizing: border-box;
+    text-align: center;
+    color: var(--color-text);
+    background-color: var(--color-bg-card);
+    border: 1.5px dashed var(--color-accent-soft-hover);
+    border-radius: var(--radius-lg);
+}
+
+.empty-state-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background-color: var(--color-accent-soft);
+    color: var(--color-primary);
+}
+
+.empty-state-icon .MuiSvgIcon-root {
+    font-size: 28px;
+}
+
+.empty-state-text {
+    font-size: var(--fs-md);
+    line-height: 1.5;
+}
+
+.empty-state-actions {
+    margin-top: 4px;
+}
+
+/* Binnen een venster of tabblad: geen extra marge eromheen. */
+.MuiDialog-root .empty-state {
+    margin: 0 auto;
+    padding: 28px 20px;
+}
+
+.empty-state--error {
+    border-style: solid;
+}
+
+.empty-state--error .empty-state-icon {
+    background-color: rgba(179, 38, 30, 0.1);
+    color: var(--color-danger);
+}
+
 /* "Meer laden" onder de kaarten op Home (PatternBrowser.tsx). */
 .load-more {
     display: flex;
@@ -1706,10 +2092,10 @@ body {
     gap: 6px;
     max-width: 100%;
     padding: 2px 10px 2px 2px;
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     background-color: var(--color-accent-soft);
     color: var(--color-text);
-    font-size: 0.9rem;
+    font-size: var(--fs-sm);
     font-weight: 500;
     line-height: 1.6;
     text-decoration: none;
@@ -1737,7 +2123,7 @@ body {
     border-radius: 50%;
     background-color: var(--color-primary);
     color: var(--color-bg);
-    font-size: 0.75rem;
+    font-size: var(--fs-xs);
     font-weight: 600;
 }
 
@@ -1954,7 +2340,7 @@ body {
     }
 
     .draggable-shape {
-        border: 3px solid black;
+        border: 2px solid var(--color-text);
         min-width: 40px;
         min-height: 40px;
     }
@@ -1971,7 +2357,7 @@ body {
 
     .input-text input, .input-text select {
         height: 1.8rem;
-        font-size: 1.1rem;
+        font-size: var(--fs-md);
     }
 
     .pattern {
@@ -1982,6 +2368,11 @@ body {
         width: 100%;
         max-width: none;
         position: static;
+    }
+
+    /* Hier scrollt het voorbeeld mee weg; een inhoudsopgave bovenaan voegt dan weinig toe. */
+    .pattern-toc {
+        display: none;
     }
 
     .pattern-container {
@@ -2015,7 +2406,7 @@ body {
     }
 
     .my-pattern-text-container h1 {
-        font-size: 1rem;
+        font-size: var(--fs-md);
         margin-top: 8px !important;
         margin-bottom: 8px !important;
         line-height: 1.3;
@@ -2023,13 +2414,13 @@ body {
 
     .my-pattern-text-container .MuiChip-root {
         height: 22px;
-        font-size: 0.68rem;
+        font-size: var(--fs-xs);
     }
 
     .my-pattern-text-container .MuiButton-root {
         min-width: 0 !important;
         padding: 4px 6px !important;
-        font-size: 0.72rem !important;
+        font-size: var(--fs-xs) !important;
     }
 
     .my-pattern-text-container .MuiIconButton-root {
@@ -2058,14 +2449,8 @@ body {
 /* xs (<=599px): phones — beyond stacking, the desktop font/spacing scale itself
    needs to shrink so nothing clips or forces horizontal scrolling. */
 @media (max-width: 599px) {
-    .navbar-button {
-        font-size: 1em;
-        padding: 0.5em 3vw;
-        margin: 0.3vh 1vw;
-    }
-
     .pattern-page-title {
-        font-size: 1.5rem;
+        font-size: var(--fs-xl);
     }
 
     /* Buitenste paginamarges knijpen extra samen op xs — anders gaat een groot deel van het
@@ -2089,7 +2474,7 @@ body {
     }
 
     .pattern-card-title {
-        font-size: 1.05rem;
+        font-size: var(--fs-md);
     }
 
     .my-pattern {
@@ -2111,7 +2496,7 @@ body {
     }
 
     .my-pattern-text-container h1 {
-        font-size: 0.95rem;
+        font-size: var(--fs-md);
     }
 
     .MuiDialogContent-root.detail-dialog {
@@ -2207,7 +2592,7 @@ body {
 .canvas-toolbar-group {
     display: flex;
     background-color: var(--color-bg-card);
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     box-shadow: 0 2px 8px rgba(var(--shadow-color), 0.2);
     pointer-events: auto;
 }
@@ -2216,6 +2601,20 @@ body {
     width: 40px;
     height: 40px;
     color: var(--color-primary);
+}
+
+.canvas-toolbar-group .MuiIconButton-root.danger {
+    color: var(--color-danger);
+}
+
+.canvas-toolbar-group .MuiIconButton-root.danger:hover {
+    background-color: rgba(179, 38, 30, 0.1);
+}
+
+.canvas-toolbar-separator {
+    width: 1px;
+    margin: 8px 4px;
+    background-color: var(--color-accent-soft-hover);
 }
 
 .canvas-toolbar-group .MuiIconButton-root.active {
@@ -2274,7 +2673,7 @@ body {
 }
 
 .editor--phone .palette-label {
-    font-size: 0.65rem;
+    font-size: var(--fs-xs);
     white-space: nowrap;
 }
 
@@ -2330,11 +2729,6 @@ body {
     color: var(--color-primary);
 }
 
-/* Pijltjestoetsen zijn er op een telefoon niet. */
-.editor--phone .settings-bar-tip {
-    display: none;
-}
-
 /* Kopregel van de editor op de telefoon (EditorHeader.tsx). */
 .editor-header {
     flex: 0 0 auto;
@@ -2360,7 +2754,7 @@ body {
     flex: 1 1 auto;
     min-width: 0;
     margin: 0 4px;
-    font-size: 1rem;
+    font-size: var(--fs-md);
     font-weight: 700;
     white-space: nowrap;
     overflow: hidden;
@@ -2408,7 +2802,7 @@ body {
 
 .editor--phone .shape-settings-title {
     margin: 4px 0 6px;
-    font-size: 0.9rem;
+    font-size: var(--fs-sm);
 }
 
 .editor--phone .shape-settings-group .input-text {
@@ -2420,7 +2814,7 @@ body {
 
 .editor--phone .shape-settings-group .input-text label {
     margin: 0;
-    font-size: 0.75rem;
+    font-size: var(--fs-xs);
     font-weight: 600;
 }
 
@@ -2428,7 +2822,7 @@ body {
 .editor--phone .shape-settings-group .input-text select {
     width: 100%;
     height: 34px;
-    font-size: 0.95rem;
+    font-size: var(--fs-md);
 }
 
 .editor--phone .shape-settings-group--xyz {
@@ -2463,7 +2857,7 @@ body {
     align-items: center;
     gap: 2px;
     padding: 8px 2px 6px;
-    font-size: 0.68rem;
+    font-size: var(--fs-xs);
     font-weight: 600;
     color: var(--color-secondary);
     text-decoration: none;
@@ -2492,4 +2886,95 @@ body {
     display: flex;
     flex-direction: column;
     gap: 8px;
+}
+
+/* ---- Vormen met een pictogram uit hun definitie (src/shapes/, zie ShapeIcon.tsx) ---- */
+
+/* Een SVG in plaats van een met CSS getekende vorm: de lijn volgt `color`. */
+.draggable-shape.has-icon {
+    width: 56px;
+    height: 56px;
+    border: none;
+    color: var(--color-text);
+}
+
+.draggable-shape.has-icon:hover {
+    color: var(--color-primary);
+}
+
+.shape-icon-svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+/* Kopjes per groep in de vormenbalk (bolle vormen, platte vormen, details): duidelijk
+   gescheiden secties, elk kopje in de huisstijl met een lijn erachter. */
+.palette-group-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 12px;
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--color-primary);
+    text-align: left;
+}
+
+/* Een kort lijntje achter het kopje, zodat het als sectiekop leest en niet als label. */
+.palette-group-title::after {
+    content: "";
+    flex: 1 1 auto;
+    height: 1px;
+    background-color: var(--color-accent-soft-hover);
+}
+
+/* Ruimte tussen de groepen, zodat elke groep als eigen blok leest. */
+.draggables + .palette-group-title {
+    margin-top: 12px;
+}
+
+/* Telefoon: de groepen naast elkaar in één doorlopende strook, met een streepje ertussen. */
+.editor--phone .shapebar {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.editor--phone .palette-group-title {
+    display: none;
+}
+
+.editor--phone .shapebar .draggables {
+    flex: 0 0 auto;
+    overflow: visible;
+}
+
+.editor--phone .shapebar .draggables + .palette-group-title + .draggables {
+    border-left: 1px solid var(--color-accent-soft-hover);
+}
+
+/* Meldingen (react-toastify): in de stijl van de app en onder de navigatiebalk, niet eroverheen.
+   De variabelen van react-toastify staan in hun eigen :root (later geladen), dus hier op de
+   container zelf overschrijven. */
+.Toastify__toast-container {
+    --toastify-font-family: var(--font-body);
+    --toastify-color-light: var(--color-surface);
+    --toastify-text-color-light: var(--color-text);
+    --toastify-color-success: #2E7D32;
+    --toastify-color-error: var(--color-danger);
+    --toastify-toast-top: calc(var(--navbar-height) + 12px);
+    --toastify-toast-bd-radius: var(--radius-md);
+}
+
+.Toastify__toast {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: var(--fs-sm);
+    border: 1px solid var(--color-accent-soft-hover);
+    box-shadow: 0 8px 24px rgba(var(--shadow-color), 0.14);
 }

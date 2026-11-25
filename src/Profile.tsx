@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Avatar, Box, Button, Skeleton, Typography } from '@mui/material';
-import { Check, PersonAdd, PersonRemove, Settings } from '@mui/icons-material';
+import { Check, ErrorOutline, PersonAdd, PersonOffOutlined, PersonRemove, PhotoCameraOutlined, Settings, ViewInArOutlined } from '@mui/icons-material';
 import { collection, doc, getDocs, onSnapshot, query, where } from 'firebase/firestore';
 import { useCollection } from 'react-firebase-hooks/firestore';
 import { db } from '../firebase-config.js';
@@ -9,6 +9,7 @@ import { useAuth } from './auth/AuthProvider';
 import AmigurumiCard from './AmigurumiCard.tsx';
 import MasonryGrid from './MasonryGrid.tsx';
 import PatternDetail from './PatternDetail.tsx';
+import EmptyState from './EmptyState.tsx';
 import { MakeGrid, useMakes } from './Makes.tsx';
 import { CardGridSkeleton, ProfileHeaderSkeleton } from './Skeletons.tsx';
 import { useResponsiveMinColumns } from './useResponsiveMinColumns.ts';
@@ -44,7 +45,11 @@ const Profile = () => {
         );
     }
     if (!uid) {
-        return <Typography sx={{ m: 5 }}>{t('profile.notFound', { username })}</Typography>;
+        return (
+            <div className="my-pattern">
+                <EmptyState icon={<PersonOffOutlined />}>{t('profile.notFound', { username })}</EmptyState>
+            </div>
+        );
     }
     return <ProfileContent key={uid} userId={uid} username={username} />;
 };
@@ -72,9 +77,7 @@ const FollowButton = ({ userId }: { userId: string }) => {
             onMouseLeave={() => setHover(false)}
             disabled={!loaded || busy}
             aria-pressed={following}
-            sx={following
-                ? { borderColor: 'var(--color-primary)', color: 'var(--color-primary)', minWidth: 130 }
-                : { backgroundColor: 'var(--color-primary)', color: 'var(--color-bg)', minWidth: 130 }}
+            sx={{ minWidth: 130 }}
         >
             {following ? t(hover ? 'follow.unfollow' : 'follow.following') : t('follow.follow')}
         </Button>
@@ -165,7 +168,6 @@ const ProfileContent = ({ userId, username }: { userId: string; username: string
                             to="/account"
                             variant="outlined"
                             startIcon={<Settings />}
-                            sx={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}
                         >
                             {t('nav.settings')}
                         </Button>
@@ -177,9 +179,9 @@ const ProfileContent = ({ userId, username }: { userId: string; username: string
             {loading ? (
                 <CardGridSkeleton className="my-pattern-container" count={3} />
             ) : error ? (
-                <Typography color="error">{t('patterns.loadError', { message: error.message })}</Typography>
+                <EmptyState icon={<ErrorOutline />} tone="error">{t('patterns.loadError', { message: error.message })}</EmptyState>
             ) : amigurumis.length === 0 ? (
-                <Typography className="profile-empty">{t('profile.noDesigns')}</Typography>
+                <EmptyState icon={<ViewInArOutlined />}>{t('profile.noDesigns')}</EmptyState>
             ) : (
                 <MasonryGrid
                     className="my-pattern-container"
@@ -194,6 +196,7 @@ const ProfileContent = ({ userId, username }: { userId: string; username: string
                             amigurumi={amigurumi}
                             onPatternClick={handlePatternClick}
                             onCardClick={setSelectedAmigurumi}
+                            showOwner={false}
                         />
                     )}
                 />
@@ -204,7 +207,7 @@ const ProfileContent = ({ userId, username }: { userId: string; username: string
                 {makesLoading ? (
                     <CardGridSkeleton count={3} withTags={false} />
                 ) : makes.length === 0 ? (
-                    <Typography>{t('profile.noMakes')}</Typography>
+                    <EmptyState icon={<PhotoCameraOutlined />}>{t('profile.noMakes')}</EmptyState>
                 ) : (
                     <MakeGrid
                         makes={makes}

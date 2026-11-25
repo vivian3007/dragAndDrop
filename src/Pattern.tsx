@@ -1,6 +1,7 @@
-import {lazy, Suspense, useEffect, useState} from "react";
+import React, {lazy, Suspense, useEffect, useState} from "react";
 import {useLocation, useNavigate, useParams} from "react-router-dom";
 import {Button, Card, Skeleton} from "@mui/material";
+import {ArrowBack} from "@mui/icons-material";
 import {collection, doc, getDoc, getDocs, query, where} from "firebase/firestore";
 import {db} from "../firebase-config.js";
 import { generatePattern, PatternPart } from "./patterns/generators";
@@ -8,6 +9,22 @@ import { formatRow, PatternRow } from "./patterns/patternTerms";
 import { eyePlacements, eyeSupplies, isEye } from "./patterns/eyes";
 import { embroideryPlacements, embroiderySupplies, type EmbroideryPlacement } from "./patterns/embroidery";
 import { computePatternHeightCm, computePatternWidthCm } from "./geometry/patternBounds";
+
+// Steken die alleen sommige onderdelen gebruiken (bloem, ster, motieven in rijen): die komen
+// bij de afkortingen als een onderdeel ze nodig heeft (extraStitches in z'n definitie).
+const EXTRA_STITCHES = ["ch", "slst", "hdc", "dc", "tr"] as const;
+
+// Alle rondes/rijen van een onderdeel.
+const allRows = (pattern: PatternPart): PatternRow[] => [
+    ...("firstRow" in pattern && pattern.firstRow ? [pattern.firstRow] : []),
+    ...pattern.incArray,
+    ...pattern.scArray,
+    ...pattern.decArray,
+];
+
+// Omtrek van een kegel in het plaatje (viewBox 0..100): een driehoek, of taps toelopend een
+// trapezium met de bovenkant `topWidth` keer zo breed als de onderkant.
+const coneOutline = (topWidth: number) => `${50 - 47 * topWidth},3 ${50 + 47 * topWidth},3 97,97 3,97`;
 import { useIntl } from "react-intl";
 import { useT } from "./i18n/LanguageProvider";
 import { usePatternTerms } from "./i18n/usePatternTerms";
@@ -15,6 +32,7 @@ import { ROW_HEIGHTS } from "./patterns/estimateYarn";
 import { rowRanges, yarnUsage, type YarnUse } from "./patterns/yarnUsage";
 import { mainConnections } from "./patterns/assembly";
 import { colorName } from "./patterns/colorNames";
+import { hasShapeIcon, shapeDefinition } from "./shapes/registry";
 
 // three.js pas laden als de preview echt in beeld komt.
 const PatternPreview3D = lazy(() => import("./PatternPreview3D.tsx"));
@@ -194,14 +212,10 @@ const Pattern = () => {
             lines.push({ text: `${terms.row(pattern.lastRow)}: ${terms.dec(6)} (6)` });
             lines.push({ text: t("pattern.sewClosed") });
         } else {
-            // Bol met opening (snuit, lijf voor het hoofd): stevig vullen, de opening tegen het
-            // andere onderdeel naaien.
-            const closing: Record<string, string> = {
-                Oval: "pattern.fastenOffOval",
-                Tube: "pattern.fastenOffTube",
-                OpenSphere: "pattern.stuffOpening",
-            };
-            lines.push({ text: t(closing[pattern.type] ?? (pattern.flat ? "pattern.fastenOffFlat" : "pattern.stuffLightly")) });
+            // Hoe je een open onderdeel afmaakt, staat in z'n definitie (bv. een open bol: stevig
+            // vullen en de opening tegen het andere onderdeel naaien).
+            const finishKey = shapeDefinition(pattern.type).finishKey;
+            lines.push({ text: t(finishKey ?? (pattern.flat ? "pattern.fastenOffFlat" : "pattern.stuffLightly")) });
         }
         return lines;
     };
@@ -228,20 +242,20 @@ const Pattern = () => {
         return parts.join(", ");
     };
 
+    const scrollToPart = (id: string) => {
+        document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+
     return (
         <div>
             <div className="pattern">
                 <div className="pattern-preview-panel">
-                    <h1 className="pattern-page-title">{amigurumi?.name ?? t("pattern.defaultTitle")}</h1>
-                    <div className="pattern-preview-3d">
-                        <Suspense fallback={<Skeleton variant="rounded" sx={{ width: "100%", height: "100%", bgcolor: "var(--color-accent-soft)" }} />}>
-                            <PatternPreview3D shapes={shapes} onIntersections={setComputedIntersections} />
-                        </Suspense>
-                    </div>
                     <Button
-                        variant="contained"
-                        color="inherit"
-                        style={{ backgroundColor: "var(--color-primary)", color: "var(--color-bg)" }}
+                        variant="text"
+                        color="primary"
+                        size="small"
+                        startIcon={<ArrowBack />}
+                        className="pattern-back"
                         onClick={() => {
                             // Terug naar waar je vandaan kwam (editor of een overzicht). Geopend
                             // via een gedeelde link is er geen vorige pagina in de app: dan naar Home.
@@ -251,6 +265,36 @@ const Pattern = () => {
                     >
                         {t("pattern.goBack")}
                     </Button>
+                    <h1 className="pattern-page-title">{amigurumi?.name ?? t("pattern.defaultTitle")}</h1>
+                    <div className="pattern-preview-3d">
+                        <Suspense fallback={<Skeleton variant="rounded" sx={{ width: "100%", height: "100%", bgcolor: "var(--color-accent-soft)" }} />}>
+                            <PatternPreview3D shapes={shapes} onIntersections={setComputedIntersections} />
+                        </Suspense>
+                    </div>
+                    {/* Inhoudsopgave onder het voorbeeld: blijft met de kolom in beeld tijdens het
+                        scrollen, zodat je tijdens het haken snel naar een onderdeel springt. */}
+                    {patterns.length > 1 && (
+                        <nav className="pattern-toc" aria-label={t("pattern.contents")}>
+                            <h2 className="pattern-toc-title">{t("pattern.contents")}</h2>
+                            <ol>
+                                {patterns.map((pattern, index) => (
+                                    <li key={index}>
+                                        <button type="button" onClick={() => scrollToPart(`pattern-part-${index + 1}`)}>
+                                            <span className="pattern-toc-number">{index + 1}</span>
+                                            <span className="pattern-color-swatch" style={{ backgroundColor: pattern.color }} />
+                                            <span className="pattern-toc-name">{pattern.name || t("pattern.unnamedPart")}</span>
+                                        </button>
+                                    </li>
+                                ))}
+                                <li>
+                                    <button type="button" onClick={() => scrollToPart("pattern-part-assembly")}>
+                                        <span className="pattern-toc-number">✓</span>
+                                        <span className="pattern-toc-name">{t("pattern.assembly")}</span>
+                                    </button>
+                                </li>
+                            </ol>
+                        </nav>
+                    )}
                 </div>
                 <div className="pattern-container">
                     {/* Naslag vóór de instructies: materialen en afkortingen naast elkaar, zodat ze
@@ -343,7 +387,11 @@ const Pattern = () => {
                                     <dt>{t("pattern.abbr.inc")}</dt><dd>{t("pattern.abbr.incMeaning")}</dd>
                                     <dt>{t("pattern.abbr.dec")}</dt><dd>{t("pattern.abbr.decMeaning")}</dd>
                                     <dt>{t("pattern.abbr.magicRing")}</dt><dd>{t("pattern.abbr.magicRingMeaning")}</dd>
-                                    {patterns.some((pattern) => pattern.type === "Cylinder") && (
+                                    {/* De andere steken alleen als een onderdeel ze gebruikt. */}
+                                    {EXTRA_STITCHES.filter((stitch) => patterns.some((pattern) => shapeDefinition(pattern.type).extraStitches?.includes(stitch))).map((stitch) => (
+                                        <React.Fragment key={stitch}><dt>{t(`pattern.abbr.${stitch}`)}</dt><dd>{t(`pattern.abbr.${stitch}Meaning`)}</dd></React.Fragment>
+                                    ))}
+                                    {patterns.some((pattern) => allRows(pattern).some((row) => row.backLoop)) && (
                                         <><dt>{t("pattern.abbr.backLoop")}</dt><dd>{t("pattern.abbr.backLoopMeaning")}</dd></>
                                     )}
                                 </dl>
@@ -355,11 +403,14 @@ const Pattern = () => {
                                 </dl>
                             </div>
                             <p className="pattern-legend-note">{t("pattern.spiralNote")}</p>
+                            {patterns.some((pattern) => allRows(pattern).some((row) => row.inRows)) && (
+                                <p className="pattern-legend-note">{t("pattern.rowsNote")}</p>
+                            )}
                         </Card>
                     </div>
                     {patterns.length > 0 ? (
                         patterns.map((pattern, index) => {
-                            const maxDimension = 180;
+                            const maxDimension = 120;
                             const aspectRatio = pattern.width / pattern.height;
                             let scaledWidth = pattern.width;
                             let scaledHeight = pattern.height;
@@ -377,6 +428,7 @@ const Pattern = () => {
                             return (
                                 <Card
                                     key={index}
+                                    id={`pattern-part-${index + 1}`}
                                     className="pattern-text-container pattern-card--shape"
                                     style={{ borderLeftColor: pattern.color }}
                                 >
@@ -394,7 +446,20 @@ const Pattern = () => {
                                                 )
                                             )}
                                         </ul>
-                                        {pattern.type === "Cone" ? (
+                                        {hasShapeIcon(pattern.type) ? (
+                                            // Vormen met een eigen pictogram (druppel, hartje, ...): dat silhouet.
+                                            <svg
+                                                className="shape-svg"
+                                                width={scaledWidth}
+                                                height={scaledHeight}
+                                                viewBox="0 0 100 100"
+                                                preserveAspectRatio="none"
+                                                aria-hidden="true"
+                                                style={{ color: "rgba(42, 30, 27, 0.45)" }}
+                                            >
+                                                <path d={shapeDefinition(pattern.type).icon} fill={pattern.color} stroke="currentColor" strokeWidth="1.5" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+                                            </svg>
+                                        ) : pattern.type === "Cone" ? (
                                             // Een driehoek met rand kan niet met CSS-randen; daarom SVG.
                                             <svg
                                                 className="shape-svg"
@@ -404,7 +469,7 @@ const Pattern = () => {
                                                 preserveAspectRatio="none"
                                                 aria-hidden="true"
                                             >
-                                                <polygon points="50,3 97,97 3,97" fill={pattern.color} stroke="var(--color-text)" strokeWidth="3" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+                                                <polygon points={coneOutline(pattern.topWidth ?? 0)} fill={pattern.color} stroke="rgba(42, 30, 27, 0.45)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
                                             </svg>
                                         ) : (
                                             <div
@@ -423,7 +488,7 @@ const Pattern = () => {
                     ) : (
                         <p>{t("pattern.noShapes")}</p>
                     )}
-                    <Card className="pattern-text-container pattern-card--assembly">
+                    <Card id="pattern-part-assembly" className="pattern-text-container pattern-card--assembly">
                         <h2 className="pattern-card-title">{t("pattern.assembly")}</h2>
                         <ul className="pattern-row-list">
                             {(() => {

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Button, Typography } from '@mui/material';
-import { Add } from '@mui/icons-material';
+import { Add, ViewInArOutlined } from '@mui/icons-material';
 import { collection, query, where } from 'firebase/firestore';
 import { useCollection } from 'react-firebase-hooks/firestore';
 import { db } from '../firebase-config.js';
@@ -26,9 +26,9 @@ const MyPatterns = () => {
         <Button
             type="button"
             variant="contained"
-            color="inherit"
+            color="primary"
             startIcon={<Add />}
-            sx={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-bg)', paddingY: 1 }}
+            sx={{ paddingY: 1 }}
             onClick={() => setIsNewPatternOpen(true)}
         >
             {t('patterns.new')}
@@ -47,6 +47,8 @@ const MyPatterns = () => {
                 error={error}
                 actions={filterActions}
                 emptyMessage={t('patterns.empty')}
+                emptyIcon={<ViewInArOutlined />}
+                showOwner={false}
             />
             <NewPattern
                 open={isNewPatternOpen}

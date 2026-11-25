@@ -1,4 +1,5 @@
 import { timestampMillis } from './timestamps.ts';
+import { normalizeTag } from './searchTerms.js';
 
 export type SortOption = 'newest' | 'oldest' | 'popular' | 'favorite' | 'name';
 
@@ -56,9 +57,11 @@ export const filterAndSortAmigurumis = (
     favoriteIds: ReadonlySet<string> = new Set()
 ): Amigurumi[] => {
     const term = searchTerm.trim().toLowerCase();
+    // Hoofdletterongevoelig: "Dier" vindt ook ontwerpen met de tag "dier".
+    const selectedKeys = selectedTags.map(normalizeTag);
 
     const filtered = amigurumis.filter((amigurumi) => {
-        const matchesTags = selectedTags.length === 0 || (amigurumi.tags ?? []).some((tag) => selectedTags.includes(tag));
+        const matchesTags = selectedKeys.length === 0 || (amigurumi.tags ?? []).some((tag) => selectedKeys.includes(normalizeTag(tag)));
         return matchesSearch(amigurumi, term) && matchesTags;
     });
 

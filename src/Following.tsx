@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { PeopleOutline } from '@mui/icons-material';
 import PatternBrowser from './PatternBrowser.tsx';
 import { useDesignsWhereIn } from './useDesignsWhereIn.ts';
 import { useFollowing } from './follows/FollowingProvider';
@@ -16,6 +17,7 @@ const Following = () => {
             amigurumis={amigurumis}
             loading={!loaded || loading}
             error={error}
+            emptyIcon={<PeopleOutline />}
             emptyMessage={
                 uids.length === 0 ? (
                     <>

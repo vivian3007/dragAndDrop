@@ -40,7 +40,9 @@ const MasonryGrid = <T,>({
             const count = Math.max(minColumns, naturalCount);
             setColumnCount(count);
             setActualGap(effectiveGap);
-            setActualColumnWidth(Math.min(columnWidth, (width - effectiveGap * (count - 1)) / count));
+            // De kolommen vullen samen precies de breedte (columnWidth is de minimumbreedte), zodat
+            // de kaarten links en rechts uitlijnen met de filterbalk en de koppen erboven.
+            setActualColumnWidth((width - effectiveGap * (count - 1)) / count);
         };
 
         updateLayout();
@@ -58,7 +60,7 @@ const MasonryGrid = <T,>({
         <div
             ref={containerRef}
             className={className}
-            style={{ display: 'flex', gap: `${actualGap}px`, justifyContent: 'center' }}
+            style={{ display: 'flex', gap: `${actualGap}px` }}
         >
             {columns.map((columnItems, colIndex) => (
                 <div

@@ -39,16 +39,9 @@ const PatternFilters = ({
     const hasActions = Boolean(actions);
     const t = useT();
 
+    // Rand, hoek en focuskleur komen uit het thema (theme.ts); alle velden even hoog.
     const fieldSx = {
         minWidth: 220,
-        '& .MuiOutlinedInput-root': {
-            borderRadius: '12px',
-            backgroundColor: 'var(--color-bg)',
-            '& fieldset': { borderColor: 'var(--color-secondary)', borderWidth: '2px' },
-            '&:hover fieldset': { borderColor: 'var(--color-secondary-hover)' },
-            '&.Mui-focused fieldset': { borderColor: 'var(--color-primary)', borderWidth: '2px' },
-        },
-        '& .MuiInputLabel-root.Mui-focused': { color: 'var(--color-primary)' },
     };
 
     // Drie duidelijk verschillende indelingen per breakpoint, via CSS grid-areas (geen losse
@@ -87,8 +80,8 @@ const PatternFilters = ({
                 p: { xs: 1, sm: 2, md: 2.5 },
                 boxSizing: 'border-box',
                 backgroundColor: 'var(--color-bg-card)',
-                borderRadius: '18px',
-                boxShadow: '0 4px 14px rgba(var(--shadow-color), 0.12)',
+                borderRadius: 'var(--radius-lg)',
+                boxShadow: 'var(--shadow-card)',
             }}
         >
             <TextField
@@ -100,9 +93,6 @@ const PatternFilters = ({
                     ...fieldSx,
                     gridArea: 'search',
                     width: '100%',
-                    maxWidth: { md: 520 },
-                    '& .MuiOutlinedInput-input': { fontSize: { xs: '1.1rem', sm: '1rem', md: '0.95rem' } },
-                    '& .MuiOutlinedInput-root': { ...fieldSx['& .MuiOutlinedInput-root'], height: { xs: 52, sm: 52, md: 'auto' } },
                 }}
             />
             <Autocomplete

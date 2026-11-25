@@ -33,8 +33,21 @@ const LanguageSelect = ({ variant = "light" }: { variant?: "light" | "dark" }) =
             sx={{
                 color,
                 minWidth: 130,
-                ".MuiOutlinedInput-notchedOutline": { borderColor: color, opacity: 0.6 },
-                "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: color, opacity: 1 },
+                fontSize: "var(--fs-sm)",
+                fontWeight: 600,
+                ...(variant === "light"
+                    ? {
+                        backgroundColor: "transparent",
+                        ".MuiOutlinedInput-notchedOutline": { borderColor: color, opacity: 0.6 },
+                        "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: color, opacity: 1 },
+                    }
+                    : {
+                        // In de lichte navbar: een rustig, randloos keuzemenu.
+                        backgroundColor: "transparent",
+                        ".MuiOutlinedInput-notchedOutline": { borderColor: "transparent" },
+                        "&:hover": { backgroundColor: "var(--color-accent-soft)" },
+                        "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "transparent" },
+                    }),
                 ".MuiSvgIcon-root": { color },
             }}
         >
