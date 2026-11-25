@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Kleuren uit src/styles.css: primary #7D3A45, secondary #97616A, bg #F1E3E0, card #FAF5F4, text #2A1E1B -->
+  <defs>
+    <clipPath id="ball"><circle cx="215" cy="295" r="130"/></clipPath>
+    <radialGradient id="shade" cx="0.35" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="#97616A"/>
+      <stop offset="1" stop-color="#7D3A45"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="#F1E3E0"/>
+
+  <!-- haaknaald (achter het bolletje) -->
+  <g transform="rotate(40 250 270)">
+    <rect x="234" y="62" width="32" height="420" rx="16" fill="#2A1E1B"/>
+    <!-- het haakje in de punt -->
+    <path d="M266 92 L238 106 L266 126 Z" fill="#F1E3E0"/>
+    <!-- duimsteun -->
+    <rect x="226" y="330" width="48" height="90" rx="14" fill="#2A1E1B"/>
+  </g>
+
+  <!-- bolletje wol -->
+  <circle cx="215" cy="295" r="130" fill="url(#shade)"/>
+  <g clip-path="url(#ball)" fill="none" stroke="#F1E3E0" stroke-opacity="0.45" stroke-width="9" stroke-linecap="round">
+    <ellipse cx="215" cy="295" rx="150" ry="58" transform="rotate(-30 215 295)"/>
+    <ellipse cx="215" cy="295" rx="150" ry="95" transform="rotate(-30 215 295)"/>
+    <ellipse cx="215" cy="295" rx="60" ry="150" transform="rotate(25 215 295)"/>
+    <ellipse cx="215" cy="295" rx="100" ry="150" transform="rotate(25 215 295)"/>
+  </g>
+  <circle cx="215" cy="295" r="130" fill="none" stroke="#642E37" stroke-width="6"/>
+
+  <!-- losse draad die overgaat in een haakketting (lossen) -->
+  <path d="M318 372 C 336 390, 344 398, 352 404" fill="none" stroke="#7D3A45" stroke-width="10" stroke-linecap="round"/>
+  <g fill="none" stroke="#7D3A45" stroke-width="10">
+    <ellipse cx="372" cy="414" rx="24" ry="14" transform="rotate(25 372 414)"/>
+    <ellipse cx="410" cy="432" rx="24" ry="14" transform="rotate(25 410 432)"/>
+    <ellipse cx="448" cy="450" rx="24" ry="14" transform="rotate(25 448 450)" stroke="#97616A"/>
+  </g>
+</svg>

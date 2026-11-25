@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 360" width="1240" height="360">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7C3AED"/>
+      <stop offset="1" stop-color="#EC4899"/>
+    </linearGradient>
+    <linearGradient id="txt" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6D28D9"/>
+      <stop offset="1" stop-color="#DB2777"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(24 24) scale(0.609)">
+    <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+    <g fill="none" stroke="#FFFFFF" stroke-opacity="0.35" stroke-width="10" stroke-linecap="round">
+      <path d="M70 130 V70 H130"/>
+      <path d="M382 442 H442 V382"/>
+    </g>
+    <path d="M338 160 C 300 112, 172 112, 172 192 C 172 268, 340 244, 340 324 C 340 404, 206 412, 166 356"
+          fill="none" stroke="#FFFFFF" stroke-width="32" stroke-linecap="round" stroke-dasharray="40 26"/>
+    <g transform="rotate(-42 380 118)">
+      <rect x="368" y="40" width="24" height="150" rx="12" fill="#FFFFFF"/>
+      <path d="M368 178 L380 222 L392 178 Z" fill="#FFFFFF"/>
+      <rect x="375" y="56" width="10" height="34" rx="5" fill="#A23ED6"/>
+    </g>
+  </g>
+  <text x="380" y="222" font-family="Poppins, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif"
+        font-size="150" font-weight="700" letter-spacing="-3" fill="url(#txt)">Stitchify</text>
+  <!-- stitched underline -->
+  <path d="M388 268 H1190" fill="none" stroke="url(#txt)" stroke-width="10" stroke-linecap="round" stroke-dasharray="26 18"/>
+</svg>

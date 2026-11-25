@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 360" width="1300" height="360">
+  <!-- Kleuren en lettertype uit src/styles.css (Fredoka 700, primary #7D3A45) -->
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@700&amp;display=swap');
+    .word { font-family: 'Fredoka', 'Segoe UI', Arial, sans-serif; font-weight: 700; }
+  </style>
+  <defs>
+    <clipPath id="ball"><circle cx="215" cy="295" r="130"/></clipPath>
+    <radialGradient id="shade" cx="0.35" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="#97616A"/>
+      <stop offset="1" stop-color="#7D3A45"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1300" height="360" rx="40" fill="#FAF5F4"/>
+
+  <g transform="translate(24 24) scale(0.609)">
+    <rect width="512" height="512" rx="112" fill="#F1E3E0"/>
+    <g transform="rotate(40 250 270)">
+      <rect x="234" y="62" width="32" height="420" rx="16" fill="#2A1E1B"/>
+      <path d="M266 92 L238 106 L266 126 Z" fill="#F1E3E0"/>
+      <rect x="226" y="330" width="48" height="90" rx="14" fill="#2A1E1B"/>
+    </g>
+    <circle cx="215" cy="295" r="130" fill="url(#shade)"/>
+    <g clip-path="url(#ball)" fill="none" stroke="#F1E3E0" stroke-opacity="0.45" stroke-width="9" stroke-linecap="round">
+      <ellipse cx="215" cy="295" rx="150" ry="58" transform="rotate(-30 215 295)"/>
+      <ellipse cx="215" cy="295" rx="150" ry="95" transform="rotate(-30 215 295)"/>
+      <ellipse cx="215" cy="295" rx="60" ry="150" transform="rotate(25 215 295)"/>
+      <ellipse cx="215" cy="295" rx="100" ry="150" transform="rotate(25 215 295)"/>
+    </g>
+    <circle cx="215" cy="295" r="130" fill="none" stroke="#642E37" stroke-width="6"/>
+    <path d="M318 372 C 336 390, 344 398, 352 404" fill="none" stroke="#7D3A45" stroke-width="10" stroke-linecap="round"/>
+    <g fill="none" stroke="#7D3A45" stroke-width="10">
+      <ellipse cx="372" cy="414" rx="24" ry="14" transform="rotate(25 372 414)"/>
+      <ellipse cx="410" cy="432" rx="24" ry="14" transform="rotate(25 410 432)"/>
+      <ellipse cx="448" cy="450" rx="24" ry="14" transform="rotate(25 448 450)" stroke="#97616A"/>
+    </g>
+  </g>
+
+  <text class="word" x="380" y="215" font-size="150" fill="#7D3A45">Stitchify</text>
+
+  <!-- haakketting als onderstreping -->
+  <g fill="none" stroke="#97616A" stroke-width="7">
+    <ellipse cx="406" cy="262" rx="20" ry="11"/><ellipse cx="442" cy="262" rx="20" ry="11"/>
+    <ellipse cx="478" cy="262" rx="20" ry="11"/><ellipse cx="514" cy="262" rx="20" ry="11"/>
+    <ellipse cx="550" cy="262" rx="20" ry="11"/><ellipse cx="586" cy="262" rx="20" ry="11"/>
+    <ellipse cx="622" cy="262" rx="20" ry="11"/><ellipse cx="658" cy="262" rx="20" ry="11"/>
+    <ellipse cx="694" cy="262" rx="20" ry="11"/><ellipse cx="730" cy="262" rx="20" ry="11"/>
+    <ellipse cx="766" cy="262" rx="20" ry="11"/><ellipse cx="802" cy="262" rx="20" ry="11"/>
+    <ellipse cx="838" cy="262" rx="20" ry="11"/><ellipse cx="874" cy="262" rx="20" ry="11"/>
+    <ellipse cx="910" cy="262" rx="20" ry="11"/><ellipse cx="946" cy="262" rx="20" ry="11"/>
+    <ellipse cx="982" cy="262" rx="20" ry="11"/><ellipse cx="1018" cy="262" rx="20" ry="11"/>
+    <ellipse cx="1054" cy="262" rx="20" ry="11"/>
+  </g>
+  <path d="M1074 262 C 1100 262, 1110 290, 1140 286" fill="none" stroke="#97616A" stroke-width="7" stroke-linecap="round"/>
+</svg>
